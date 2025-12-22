@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
         // Redirect based on role
         if (!profile) {
-          return NextResponse.redirect(`${origin}/onboarding`)
+          return NextResponse.redirect(`${origin}/login?error=Du må bli invitert for å bruke Tetra`)
         } else if (profile.role === 'admin') {
           return NextResponse.redirect(`${origin}/admin`)
         } else if (profile.role === 'teamleader') {

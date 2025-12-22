@@ -15,7 +15,7 @@ export default async function EmployeePage() {
     .single()
 
   if (!profile) {
-    redirect('/onboarding')
+    redirect('/login?error=Du må bli invitert for å bruke Tetra')
   }
 
   // Fetch instructions for this user's team (or all if no team)

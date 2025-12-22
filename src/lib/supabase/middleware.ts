@@ -58,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     const url = request.nextUrl.clone()
     
     if (!profile) {
-      url.pathname = '/onboarding'
+      url.pathname = '/login'
     } else if (profile.role === 'admin') {
       url.pathname = '/admin'
     } else if (profile.role === 'teamleader') {
