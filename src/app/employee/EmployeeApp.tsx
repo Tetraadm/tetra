@@ -51,6 +51,49 @@ type Props = {
   alerts: Alert[]
 }
 
+function FileLink({ fileUrl, supabase }: { fileUrl: string, supabase: ReturnType<typeof createClient> }) {
+  const [signedUrl, setSignedUrl] = useState<string | null>(null)
+  
+  useEffect(() => {
+    const getUrl = async () => {
+      const { data } = await supabase.storage
+        .from('instructions')
+        .createSignedUrl(fileUrl, 3600)
+      if (data?.signedUrl) {
+        setSignedUrl(data.signedUrl)
+      }
+    }
+    getUrl()
+  }, [fileUrl, supabase])
+
+  if (!signedUrl) return <p style={{ color: '#64748B', fontSize: 14 }}>Laster vedlegg...</p>
+
+  return (
+    
+      href={signedUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '12px 16px',
+        background: '#EFF6FF',
+        border: '1px solid #BFDBFE',
+        borderRadius: 8,
+        color: '#2563EB',
+        fontWeight: 600,
+        fontSize: 14,
+        textDecoration: 'none',
+        width: '100%',
+        boxSizing: 'border-box' as const,
+      }}
+    >
+      📄 Åpne vedlegg (PDF)
+    </a>
+  )
+}
+
 export default function EmployeeApp({ 
   profile, 
   organization, 
@@ -145,15 +188,6 @@ export default function EmployeeApp({
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-  }
-
-  const openFile = async (fileUrl: string) => {
-    const { data } = await supabase.storage
-      .from('instructions')
-      .createSignedUrl(fileUrl, 3600)
-    if (data?.signedUrl) {
-      window.open(data.signedUrl, '_blank')
-    }
   }
 
   const styles = {
@@ -516,20 +550,6 @@ export default function EmployeeApp({
       padding: 14,
       marginBottom: 10,
     }),
-    fileButton: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      padding: '12px 16px',
-      background: '#EFF6FF',
-      border: '1px solid #BFDBFE',
-      borderRadius: 8,
-      color: '#2563EB',
-      fontWeight: 600,
-      fontSize: 14,
-      cursor: 'pointer',
-      width: '100%',
-    },
   }
 
   return (
@@ -552,7 +572,6 @@ export default function EmployeeApp({
       <div style={styles.content}>
         {tab === 'home' && (
           <>
-            {/* Alerts */}
             {alerts.length > 0 && (
               <>
                 <div style={styles.sectionTitle}>⚠️ Aktive varsler</div>
@@ -790,7 +809,6 @@ export default function EmployeeApp({
         </button>
       </nav>
 
-      {/* Instruction Modal */}
       {selectedInstruction && (
         <div style={styles.modal} onClick={() => setSelectedInstruction(null)}>
           <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
@@ -821,12 +839,7 @@ export default function EmployeeApp({
               )}
               
               {selectedInstruction.file_url && (
-                <button
-                  onClick={() => openFile(selectedInstruction.file_url!)}
-                  style={styles.fileButton}
-                >
-                  📄 Åpne vedlegg (PDF)
-                </button>
+                <FileLink fileUrl={selectedInstruction.file_url} supabase={supabase} />
               )}
               
               {!selectedInstruction.content && !selectedInstruction.file_url && (
