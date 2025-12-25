@@ -38,6 +38,15 @@ type Folder = {
   name: string
 }
 
+type Alert = {
+  id: string
+  title: string
+  description: string | null
+  severity: string
+  active: boolean
+  created_at: string
+}
+
 type Props = {
   profile: Profile
   organization: Organization
@@ -45,6 +54,7 @@ type Props = {
   users: Profile[]
   instructions: Instruction[]
   folders: Folder[]
+  alerts: Alert[]
 }
 
 export default function AdminDashboard({ 
@@ -53,18 +63,21 @@ export default function AdminDashboard({
   teams: initialTeams, 
   users: initialUsers,
   instructions: initialInstructions,
-  folders: initialFolders
+  folders: initialFolders,
+  alerts: initialAlerts
 }: Props) {
-  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'innsikt'>('oversikt')
+  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'avvik' | 'innsikt'>('oversikt')
   const [teams, setTeams] = useState(initialTeams)
   const [users, setUsers] = useState(initialUsers)
   const [instructions, setInstructions] = useState(initialInstructions)
   const [folders, setFolders] = useState(initialFolders)
+  const [alerts, setAlerts] = useState(initialAlerts)
   
   // Modal states
   const [showCreateTeam, setShowCreateTeam] = useState(false)
   const [showCreateInstruction, setShowCreateInstruction] = useState(false)
   const [showInviteUser, setShowInviteUser] = useState(false)
+  const [showCreateAlert, setShowCreateAlert] = useState(false)
   
   // Form states
   const [newTeamName, setNewTeamName] = useState('')
@@ -78,6 +91,13 @@ export default function AdminDashboard({
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('employee')
   const [inviteTeam, setInviteTeam] = useState('')
+  const [newAlert, setNewAlert] = useState({
+    title: '',
+    description: '',
+    severity: 'medium',
+    teamIds: [] as string[],
+    allTeams: true
+  })
   
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -125,7 +145,6 @@ export default function AdminDashboard({
       .single()
 
     if (!error && data) {
-      // Link instruction to teams
       const teamIdsToLink = newInstruction.allTeams 
         ? teams.map(t => t.id) 
         : newInstruction.teamIds
@@ -175,6 +194,68 @@ export default function AdminDashboard({
       setShowInviteUser(false)
     }
     setLoading(false)
+  }
+
+  const createAlert = async () => {
+    if (!newAlert.title.trim()) return
+    setLoading(true)
+
+    const { data, error } = await supabase
+      .from('alerts')
+      .insert({
+        title: newAlert.title,
+        description: newAlert.description,
+        severity: newAlert.severity,
+        org_id: profile.org_id,
+        created_by: profile.id,
+        active: true
+      })
+      .select()
+      .single()
+
+    if (!error && data) {
+      const teamIdsToLink = newAlert.allTeams 
+        ? teams.map(t => t.id) 
+        : newAlert.teamIds
+
+      if (teamIdsToLink.length > 0) {
+        await supabase.from('alert_teams').insert(
+          teamIdsToLink.map(teamId => ({
+            alert_id: data.id,
+            team_id: teamId
+          }))
+        )
+      }
+      
+      setAlerts([data, ...alerts])
+      setNewAlert({ title: '', description: '', severity: 'medium', teamIds: [], allTeams: true })
+      setShowCreateAlert(false)
+    }
+    setLoading(false)
+  }
+
+  const toggleAlert = async (alertId: string, active: boolean) => {
+    const { error } = await supabase
+      .from('alerts')
+      .update({ active: !active })
+      .eq('id', alertId)
+
+    if (!error) {
+      setAlerts(alerts.map(a => a.id === alertId ? { ...a, active: !active } : a))
+    }
+  }
+
+  const deleteAlert = async (alertId: string) => {
+    if (!confirm('Er du sikker på at du vil slette dette avviket?')) return
+
+    const { error } = await supabase
+      .from('alerts')
+      .delete()
+      .eq('id', alertId)
+
+    if (!error) {
+      setAlerts(alerts.filter(a => a.id !== alertId))
+    }
   }
 
   const severityLabel = (s: string) => {
@@ -322,6 +403,26 @@ export default function AdminDashboard({
       borderRadius: 8,
       cursor: 'pointer',
     },
+    btnDanger: {
+      padding: '6px 12px',
+      fontSize: 12,
+      fontWeight: 500,
+      color: '#DC2626',
+      background: '#FEF2F2',
+      border: '1px solid #FECACA',
+      borderRadius: 6,
+      cursor: 'pointer',
+    },
+    btnSmall: {
+      padding: '6px 12px',
+      fontSize: 12,
+      fontWeight: 500,
+      color: '#64748B',
+      background: 'white',
+      border: '1px solid #E2E8F0',
+      borderRadius: 6,
+      cursor: 'pointer',
+    },
     table: {
       width: '100%',
       borderCollapse: 'collapse' as const,
@@ -376,6 +477,17 @@ export default function AdminDashboard({
       marginBottom: 16,
       boxSizing: 'border-box' as const,
     },
+    textarea: {
+      width: '100%',
+      padding: '12px 16px',
+      fontSize: 14,
+      border: '1px solid #E2E8F0',
+      borderRadius: 8,
+      marginBottom: 16,
+      boxSizing: 'border-box' as const,
+      minHeight: 100,
+      resize: 'vertical' as const,
+    },
     select: {
       width: '100%',
       padding: '12px 16px',
@@ -403,6 +515,14 @@ export default function AdminDashboard({
         : 'white',
       color: selected ? 'white' : '#64748B',
       cursor: 'pointer',
+    }),
+    alertCard: (severity: string, active: boolean) => ({
+      background: active ? severityColor(severity).bg : '#F8FAFC',
+      border: `1px solid ${active ? severityColor(severity).color : '#E2E8F0'}`,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      opacity: active ? 1 : 0.6,
     }),
   }
 
@@ -435,6 +555,9 @@ export default function AdminDashboard({
           <button style={styles.navItem(tab === 'instrukser')} onClick={() => setTab('instrukser')}>
             Instrukser
           </button>
+          <button style={styles.navItem(tab === 'avvik')} onClick={() => setTab('avvik')}>
+            Avvik & Varsler
+          </button>
           <button style={styles.navItem(tab === 'innsikt')} onClick={() => setTab('innsikt')}>
             Innsikt
           </button>
@@ -462,11 +585,33 @@ export default function AdminDashboard({
                 </div>
                 <div style={styles.statCard}>
                   <div style={{ ...styles.statValue, color: '#DC2626' }}>
-                    {instructions.filter(i => i.severity === 'critical').length}
+                    {alerts.filter(a => a.active).length}
                   </div>
-                  <div style={styles.statLabel}>Kritiske</div>
+                  <div style={styles.statLabel}>Aktive avvik</div>
                 </div>
               </div>
+
+              {/* Active Alerts */}
+              {alerts.filter(a => a.active).length > 0 && (
+                <div style={{ marginBottom: 24 }}>
+                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>⚠️ Aktive avvik</h3>
+                  {alerts.filter(a => a.active).slice(0, 3).map(alert => (
+                    <div key={alert.id} style={styles.alertCard(alert.severity, true)}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div>
+                          <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
+                            {severityLabel(alert.severity)}
+                          </span>
+                          <h4 style={{ fontSize: 15, fontWeight: 600, marginTop: 8 }}>{alert.title}</h4>
+                          {alert.description && (
+                            <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{alert.description}</p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={styles.card}>
@@ -602,7 +747,6 @@ export default function AdminDashboard({
                     <tr>
                       <th style={styles.th}>Tittel</th>
                       <th style={styles.th}>Alvorlighet</th>
-                      <th style={styles.th}>Team</th>
                       <th style={styles.th}>Status</th>
                     </tr>
                   </thead>
@@ -618,7 +762,6 @@ export default function AdminDashboard({
                             {severityLabel(inst.severity)}
                           </span>
                         </td>
-                        <td style={styles.td}>—</td>
                         <td style={styles.td}>
                           <span style={styles.badge('#ECFDF5', '#10B981')}>
                             {inst.status === 'approved' ? 'Godkjent' : inst.status}
@@ -628,7 +771,7 @@ export default function AdminDashboard({
                     ))}
                     {instructions.length === 0 && (
                       <tr>
-                        <td colSpan={4} style={{ ...styles.td, color: '#64748B' }}>
+                        <td colSpan={3} style={{ ...styles.td, color: '#64748B' }}>
                           Ingen instrukser opprettet ennå
                         </td>
                       </tr>
@@ -636,6 +779,70 @@ export default function AdminDashboard({
                   </tbody>
                 </table>
               </div>
+            </>
+          )}
+
+          {tab === 'avvik' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <div>
+                  <h1 style={styles.pageTitle}>Avvik & Varsler</h1>
+                  <p style={styles.pageSubtitle}>Varsler som vises på ansattes hjem-side</p>
+                </div>
+                <button style={styles.btn} onClick={() => setShowCreateAlert(true)}>
+                  + Nytt avvik
+                </button>
+              </div>
+
+              {alerts.length === 0 ? (
+                <div style={styles.card}>
+                  <div style={styles.cardBody}>
+                    <p style={{ color: '#64748B', textAlign: 'center' }}>
+                      Ingen avvik opprettet ennå. Klikk "Nytt avvik" for å legge til.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {alerts.map(alert => (
+                    <div key={alert.id} style={styles.alertCard(alert.severity, alert.active)}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                            <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
+                              {severityLabel(alert.severity)}
+                            </span>
+                            {!alert.active && (
+                              <span style={styles.badge('#F1F5F9', '#64748B')}>Inaktiv</span>
+                            )}
+                          </div>
+                          <h4 style={{ fontSize: 15, fontWeight: 600 }}>{alert.title}</h4>
+                          {alert.description && (
+                            <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{alert.description}</p>
+                          )}
+                          <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>
+                            Opprettet: {new Date(alert.created_at).toLocaleDateString('nb-NO')}
+                          </p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button 
+                            style={styles.btnSmall} 
+                            onClick={() => toggleAlert(alert.id, alert.active)}
+                          >
+                            {alert.active ? 'Deaktiver' : 'Aktiver'}
+                          </button>
+                          <button 
+                            style={styles.btnDanger} 
+                            onClick={() => deleteAlert(alert.id)}
+                          >
+                            Slett
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
             </>
           )}
 
@@ -708,7 +915,7 @@ export default function AdminDashboard({
             
             <label style={styles.label}>Innhold</label>
             <textarea
-              style={{ ...styles.input, minHeight: 100, resize: 'vertical' }}
+              style={styles.textarea}
               value={newInstruction.content}
               onChange={e => setNewInstruction({ ...newInstruction, content: e.target.value })}
               placeholder="Beskriv instruksen..."
@@ -820,6 +1027,90 @@ export default function AdminDashboard({
               </button>
               <button style={styles.btn} onClick={inviteUser} disabled={loading}>
                 {loading ? 'Sender...' : 'Opprett invitasjon'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Alert Modal */}
+      {showCreateAlert && (
+        <div style={styles.modal} onClick={() => setShowCreateAlert(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett avvik/varsel</h2>
+            
+            <label style={styles.label}>Tittel</label>
+            <input
+              style={styles.input}
+              value={newAlert.title}
+              onChange={e => setNewAlert({ ...newAlert, title: e.target.value })}
+              placeholder="F.eks. Stengt nødutgang i 2. etasje"
+            />
+            
+            <label style={styles.label}>Beskrivelse (valgfritt)</label>
+            <textarea
+              style={styles.textarea}
+              value={newAlert.description}
+              onChange={e => setNewAlert({ ...newAlert, description: e.target.value })}
+              placeholder="Mer informasjon om avviket..."
+            />
+            
+            <label style={styles.label}>Alvorlighet</label>
+            <select
+              style={styles.select}
+              value={newAlert.severity}
+              onChange={e => setNewAlert({ ...newAlert, severity: e.target.value })}
+            >
+              <option value="critical">Kritisk</option>
+              <option value="medium">Middels</option>
+              <option value="low">Lav</option>
+            </select>
+
+            <label style={styles.label}>Hvem skal se dette?</label>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={newAlert.allTeams}
+                  onChange={e => setNewAlert({ 
+                    ...newAlert, 
+                    allTeams: e.target.checked,
+                    teamIds: e.target.checked ? [] : newAlert.teamIds
+                  })}
+                />
+                <span style={{ fontSize: 14 }}>Alle team</span>
+              </label>
+              
+              {!newAlert.allTeams && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {teams.map(team => (
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => {
+                        const ids = newAlert.teamIds.includes(team.id)
+                          ? newAlert.teamIds.filter(id => id !== team.id)
+                          : [...newAlert.teamIds, team.id]
+                        setNewAlert({ ...newAlert, teamIds: ids })
+                      }}
+                      style={styles.teamChip(newAlert.teamIds.includes(team.id))}
+                    >
+                      {team.name}
+                    </button>
+                  ))}
+                  {teams.length === 0 && (
+                    <span style={{ color: '#94A3B8', fontSize: 13 }}>Opprett team først</span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button style={styles.btnSecondary} onClick={() => setShowCreateAlert(false)}>
+                Avbryt
+              </button>
+              <button style={styles.btn} onClick={createAlert} disabled={loading}>
+                {loading ? 'Oppretter...' : 'Opprett'}
               </button>
             </div>
           </div>

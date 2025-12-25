@@ -29,6 +29,13 @@ type Instruction = {
   severity: string
 }
 
+type Alert = {
+  id: string
+  title: string
+  description: string | null
+  severity: string
+}
+
 type ChatMessage = {
   type: 'user' | 'bot' | 'notfound'
   text: string
@@ -40,19 +47,22 @@ type Props = {
   organization: Organization
   team: Team | null
   instructions: Instruction[]
+  alerts: Alert[]
 }
 
 export default function EmployeeApp({ 
   profile, 
   organization, 
   team,
-  instructions
+  instructions,
+  alerts
 }: Props) {
   const [tab, setTab] = useState<'home' | 'instructions' | 'ask'>('home')
   const [searchQuery, setSearchQuery] = useState('')
   const [chatInput, setChatInput] = useState('')
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isTyping, setIsTyping] = useState(false)
+  const [selectedInstruction, setSelectedInstruction] = useState<Instruction | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
@@ -282,6 +292,7 @@ export default function EmployeeApp({
       gap: 12,
       padding: '12px 0',
       borderBottom: '1px solid #E2E8F0',
+      cursor: 'pointer',
     },
     instructionIcon: {
       width: 40,
@@ -443,6 +454,58 @@ export default function EmployeeApp({
       background: '#94A3B8',
       animation: 'pulse 1s infinite',
     },
+    modal: {
+      position: 'fixed' as const,
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      zIndex: 100,
+    },
+    modalContent: {
+      background: 'white',
+      borderRadius: '16px 16px 0 0',
+      width: '100%',
+      maxWidth: 480,
+      maxHeight: '85vh',
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column' as const,
+    },
+    modalHeader: {
+      padding: 16,
+      borderBottom: '1px solid #E2E8F0',
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    modalBody: {
+      padding: 16,
+      overflowY: 'auto' as const,
+      flex: 1,
+    },
+    modalClose: {
+      width: 32,
+      height: 32,
+      borderRadius: 8,
+      border: '1px solid #E2E8F0',
+      background: 'white',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 18,
+      flexShrink: 0,
+    },
+    alertCard: (severity: string) => ({
+      background: severityColor(severity).bg,
+      border: `1px solid ${severityColor(severity).color}`,
+      borderRadius: 12,
+      padding: 14,
+      marginBottom: 10,
+    }),
   }
 
   return (
@@ -465,6 +528,28 @@ export default function EmployeeApp({
       <div style={styles.content}>
         {tab === 'home' && (
           <>
+            {/* Alerts */}
+            {alerts.length > 0 && (
+              <>
+                <div style={styles.sectionTitle}>⚠️ Aktive varsler</div>
+                <div style={{ marginBottom: 20 }}>
+                  {alerts.map(alert => (
+                    <div key={alert.id} style={styles.alertCard(alert.severity)}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
+                          {severityLabel(alert.severity)}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 600 }}>{alert.title}</div>
+                      {alert.description && (
+                        <div style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{alert.description}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
             <div style={styles.quickActions}>
               <div style={styles.quickAction} onClick={() => setTab('instructions')}>
                 <div style={styles.quickActionIcon('blue')}>📄</div>
@@ -482,7 +567,11 @@ export default function EmployeeApp({
                 <div style={styles.card}>
                   <div style={{ padding: '4px 16px' }}>
                     {criticalInstructions.slice(0, 3).map(inst => (
-                      <div key={inst.id} style={styles.instructionItem}>
+                      <div 
+                        key={inst.id} 
+                        style={styles.instructionItem}
+                        onClick={() => setSelectedInstruction(inst)}
+                      >
                         <div style={styles.instructionIcon}>📄</div>
                         <div style={styles.instructionContent}>
                           <div style={styles.instructionTitle}>{inst.title}</div>
@@ -499,7 +588,11 @@ export default function EmployeeApp({
             <div style={styles.card}>
               <div style={{ padding: '4px 16px' }}>
                 {instructions.slice(0, 5).map(inst => (
-                  <div key={inst.id} style={styles.instructionItem}>
+                  <div 
+                    key={inst.id} 
+                    style={styles.instructionItem}
+                    onClick={() => setSelectedInstruction(inst)}
+                  >
                     <div style={styles.instructionIcon}>📄</div>
                     <div style={styles.instructionContent}>
                       <div style={styles.instructionTitle}>{inst.title}</div>
@@ -537,7 +630,11 @@ export default function EmployeeApp({
             <div style={styles.card}>
               <div style={{ padding: '4px 16px' }}>
                 {filteredInstructions.map(inst => (
-                  <div key={inst.id} style={styles.instructionItem}>
+                  <div 
+                    key={inst.id} 
+                    style={styles.instructionItem}
+                    onClick={() => setSelectedInstruction(inst)}
+                  >
                     <div style={styles.instructionIcon}>📄</div>
                     <div style={styles.instructionContent}>
                       <div style={styles.instructionTitle}>{inst.title}</div>
@@ -668,6 +765,44 @@ export default function EmployeeApp({
           <span>Spør Tetra</span>
         </button>
       </nav>
+
+      {/* Instruction Modal */}
+      {selectedInstruction && (
+        <div style={styles.modal} onClick={() => setSelectedInstruction(null)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <div style={styles.modalHeader}>
+              <div>
+                <span style={styles.badge(
+                  severityColor(selectedInstruction.severity).bg,
+                  severityColor(selectedInstruction.severity).color
+                )}>
+                  {severityLabel(selectedInstruction.severity)}
+                </span>
+                <h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 8 }}>
+                  {selectedInstruction.title}
+                </h2>
+              </div>
+              <button 
+                style={styles.modalClose}
+                onClick={() => setSelectedInstruction(null)}
+              >
+                ✕
+              </button>
+            </div>
+            <div style={styles.modalBody}>
+              {selectedInstruction.content ? (
+                <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+                  {selectedInstruction.content}
+                </div>
+              ) : (
+                <p style={{ color: '#64748B', fontStyle: 'italic' }}>
+                  Ingen beskrivelse tilgjengelig.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes pulse {

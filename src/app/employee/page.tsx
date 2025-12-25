@@ -18,7 +18,7 @@ export default async function EmployeePage() {
     redirect('/login?error=Du må bli invitert for å bruke Tetra')
   }
 
-  // Fetch instructions for this user's team (or all if no team)
+  // Fetch instructions for this user's team
   let instructions = []
   
   if (profile.team_id) {
@@ -30,7 +30,6 @@ export default async function EmployeePage() {
       .order('severity')
     instructions = data || []
   } else {
-    // If no team, get all approved instructions in org
     const { data } = await supabase
       .from('instructions')
       .select('*')
@@ -40,12 +39,34 @@ export default async function EmployeePage() {
     instructions = data || []
   }
 
+  // Fetch active alerts for this user's team
+  let alerts = []
+  
+  if (profile.team_id) {
+    const { data } = await supabase
+      .from('alerts')
+      .select('*, alert_teams!inner(*)')
+      .eq('alert_teams.team_id', profile.team_id)
+      .eq('active', true)
+      .order('severity')
+    alerts = data || []
+  } else {
+    const { data } = await supabase
+      .from('alerts')
+      .select('*')
+      .eq('org_id', profile.org_id)
+      .eq('active', true)
+      .order('severity')
+    alerts = data || []
+  }
+
   return (
     <EmployeeApp
       profile={profile}
       organization={profile.organizations}
       team={profile.teams}
       instructions={instructions}
+      alerts={alerts}
     />
   )
 }

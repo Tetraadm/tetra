@@ -18,39 +18,24 @@ export default async function AdminPage() {
     redirect('/login')
   }
 
-  // Fetch all data for admin
-  const { data: teams } = await supabase
-    .from('teams')
-    .select('*')
-    .eq('org_id', profile.org_id)
-    .order('name')
-
-  const { data: users } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('org_id', profile.org_id)
-    .order('full_name')
-
-  const { data: instructions } = await supabase
-    .from('instructions')
-    .select('*, folders(*)')
-    .eq('org_id', profile.org_id)
-    .order('created_at', { ascending: false })
-
-  const { data: folders } = await supabase
-    .from('folders')
-    .select('*')
-    .eq('org_id', profile.org_id)
-    .order('name')
+  // Fetch all data for the organization
+  const [teamsRes, usersRes, instructionsRes, foldersRes, alertsRes] = await Promise.all([
+    supabase.from('teams').select('*').eq('org_id', profile.org_id),
+    supabase.from('profiles').select('*').eq('org_id', profile.org_id),
+    supabase.from('instructions').select('*, folders(*)').eq('org_id', profile.org_id),
+    supabase.from('folders').select('*').eq('org_id', profile.org_id),
+    supabase.from('alerts').select('*').eq('org_id', profile.org_id).order('created_at', { ascending: false })
+  ])
 
   return (
     <AdminDashboard
       profile={profile}
       organization={profile.organizations}
-      teams={teams || []}
-      users={users || []}
-      instructions={instructions || []}
-      folders={folders || []}
+      teams={teamsRes.data || []}
+      users={usersRes.data || []}
+      instructions={instructionsRes.data || []}
+      folders={foldersRes.data || []}
+      alerts={alertsRes.data || []}
     />
   )
 }
