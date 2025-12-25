@@ -27,6 +27,7 @@ type Instruction = {
   title: string
   content: string | null
   severity: string
+  file_url: string | null
 }
 
 type Alert = {
@@ -144,6 +145,15 @@ export default function EmployeeApp({
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+  }
+
+  const openFile = async (fileUrl: string) => {
+    const { data } = await supabase.storage
+      .from('instructions')
+      .createSignedUrl(fileUrl, 3600)
+    if (data?.signedUrl) {
+      window.open(data.signedUrl, '_blank')
+    }
   }
 
   const styles = {
@@ -506,6 +516,20 @@ export default function EmployeeApp({
       padding: 14,
       marginBottom: 10,
     }),
+    fileButton: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: '12px 16px',
+      background: '#EFF6FF',
+      border: '1px solid #BFDBFE',
+      borderRadius: 8,
+      color: '#2563EB',
+      fontWeight: 600,
+      fontSize: 14,
+      cursor: 'pointer',
+      width: '100%',
+    },
   }
 
   return (
@@ -790,11 +814,22 @@ export default function EmployeeApp({
               </button>
             </div>
             <div style={styles.modalBody}>
-              {selectedInstruction.content ? (
-                <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap' }}>
+              {selectedInstruction.content && (
+                <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 16 }}>
                   {selectedInstruction.content}
                 </div>
-              ) : (
+              )}
+              
+              {selectedInstruction.file_url && (
+                <button
+                  onClick={() => openFile(selectedInstruction.file_url!)}
+                  style={styles.fileButton}
+                >
+                  📄 Åpne vedlegg (PDF)
+                </button>
+              )}
+              
+              {!selectedInstruction.content && !selectedInstruction.file_url && (
                 <p style={{ color: '#64748B', fontStyle: 'italic' }}>
                   Ingen beskrivelse tilgjengelig.
                 </p>

@@ -30,6 +30,7 @@ type Instruction = {
   severity: string
   status: string
   folder_id: string | null
+  file_url: string | null
   folders: { name: string } | null
 }
 
@@ -88,6 +89,7 @@ export default function AdminDashboard({
     teamIds: [] as string[],
     allTeams: false
   })
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('employee')
   const [inviteTeam, setInviteTeam] = useState('')
@@ -131,6 +133,27 @@ export default function AdminDashboard({
     if (!newInstruction.title.trim()) return
     setLoading(true)
 
+    let fileUrl = null
+
+    // Upload file if selected
+    if (selectedFile) {
+      const fileExt = selectedFile.name.split('.').pop()
+      const fileName = `${profile.org_id}/${crypto.randomUUID()}.${fileExt}`
+      
+      const { error: uploadError } = await supabase.storage
+        .from('instructions')
+        .upload(fileName, selectedFile)
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        alert('Kunne ikke laste opp fil')
+        setLoading(false)
+        return
+      }
+
+      fileUrl = fileName
+    }
+
     const { data, error } = await supabase
       .from('instructions')
       .insert({
@@ -139,7 +162,8 @@ export default function AdminDashboard({
         severity: newInstruction.severity,
         org_id: profile.org_id,
         status: 'approved',
-        created_by: profile.id
+        created_by: profile.id,
+        file_url: fileUrl
       })
       .select('*, folders(*)')
       .single()
@@ -160,6 +184,7 @@ export default function AdminDashboard({
       
       setInstructions([data, ...instructions])
       setNewInstruction({ title: '', content: '', severity: 'medium', teamIds: [], allTeams: false })
+      setSelectedFile(null)
       setShowCreateInstruction(false)
     }
     setLoading(false)
@@ -524,6 +549,9 @@ export default function AdminDashboard({
       marginBottom: 12,
       opacity: active ? 1 : 0.6,
     }),
+    fileInput: {
+      marginBottom: 16,
+    },
   }
 
   return (
@@ -747,6 +775,7 @@ export default function AdminDashboard({
                     <tr>
                       <th style={styles.th}>Tittel</th>
                       <th style={styles.th}>Alvorlighet</th>
+                      <th style={styles.th}>Fil</th>
                       <th style={styles.th}>Status</th>
                     </tr>
                   </thead>
@@ -763,6 +792,11 @@ export default function AdminDashboard({
                           </span>
                         </td>
                         <td style={styles.td}>
+                          {inst.file_url ? (
+                            <span style={styles.badge('#EFF6FF', '#2563EB')}>📎 PDF</span>
+                          ) : '—'}
+                        </td>
+                        <td style={styles.td}>
                           <span style={styles.badge('#ECFDF5', '#10B981')}>
                             {inst.status === 'approved' ? 'Godkjent' : inst.status}
                           </span>
@@ -771,7 +805,7 @@ export default function AdminDashboard({
                     ))}
                     {instructions.length === 0 && (
                       <tr>
-                        <td colSpan={3} style={{ ...styles.td, color: '#64748B' }}>
+                        <td colSpan={4} style={{ ...styles.td, color: '#64748B' }}>
                           Ingen instrukser opprettet ennå
                         </td>
                       </tr>
@@ -931,6 +965,19 @@ export default function AdminDashboard({
               <option value="medium">Middels</option>
               <option value="low">Lav</option>
             </select>
+
+            <label style={styles.label}>Vedlegg (PDF, Word)</label>
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+              style={styles.fileInput}
+            />
+            {selectedFile && (
+              <p style={{ fontSize: 13, color: '#10B981', marginBottom: 16 }}>
+                ✓ {selectedFile.name}
+              </p>
+            )}
 
             <label style={styles.label}>Team</label>
             <div style={{ marginBottom: 16 }}>
