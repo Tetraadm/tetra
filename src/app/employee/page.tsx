@@ -24,7 +24,7 @@ export default async function EmployeePage() {
   if (profile.team_id) {
     const { data } = await supabase
       .from('instructions')
-      .select('*, instruction_teams!inner(*)')
+      .select('id, title, content, severity, file_url, instruction_teams!inner(team_id)')
       .eq('instruction_teams.team_id', profile.team_id)
       .eq('status', 'approved')
       .order('severity')
@@ -32,7 +32,7 @@ export default async function EmployeePage() {
   } else {
     const { data } = await supabase
       .from('instructions')
-      .select('*')
+      .select('id, title, content, severity, file_url')
       .eq('org_id', profile.org_id)
       .eq('status', 'approved')
       .order('severity')
@@ -45,7 +45,7 @@ export default async function EmployeePage() {
   if (profile.team_id) {
     const { data } = await supabase
       .from('alerts')
-      .select('*, alert_teams!inner(*)')
+      .select('id, title, description, severity, alert_teams!inner(team_id)')
       .eq('alert_teams.team_id', profile.team_id)
       .eq('active', true)
       .order('severity')
@@ -53,7 +53,7 @@ export default async function EmployeePage() {
   } else {
     const { data } = await supabase
       .from('alerts')
-      .select('*')
+      .select('id, title, description, severity')
       .eq('org_id', profile.org_id)
       .eq('active', true)
       .order('severity')
