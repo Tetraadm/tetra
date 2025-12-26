@@ -48,6 +48,14 @@ type Alert = {
   created_at: string
 }
 
+type AiLog = {
+  id: string
+  question: string
+  answer: string
+  created_at: string
+  instructions: { title: string } | null
+}
+
 type Props = {
   profile: Profile
   organization: Organization
@@ -56,6 +64,7 @@ type Props = {
   instructions: Instruction[]
   folders: Folder[]
   alerts: Alert[]
+  aiLogs: AiLog[]
 }
 
 export default function AdminDashboard({ 
@@ -65,9 +74,10 @@ export default function AdminDashboard({
   users: initialUsers,
   instructions: initialInstructions,
   folders: initialFolders,
-  alerts: initialAlerts
+  alerts: initialAlerts,
+  aiLogs
 }: Props) {
-  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'avvik' | 'innsikt'>('oversikt')
+  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'avvik' | 'ailogg' | 'innsikt'>('oversikt')
   const [teams, setTeams] = useState(initialTeams)
   const [users, setUsers] = useState(initialUsers)
   const [instructions, setInstructions] = useState(initialInstructions)
@@ -79,13 +89,20 @@ export default function AdminDashboard({
   const [showCreateInstruction, setShowCreateInstruction] = useState(false)
   const [showInviteUser, setShowInviteUser] = useState(false)
   const [showCreateAlert, setShowCreateAlert] = useState(false)
+  const [showEditUser, setShowEditUser] = useState(false)
+  const [showEditInstruction, setShowEditInstruction] = useState(false)
+  const [showCreateFolder, setShowCreateFolder] = useState(false)
+  const [showDisclaimer, setShowDisclaimer] = useState(false)
   
   // Form states
   const [newTeamName, setNewTeamName] = useState('')
+  const [newFolderName, setNewFolderName] = useState('')
   const [newInstruction, setNewInstruction] = useState({ 
     title: '', 
     content: '', 
     severity: 'medium',
+    status: 'draft',
+    folderId: '',
     teamIds: [] as string[],
     allTeams: false
   })
@@ -100,6 +117,21 @@ export default function AdminDashboard({
     teamIds: [] as string[],
     allTeams: true
   })
+  
+  // Edit states
+  const [editingUser, setEditingUser] = useState<Profile | null>(null)
+  const [editingInstruction, setEditingInstruction] = useState<Instruction | null>(null)
+  const [editUserRole, setEditUserRole] = useState('')
+  const [editUserTeam, setEditUserTeam] = useState('')
+  const [editInstructionTitle, setEditInstructionTitle] = useState('')
+  const [editInstructionContent, setEditInstructionContent] = useState('')
+  const [editInstructionSeverity, setEditInstructionSeverity] = useState('')
+  const [editInstructionStatus, setEditInstructionStatus] = useState('')
+  const [editInstructionFolder, setEditInstructionFolder] = useState('')
+  
+  // Filter state
+  const [selectedFolder, setSelectedFolder] = useState<string>('all')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
   
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -129,63 +161,251 @@ export default function AdminDashboard({
     setLoading(false)
   }
 
+  const deleteTeam = async (teamId: string) => {
+    if (!confirm('Er du sikker på at du vil slette dette teamet?')) return
+    
+    const { error } = await supabase
+      .from('teams')
+      .delete()
+      .eq('id', teamId)
+
+    if (!error) {
+      setTeams(teams.filter(t => t.id !== teamId))
+    }
+  }
+
+  const createFolder = async () => {
+    if (!newFolderName.trim()) return
+    setLoading(true)
+
+    const { data, error } = await supabase
+      .from('folders')
+      .insert({ name: newFolderName, org_id: profile.org_id })
+      .select()
+      .single()
+
+    if (!error && data) {
+      setFolders([...folders, data])
+      setNewFolderName('')
+      setShowCreateFolder(false)
+    }
+    setLoading(false)
+  }
+
+  const deleteFolder = async (folderId: string) => {
+    if (!confirm('Slette mappen? Instrukser i mappen beholdes.')) return
+    
+    const { error } = await supabase
+      .from('folders')
+      .delete()
+      .eq('id', folderId)
+
+    if (!error) {
+      setFolders(folders.filter(f => f.id !== folderId))
+      setInstructions(instructions.map(i => 
+        i.folder_id === folderId ? { ...i, folder_id: null, folders: null } : i
+      ))
+    }
+  }
+
   const createInstruction = async () => {
     if (!newInstruction.title.trim()) return
     setLoading(true)
 
-    let fileUrl = null
-
-    // Upload file if selected
-    if (selectedFile) {
-      const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${profile.org_id}/${crypto.randomUUID()}.${fileExt}`
-      
-      const { error: uploadError } = await supabase.storage
-        .from('instructions')
-        .upload(fileName, selectedFile)
-
-      if (uploadError) {
-        console.error('Upload error:', uploadError)
-        alert('Kunne ikke laste opp fil')
-        setLoading(false)
-        return
-      }
-
-      fileUrl = fileName
-    }
-
-    const { data, error } = await supabase
-      .from('instructions')
-      .insert({
-        title: newInstruction.title,
-        content: newInstruction.content,
-        severity: newInstruction.severity,
-        org_id: profile.org_id,
-        status: 'approved',
-        created_by: profile.id,
-        file_url: fileUrl
-      })
-      .select('*, folders(*)')
-      .single()
-
-    if (!error && data) {
+    try {
       const teamIdsToLink = newInstruction.allTeams 
         ? teams.map(t => t.id) 
         : newInstruction.teamIds
 
-      if (teamIdsToLink.length > 0) {
-        await supabase.from('instruction_teams').insert(
-          teamIdsToLink.map(teamId => ({
-            instruction_id: data.id,
-            team_id: teamId
-          }))
-        )
+      if (selectedFile) {
+        const formData = new FormData()
+        formData.append('file', selectedFile)
+        formData.append('title', newInstruction.title)
+        formData.append('severity', newInstruction.severity)
+        formData.append('status', newInstruction.status)
+        formData.append('orgId', profile.org_id)
+        formData.append('userId', profile.id)
+        formData.append('teamIds', JSON.stringify(teamIdsToLink))
+        formData.append('allTeams', newInstruction.allTeams.toString())
+        if (newInstruction.folderId) {
+          formData.append('folderId', newInstruction.folderId)
+        }
+
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+
+        const result = await response.json()
+
+        if (result.error) {
+          alert(result.error)
+          setLoading(false)
+          return
+        }
+
+        if (result.instruction) {
+          const folder = folders.find(f => f.id === newInstruction.folderId)
+          setInstructions([{ 
+            ...result.instruction, 
+            folders: folder ? { name: folder.name } : null 
+          }, ...instructions])
+        }
+      } else {
+        const { data, error } = await supabase
+          .from('instructions')
+          .insert({
+            title: newInstruction.title,
+            content: newInstruction.content,
+            severity: newInstruction.severity,
+            status: newInstruction.status,
+            org_id: profile.org_id,
+            created_by: profile.id,
+            folder_id: newInstruction.folderId || null
+          })
+          .select('*, folders(*)')
+          .single()
+
+        if (error) {
+          alert('Kunne ikke opprette instruks')
+          setLoading(false)
+          return
+        }
+
+        if (data && teamIdsToLink.length > 0) {
+          await supabase.from('instruction_teams').insert(
+            teamIdsToLink.map(teamId => ({
+              instruction_id: data.id,
+              team_id: teamId
+            }))
+          )
+        }
+
+        if (data) {
+          setInstructions([data, ...instructions])
+        }
       }
-      
-      setInstructions([data, ...instructions])
-      setNewInstruction({ title: '', content: '', severity: 'medium', teamIds: [], allTeams: false })
+
+      setNewInstruction({ title: '', content: '', severity: 'medium', status: 'draft', folderId: '', teamIds: [], allTeams: false })
       setSelectedFile(null)
       setShowCreateInstruction(false)
+    } catch (error) {
+      console.error('Error:', error)
+      alert('Noe gikk galt')
+    }
+
+    setLoading(false)
+  }
+
+  const deleteInstruction = async (instructionId: string) => {
+    if (!confirm('Slette instruksen? Dette fjerner også tilhørende data.')) return
+
+    const { error } = await supabase
+      .from('instructions')
+      .delete()
+      .eq('id', instructionId)
+
+    if (!error) {
+      setInstructions(instructions.filter(i => i.id !== instructionId))
+    }
+  }
+
+  const toggleInstructionStatus = async (instruction: Instruction) => {
+    const newStatus = instruction.status === 'published' ? 'draft' : 'published'
+    
+    const { error } = await supabase
+      .from('instructions')
+      .update({ status: newStatus })
+      .eq('id', instruction.id)
+
+    if (!error) {
+      setInstructions(instructions.map(i => 
+        i.id === instruction.id ? { ...i, status: newStatus } : i
+      ))
+    }
+  }
+
+  const openEditInstruction = (instruction: Instruction) => {
+    setEditingInstruction(instruction)
+    setEditInstructionTitle(instruction.title)
+    setEditInstructionContent(instruction.content || '')
+    setEditInstructionSeverity(instruction.severity)
+    setEditInstructionStatus(instruction.status)
+    setEditInstructionFolder(instruction.folder_id || '')
+    setShowEditInstruction(true)
+  }
+
+  const saveEditInstruction = async () => {
+    if (!editingInstruction) return
+    setLoading(true)
+
+    const { data, error } = await supabase
+      .from('instructions')
+      .update({
+        title: editInstructionTitle,
+        content: editInstructionContent,
+        severity: editInstructionSeverity,
+        status: editInstructionStatus,
+        folder_id: editInstructionFolder || null
+      })
+      .eq('id', editingInstruction.id)
+      .select('*, folders(*)')
+      .single()
+
+    if (!error && data) {
+      setInstructions(instructions.map(i => 
+        i.id === editingInstruction.id ? data : i
+      ))
+      setShowEditInstruction(false)
+      setEditingInstruction(null)
+    }
+    setLoading(false)
+  }
+
+  const deleteUser = async (userId: string) => {
+    if (userId === profile.id) {
+      alert('Du kan ikke slette deg selv')
+      return
+    }
+    if (!confirm('Fjerne denne brukeren?')) return
+
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', userId)
+
+    if (!error) {
+      setUsers(users.filter(u => u.id !== userId))
+    }
+  }
+
+  const openEditUser = (user: Profile) => {
+    setEditingUser(user)
+    setEditUserRole(user.role)
+    setEditUserTeam(user.team_id || '')
+    setShowEditUser(true)
+  }
+
+  const saveEditUser = async () => {
+    if (!editingUser) return
+    setLoading(true)
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        role: editUserRole,
+        team_id: editUserTeam || null
+      })
+      .eq('id', editingUser.id)
+
+    if (!error) {
+      setUsers(users.map(u => 
+        u.id === editingUser.id 
+          ? { ...u, role: editUserRole, team_id: editUserTeam || null }
+          : u
+      ))
+      setShowEditUser(false)
+      setEditingUser(null)
     }
     setLoading(false)
   }
@@ -212,7 +432,7 @@ export default function AdminDashboard({
     if (!error) {
       const inviteUrl = `${window.location.origin}/invite/${token}`
       navigator.clipboard.writeText(inviteUrl)
-      alert(`Invitasjonslenke kopiert til utklippstavlen!\n\n${inviteUrl}`)
+      alert(`Invitasjonslenke kopiert!\n\n${inviteUrl}`)
       setInviteEmail('')
       setInviteRole('employee')
       setInviteTeam('')
@@ -271,7 +491,7 @@ export default function AdminDashboard({
   }
 
   const deleteAlert = async (alertId: string) => {
-    if (!confirm('Er du sikker på at du vil slette dette avviket?')) return
+    if (!confirm('Slette dette avviket?')) return
 
     const { error } = await supabase
       .from('alerts')
@@ -295,17 +515,31 @@ export default function AdminDashboard({
     return { bg: '#ECFDF5', color: '#10B981' }
   }
 
+  const statusColor = (s: string) => {
+    if (s === 'published') return { bg: '#ECFDF5', color: '#10B981' }
+    return { bg: '#FEF3C7', color: '#D97706' }
+  }
+
   const roleLabel = (r: string) => {
     if (r === 'admin') return 'Sikkerhetsansvarlig'
     if (r === 'teamleader') return 'Teamleder'
     return 'Ansatt'
   }
 
+  const filteredInstructions = instructions.filter(i => {
+    const folderMatch = selectedFolder === 'all' 
+      ? true 
+      : selectedFolder === 'none'
+      ? !i.folder_id
+      : i.folder_id === selectedFolder
+    
+    const statusMatch = statusFilter === 'all' ? true : i.status === statusFilter
+    
+    return folderMatch && statusMatch
+  })
+
   const styles = {
-    container: {
-      minHeight: '100vh',
-      background: '#F8FAFC',
-    },
+    container: { minHeight: '100vh', background: '#F8FAFC' },
     header: {
       background: 'white',
       borderBottom: '1px solid #E2E8F0',
@@ -317,15 +551,11 @@ export default function AdminDashboard({
     logo: {
       fontSize: 20,
       fontWeight: 800,
-      background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+      background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
       WebkitBackgroundClip: 'text',
       WebkitTextFillColor: 'transparent',
     },
-    orgName: {
-      fontSize: 14,
-      color: '#64748B',
-      marginLeft: 16,
-    },
+    orgName: { fontSize: 14, color: '#64748B', marginLeft: 16 },
     logoutBtn: {
       padding: '8px 16px',
       fontSize: 14,
@@ -334,9 +564,7 @@ export default function AdminDashboard({
       borderRadius: 8,
       cursor: 'pointer',
     },
-    main: {
-      display: 'flex',
-    },
+    main: { display: 'flex' },
     sidebar: {
       width: 220,
       background: 'white',
@@ -350,26 +578,15 @@ export default function AdminDashboard({
       padding: '12px 24px',
       fontSize: 14,
       fontWeight: active ? 600 : 400,
-      color: active ? '#2563EB' : '#64748B',
+      color: active ? '#1E3A5F' : '#64748B',
       background: active ? '#EFF6FF' : 'transparent',
       border: 'none',
       textAlign: 'left' as const,
       cursor: 'pointer',
     }),
-    content: {
-      flex: 1,
-      padding: 24,
-    },
-    pageTitle: {
-      fontSize: 24,
-      fontWeight: 700,
-      marginBottom: 8,
-    },
-    pageSubtitle: {
-      fontSize: 14,
-      color: '#64748B',
-      marginBottom: 24,
-    },
+    content: { flex: 1, padding: 24 },
+    pageTitle: { fontSize: 24, fontWeight: 700, marginBottom: 8 },
+    pageSubtitle: { fontSize: 14, color: '#64748B', marginBottom: 24 },
     card: {
       background: 'white',
       borderRadius: 12,
@@ -384,9 +601,7 @@ export default function AdminDashboard({
       justifyContent: 'space-between',
       alignItems: 'center',
     },
-    cardBody: {
-      padding: 20,
-    },
+    cardBody: { padding: 20 },
     statsGrid: {
       display: 'grid',
       gridTemplateColumns: 'repeat(4, 1fr)',
@@ -399,21 +614,14 @@ export default function AdminDashboard({
       border: '1px solid #E2E8F0',
       padding: 20,
     },
-    statValue: {
-      fontSize: 28,
-      fontWeight: 700,
-    },
-    statLabel: {
-      fontSize: 13,
-      color: '#64748B',
-      marginTop: 4,
-    },
+    statValue: { fontSize: 28, fontWeight: 700 },
+    statLabel: { fontSize: 13, color: '#64748B', marginTop: 4 },
     btn: {
       padding: '10px 16px',
       fontSize: 14,
       fontWeight: 600,
       color: 'white',
-      background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+      background: '#1E3A5F',
       border: 'none',
       borderRadius: 8,
       cursor: 'pointer',
@@ -448,10 +656,17 @@ export default function AdminDashboard({
       borderRadius: 6,
       cursor: 'pointer',
     },
-    table: {
-      width: '100%',
-      borderCollapse: 'collapse' as const,
+    btnSuccess: {
+      padding: '6px 12px',
+      fontSize: 12,
+      fontWeight: 500,
+      color: '#10B981',
+      background: '#ECFDF5',
+      border: '1px solid #A7F3D0',
+      borderRadius: 6,
+      cursor: 'pointer',
     },
+    table: { width: '100%', borderCollapse: 'collapse' as const },
     th: {
       textAlign: 'left' as const,
       padding: '12px 16px',
@@ -535,11 +750,21 @@ export default function AdminDashboard({
       fontWeight: 500,
       borderRadius: 999,
       border: selected ? 'none' : '1px solid #E2E8F0',
-      background: selected 
-        ? 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)' 
-        : 'white',
+      background: selected ? '#1E3A5F' : 'white',
       color: selected ? 'white' : '#64748B',
       cursor: 'pointer',
+    }),
+    folderChip: (selected: boolean) => ({
+      padding: '8px 14px',
+      fontSize: 13,
+      fontWeight: 500,
+      borderRadius: 8,
+      border: selected ? '2px solid #1E3A5F' : '1px solid #E2E8F0',
+      background: selected ? '#EFF6FF' : 'white',
+      color: selected ? '#1E3A5F' : '#64748B',
+      cursor: 'pointer',
+      marginRight: 8,
+      marginBottom: 8,
     }),
     alertCard: (severity: string, active: boolean) => ({
       background: active ? severityColor(severity).bg : '#F8FAFC',
@@ -549,54 +774,84 @@ export default function AdminDashboard({
       marginBottom: 12,
       opacity: active ? 1 : 0.6,
     }),
-    fileInput: {
+    filterBar: {
+      display: 'flex',
+      flexWrap: 'wrap' as const,
+      alignItems: 'center',
+      gap: 8,
       marginBottom: 16,
+      padding: 16,
+      background: 'white',
+      borderRadius: 12,
+      border: '1px solid #E2E8F0',
+    },
+    actionBtns: { display: 'flex', gap: 8 },
+    logCard: {
+      background: '#F8FAFC',
+      border: '1px solid #E2E8F0',
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+    },
+    disclaimer: {
+      background: '#FEF3C7',
+      border: '1px solid #FDE68A',
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 24,
     },
   }
 
   return (
     <div style={styles.container}>
-      {/* Header */}
       <header style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <span style={styles.logo}>Tetra</span>
           <span style={styles.orgName}>{organization.name}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button 
+            style={styles.btnSmall} 
+            onClick={() => setShowDisclaimer(true)}
+            title="Om AI-assistenten"
+          >
+            ⓘ AI-info
+          </button>
           <span style={{ fontSize: 14, color: '#64748B' }}>{profile.full_name}</span>
           <button style={styles.logoutBtn} onClick={handleLogout}>Logg ut</button>
         </div>
       </header>
 
       <div style={styles.main}>
-        {/* Sidebar */}
         <aside style={styles.sidebar}>
           <button style={styles.navItem(tab === 'oversikt')} onClick={() => setTab('oversikt')}>
-            Oversikt
+            📊 Oversikt
           </button>
           <button style={styles.navItem(tab === 'brukere')} onClick={() => setTab('brukere')}>
-            Brukere
+            👥 Brukere
           </button>
           <button style={styles.navItem(tab === 'team')} onClick={() => setTab('team')}>
-            Team
+            🏢 Team
           </button>
           <button style={styles.navItem(tab === 'instrukser')} onClick={() => setTab('instrukser')}>
-            Instrukser
+            📄 Instrukser
           </button>
           <button style={styles.navItem(tab === 'avvik')} onClick={() => setTab('avvik')}>
-            Avvik & Varsler
+            ⚠️ Avvik & Varsler
+          </button>
+          <button style={styles.navItem(tab === 'ailogg')} onClick={() => setTab('ailogg')}>
+            🤖 AI-logg
           </button>
           <button style={styles.navItem(tab === 'innsikt')} onClick={() => setTab('innsikt')}>
-            Innsikt
+            📈 Innsikt
           </button>
         </aside>
 
-        {/* Content */}
         <main style={styles.content}>
           {tab === 'oversikt' && (
             <>
               <h1 style={styles.pageTitle}>Oversikt</h1>
-              <p style={styles.pageSubtitle}>Velkommen tilbake, {profile.full_name}</p>
+              <p style={styles.pageSubtitle}>Velkommen, {profile.full_name}</p>
 
               <div style={styles.statsGrid}>
                 <div style={styles.statCard}>
@@ -604,12 +859,12 @@ export default function AdminDashboard({
                   <div style={styles.statLabel}>Brukere</div>
                 </div>
                 <div style={styles.statCard}>
-                  <div style={styles.statValue}>{teams.length}</div>
-                  <div style={styles.statLabel}>Team</div>
+                  <div style={styles.statValue}>{instructions.filter(i => i.status === 'published').length}</div>
+                  <div style={styles.statLabel}>Publiserte instrukser</div>
                 </div>
                 <div style={styles.statCard}>
-                  <div style={styles.statValue}>{instructions.length}</div>
-                  <div style={styles.statLabel}>Instrukser</div>
+                  <div style={styles.statValue}>{instructions.filter(i => i.status === 'draft').length}</div>
+                  <div style={styles.statLabel}>Utkast</div>
                 </div>
                 <div style={styles.statCard}>
                   <div style={{ ...styles.statValue, color: '#DC2626' }}>
@@ -619,74 +874,19 @@ export default function AdminDashboard({
                 </div>
               </div>
 
-              {/* Active Alerts */}
               {alerts.filter(a => a.active).length > 0 && (
                 <div style={{ marginBottom: 24 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>⚠️ Aktive avvik</h3>
                   {alerts.filter(a => a.active).slice(0, 3).map(alert => (
                     <div key={alert.id} style={styles.alertCard(alert.severity, true)}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
-                            {severityLabel(alert.severity)}
-                          </span>
-                          <h4 style={{ fontSize: 15, fontWeight: 600, marginTop: 8 }}>{alert.title}</h4>
-                          {alert.description && (
-                            <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{alert.description}</p>
-                          )}
-                        </div>
-                      </div>
+                      <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
+                        {severityLabel(alert.severity)}
+                      </span>
+                      <h4 style={{ fontSize: 15, fontWeight: 600, marginTop: 8 }}>{alert.title}</h4>
                     </div>
                   ))}
                 </div>
               )}
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                <div style={styles.card}>
-                  <div style={styles.cardHeader}>Siste instrukser</div>
-                  <div style={styles.cardBody}>
-                    {instructions.slice(0, 5).map(inst => (
-                      <div key={inst.id} style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        padding: '10px 0',
-                        borderBottom: '1px solid #E2E8F0'
-                      }}>
-                        <span style={{ fontWeight: 500 }}>{inst.title}</span>
-                        <span style={styles.badge(
-                          severityColor(inst.severity).bg,
-                          severityColor(inst.severity).color
-                        )}>
-                          {severityLabel(inst.severity)}
-                        </span>
-                      </div>
-                    ))}
-                    {instructions.length === 0 && (
-                      <p style={{ color: '#64748B' }}>Ingen instrukser ennå</p>
-                    )}
-                  </div>
-                </div>
-
-                <div style={styles.card}>
-                  <div style={styles.cardHeader}>Nyeste brukere</div>
-                  <div style={styles.cardBody}>
-                    {users.slice(0, 5).map(user => (
-                      <div key={user.id} style={{ 
-                        display: 'flex', 
-                        justifyContent: 'space-between',
-                        padding: '10px 0',
-                        borderBottom: '1px solid #E2E8F0'
-                      }}>
-                        <span style={{ fontWeight: 500 }}>{user.full_name || 'Uten navn'}</span>
-                        <span style={{ color: '#64748B', fontSize: 13 }}>{roleLabel(user.role)}</span>
-                      </div>
-                    ))}
-                    {users.length === 0 && (
-                      <p style={{ color: '#64748B' }}>Ingen brukere ennå</p>
-                    )}
-                  </div>
-                </div>
-              </div>
             </>
           )}
 
@@ -709,6 +909,7 @@ export default function AdminDashboard({
                       <th style={styles.th}>Navn</th>
                       <th style={styles.th}>Rolle</th>
                       <th style={styles.th}>Team</th>
+                      <th style={styles.th}>Handlinger</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -716,8 +917,14 @@ export default function AdminDashboard({
                       <tr key={user.id}>
                         <td style={styles.td}>{user.full_name || 'Uten navn'}</td>
                         <td style={styles.td}>{roleLabel(user.role)}</td>
+                        <td style={styles.td}>{teams.find(t => t.id === user.team_id)?.name || '—'}</td>
                         <td style={styles.td}>
-                          {teams.find(t => t.id === user.team_id)?.name || '—'}
+                          <div style={styles.actionBtns}>
+                            <button style={styles.btnSmall} onClick={() => openEditUser(user)}>Rediger</button>
+                            {user.id !== profile.id && (
+                              <button style={styles.btnDanger} onClick={() => deleteUser(user.id)}>Fjern</button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -743,16 +950,18 @@ export default function AdminDashboard({
                 {teams.map(team => (
                   <div key={team.id} style={styles.card}>
                     <div style={styles.cardBody}>
-                      <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{team.name}</h3>
-                      <p style={{ fontSize: 13, color: '#64748B' }}>
-                        {users.filter(u => u.team_id === team.id).length} medlemmer
-                      </p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <div>
+                          <h3 style={{ fontSize: 16, fontWeight: 600 }}>{team.name}</h3>
+                          <p style={{ fontSize: 13, color: '#64748B' }}>
+                            {users.filter(u => u.team_id === team.id).length} medlemmer
+                          </p>
+                        </div>
+                        <button style={styles.btnDanger} onClick={() => deleteTeam(team.id)}>Slett</button>
+                      </div>
                     </div>
                   </div>
                 ))}
-                {teams.length === 0 && (
-                  <p style={{ color: '#64748B' }}>Ingen team opprettet ennå</p>
-                )}
               </div>
             </>
           )}
@@ -762,11 +971,41 @@ export default function AdminDashboard({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <div>
                   <h1 style={styles.pageTitle}>Instrukser</h1>
-                  <p style={styles.pageSubtitle}>Administrer sikkerhetsinstrukser</p>
+                  <p style={styles.pageSubtitle}>Kun publiserte instrukser er synlige for ansatte og AI</p>
                 </div>
-                <button style={styles.btn} onClick={() => setShowCreateInstruction(true)}>
-                  + Opprett instruks
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(true)}>+ Ny mappe</button>
+                  <button style={styles.btn} onClick={() => setShowCreateInstruction(true)}>+ Opprett instruks</button>
+                </div>
+              </div>
+
+              <div style={styles.filterBar}>
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Filter:</span>
+                
+                <select 
+                  style={{ ...styles.select, width: 'auto', marginBottom: 0, marginRight: 16 }}
+                  value={statusFilter}
+                  onChange={e => setStatusFilter(e.target.value)}
+                >
+                  <option value="all">Alle statuser</option>
+                  <option value="published">Publisert</option>
+                  <option value="draft">Utkast</option>
+                </select>
+
+                <button style={styles.folderChip(selectedFolder === 'all')} onClick={() => setSelectedFolder('all')}>
+                  Alle mapper
                 </button>
+                <button style={styles.folderChip(selectedFolder === 'none')} onClick={() => setSelectedFolder('none')}>
+                  Uten mappe
+                </button>
+                {folders.map(folder => (
+                  <div key={folder.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <button style={styles.folderChip(selectedFolder === folder.id)} onClick={() => setSelectedFolder(folder.id)}>
+                      📁 {folder.name}
+                    </button>
+                    <button style={{ ...styles.btnDanger, padding: '4px 8px', fontSize: 10 }} onClick={() => deleteFolder(folder.id)}>✕</button>
+                  </div>
+                ))}
               </div>
 
               <div style={styles.card}>
@@ -774,41 +1013,46 @@ export default function AdminDashboard({
                   <thead>
                     <tr>
                       <th style={styles.th}>Tittel</th>
-                      <th style={styles.th}>Alvorlighet</th>
-                      <th style={styles.th}>Fil</th>
+                      <th style={styles.th}>Mappe</th>
                       <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Alvorlighet</th>
+                      <th style={styles.th}>Handlinger</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {instructions.map(inst => (
+                    {filteredInstructions.map(inst => (
                       <tr key={inst.id}>
-                        <td style={styles.td}>{inst.title}</td>
                         <td style={styles.td}>
-                          <span style={styles.badge(
-                            severityColor(inst.severity).bg,
-                            severityColor(inst.severity).color
-                          )}>
+                          {inst.title}
+                          {inst.file_url && <span style={{ marginLeft: 8, color: '#64748B' }}>📎</span>}
+                        </td>
+                        <td style={styles.td}>{inst.folders?.name || '—'}</td>
+                        <td style={styles.td}>
+                          <span style={styles.badge(statusColor(inst.status).bg, statusColor(inst.status).color)}>
+                            {inst.status === 'published' ? 'Publisert' : 'Utkast'}
+                          </span>
+                        </td>
+                        <td style={styles.td}>
+                          <span style={styles.badge(severityColor(inst.severity).bg, severityColor(inst.severity).color)}>
                             {severityLabel(inst.severity)}
                           </span>
                         </td>
                         <td style={styles.td}>
-                          {inst.file_url ? (
-                            <span style={styles.badge('#EFF6FF', '#2563EB')}>📎 PDF</span>
-                          ) : '—'}
-                        </td>
-                        <td style={styles.td}>
-                          <span style={styles.badge('#ECFDF5', '#10B981')}>
-                            {inst.status === 'approved' ? 'Godkjent' : inst.status}
-                          </span>
+                          <div style={styles.actionBtns}>
+                            <button 
+                              style={inst.status === 'published' ? styles.btnSmall : styles.btnSuccess} 
+                              onClick={() => toggleInstructionStatus(inst)}
+                            >
+                              {inst.status === 'published' ? 'Avpubliser' : 'Publiser'}
+                            </button>
+                            <button style={styles.btnSmall} onClick={() => openEditInstruction(inst)}>Rediger</button>
+                            <button style={styles.btnDanger} onClick={() => deleteInstruction(inst.id)}>Slett</button>
+                          </div>
                         </td>
                       </tr>
                     ))}
-                    {instructions.length === 0 && (
-                      <tr>
-                        <td colSpan={4} style={{ ...styles.td, color: '#64748B' }}>
-                          Ingen instrukser opprettet ennå
-                        </td>
-                      </tr>
+                    {filteredInstructions.length === 0 && (
+                      <tr><td colSpan={5} style={{ ...styles.td, color: '#64748B' }}>Ingen instrukser funnet</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -821,61 +1065,83 @@ export default function AdminDashboard({
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
                 <div>
                   <h1 style={styles.pageTitle}>Avvik & Varsler</h1>
-                  <p style={styles.pageSubtitle}>Varsler som vises på ansattes hjem-side</p>
+                  <p style={styles.pageSubtitle}>Varsler vises på ansattes hjem-side</p>
                 </div>
-                <button style={styles.btn} onClick={() => setShowCreateAlert(true)}>
-                  + Nytt avvik
-                </button>
+                <button style={styles.btn} onClick={() => setShowCreateAlert(true)}>+ Nytt avvik</button>
               </div>
 
               {alerts.length === 0 ? (
-                <div style={styles.card}>
-                  <div style={styles.cardBody}>
-                    <p style={{ color: '#64748B', textAlign: 'center' }}>
-                      Ingen avvik opprettet ennå. Klikk "Nytt avvik" for å legge til.
-                    </p>
-                  </div>
-                </div>
+                <div style={styles.card}><div style={styles.cardBody}><p style={{ color: '#64748B' }}>Ingen avvik</p></div></div>
               ) : (
-                <>
-                  {alerts.map(alert => (
-                    <div key={alert.id} style={styles.alertCard(alert.severity, alert.active)}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                            <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
-                              {severityLabel(alert.severity)}
-                            </span>
-                            {!alert.active && (
-                              <span style={styles.badge('#F1F5F9', '#64748B')}>Inaktiv</span>
-                            )}
-                          </div>
-                          <h4 style={{ fontSize: 15, fontWeight: 600 }}>{alert.title}</h4>
-                          {alert.description && (
-                            <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{alert.description}</p>
-                          )}
-                          <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>
-                            Opprettet: {new Date(alert.created_at).toLocaleDateString('nb-NO')}
-                          </p>
+                alerts.map(alert => (
+                  <div key={alert.id} style={styles.alertCard(alert.severity, alert.active)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                          <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
+                            {severityLabel(alert.severity)}
+                          </span>
+                          {!alert.active && <span style={styles.badge('#F1F5F9', '#64748B')}>Inaktiv</span>}
                         </div>
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <button 
-                            style={styles.btnSmall} 
-                            onClick={() => toggleAlert(alert.id, alert.active)}
-                          >
-                            {alert.active ? 'Deaktiver' : 'Aktiver'}
-                          </button>
-                          <button 
-                            style={styles.btnDanger} 
-                            onClick={() => deleteAlert(alert.id)}
-                          >
-                            Slett
-                          </button>
-                        </div>
+                        <h4 style={{ fontWeight: 600 }}>{alert.title}</h4>
+                        {alert.description && <p style={{ fontSize: 13, color: '#64748B', marginTop: 4 }}>{alert.description}</p>}
+                        <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>
+                          {new Date(alert.created_at).toLocaleDateString('nb-NO')}
+                        </p>
+                      </div>
+                      <div style={styles.actionBtns}>
+                        <button style={styles.btnSmall} onClick={() => toggleAlert(alert.id, alert.active)}>
+                          {alert.active ? 'Deaktiver' : 'Aktiver'}
+                        </button>
+                        <button style={styles.btnDanger} onClick={() => deleteAlert(alert.id)}>Slett</button>
                       </div>
                     </div>
-                  ))}
-                </>
+                  </div>
+                ))
+              )}
+            </>
+          )}
+
+          {tab === 'ailogg' && (
+            <>
+              <h1 style={styles.pageTitle}>AI-logg</h1>
+              <p style={styles.pageSubtitle}>Oversikt over spørsmål til Spør Tetra</p>
+
+              <div style={styles.disclaimer}>
+                <strong>⚠️ Viktig:</strong> AI-assistenten svarer kun basert på publiserte instrukser. 
+                Alle spørsmål og svar logges for kvalitetssikring og compliance.
+              </div>
+
+              {aiLogs.length === 0 ? (
+                <div style={styles.card}><div style={styles.cardBody}><p style={{ color: '#64748B' }}>Ingen AI-spørsmål ennå</p></div></div>
+              ) : (
+                aiLogs.map(log => (
+                  <div key={log.id} style={styles.logCard}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                      <span style={{ fontSize: 12, color: '#94A3B8' }}>
+                        {new Date(log.created_at).toLocaleString('nb-NO')}
+                      </span>
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>Spørsmål:</span>
+                      <p style={{ fontWeight: 500 }}>{log.question}</p>
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <span style={{ fontSize: 12, color: '#64748B' }}>Svar:</span>
+                      <p style={{ fontSize: 14, lineHeight: 1.5 }}>{log.answer}</p>
+                    </div>
+                    {log.instructions && (
+                      <div style={{ 
+                        background: '#EFF6FF', 
+                        padding: '8px 12px', 
+                        borderRadius: 8,
+                        fontSize: 13
+                      }}>
+                        📄 Kilde: {log.instructions.title}
+                      </div>
+                    )}
+                  </div>
+                ))
               )}
             </>
           )}
@@ -887,20 +1153,17 @@ export default function AdminDashboard({
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={styles.card}>
-                  <div style={styles.cardHeader}>Mest åpnede instrukser</div>
+                  <div style={styles.cardHeader}>AI-bruk</div>
                   <div style={styles.cardBody}>
-                    <p style={{ color: '#64748B', fontSize: 14 }}>
-                      Kommer snart – vi samler data om hvilke instrukser som åpnes mest.
-                    </p>
+                    <div style={styles.statValue}>{aiLogs.length}</div>
+                    <div style={styles.statLabel}>Totalt antall spørsmål</div>
                   </div>
                 </div>
-
                 <div style={styles.card}>
-                  <div style={styles.cardHeader}>Spør Tetra – vanlige spørsmål</div>
+                  <div style={styles.cardHeader}>Dokumenter</div>
                   <div style={styles.cardBody}>
-                    <p style={{ color: '#64748B', fontSize: 14 }}>
-                      Kommer snart – vi samler data om hva ansatte spør om.
-                    </p>
+                    <div style={styles.statValue}>{instructions.filter(i => i.status === 'published').length}</div>
+                    <div style={styles.statLabel}>Publiserte instrukser</div>
                   </div>
                 </div>
               </div>
@@ -915,19 +1178,25 @@ export default function AdminDashboard({
           <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett team</h2>
             <label style={styles.label}>Teamnavn</label>
-            <input
-              style={styles.input}
-              value={newTeamName}
-              onChange={e => setNewTeamName(e.target.value)}
-              placeholder="F.eks. Lager, Butikk, Kontor"
-            />
+            <input style={styles.input} value={newTeamName} onChange={e => setNewTeamName(e.target.value)} placeholder="F.eks. Lager, Butikk" />
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowCreateTeam(false)}>
-                Avbryt
-              </button>
-              <button style={styles.btn} onClick={createTeam} disabled={loading}>
-                {loading ? 'Oppretter...' : 'Opprett'}
-              </button>
+              <button style={styles.btnSecondary} onClick={() => setShowCreateTeam(false)}>Avbryt</button>
+              <button style={styles.btn} onClick={createTeam} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Create Folder Modal */}
+      {showCreateFolder && (
+        <div style={styles.modal} onClick={() => setShowCreateFolder(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett mappe</h2>
+            <label style={styles.label}>Mappenavn</label>
+            <input style={styles.input} value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="F.eks. Brann, HMS" />
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(false)}>Avbryt</button>
+              <button style={styles.btn} onClick={createFolder} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
             </div>
           </div>
         </div>
@@ -940,91 +1209,94 @@ export default function AdminDashboard({
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett instruks</h2>
             
             <label style={styles.label}>Tittel</label>
-            <input
-              style={styles.input}
-              value={newInstruction.title}
-              onChange={e => setNewInstruction({ ...newInstruction, title: e.target.value })}
-              placeholder="F.eks. Brann: evakueringsprosedyre"
-            />
+            <input style={styles.input} value={newInstruction.title} onChange={e => setNewInstruction({ ...newInstruction, title: e.target.value })} placeholder="F.eks. Brannrutiner" />
+
+            <label style={styles.label}>Mappe</label>
+            <select style={styles.select} value={newInstruction.folderId} onChange={e => setNewInstruction({ ...newInstruction, folderId: e.target.value })}>
+              <option value="">Ingen mappe</option>
+              {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+
+            <label style={styles.label}>Status</label>
+            <select style={styles.select} value={newInstruction.status} onChange={e => setNewInstruction({ ...newInstruction, status: e.target.value })}>
+              <option value="draft">Utkast (ikke synlig for ansatte)</option>
+              <option value="published">Publisert (synlig for ansatte og AI)</option>
+            </select>
             
-            <label style={styles.label}>Innhold</label>
-            <textarea
-              style={styles.textarea}
-              value={newInstruction.content}
-              onChange={e => setNewInstruction({ ...newInstruction, content: e.target.value })}
-              placeholder="Beskriv instruksen..."
-            />
+            <label style={styles.label}>Innhold / Sammendrag (brukes av AI)</label>
+            <textarea style={styles.textarea} value={newInstruction.content} onChange={e => setNewInstruction({ ...newInstruction, content: e.target.value })} placeholder="Skriv instruksen her..." />
             
             <label style={styles.label}>Alvorlighet</label>
-            <select
-              style={styles.select}
-              value={newInstruction.severity}
-              onChange={e => setNewInstruction({ ...newInstruction, severity: e.target.value })}
-            >
+            <select style={styles.select} value={newInstruction.severity} onChange={e => setNewInstruction({ ...newInstruction, severity: e.target.value })}>
               <option value="critical">Kritisk</option>
               <option value="medium">Middels</option>
               <option value="low">Lav</option>
             </select>
 
-            <label style={styles.label}>Vedlegg (PDF, Word)</label>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx"
-              onChange={e => setSelectedFile(e.target.files?.[0] || null)}
-              style={styles.fileInput}
-            />
-            {selectedFile && (
-              <p style={{ fontSize: 13, color: '#10B981', marginBottom: 16 }}>
-                ✓ {selectedFile.name}
-              </p>
-            )}
+            <label style={styles.label}>Vedlegg (PDF)</label>
+            <input type="file" accept=".pdf" onChange={e => setSelectedFile(e.target.files?.[0] || null)} style={{ marginBottom: 16 }} />
+            {selectedFile && <p style={{ fontSize: 13, color: '#10B981', marginBottom: 16 }}>✓ {selectedFile.name}</p>}
 
             <label style={styles.label}>Team</label>
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={newInstruction.allTeams}
-                  onChange={e => setNewInstruction({ 
-                    ...newInstruction, 
-                    allTeams: e.target.checked,
-                    teamIds: e.target.checked ? [] : newInstruction.teamIds
-                  })}
-                />
-                <span style={{ fontSize: 14 }}>Alle team</span>
+                <input type="checkbox" checked={newInstruction.allTeams} onChange={e => setNewInstruction({ ...newInstruction, allTeams: e.target.checked, teamIds: [] })} />
+                <span>Alle team</span>
               </label>
-              
               {!newInstruction.allTeams && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                   {teams.map(team => (
-                    <button
-                      key={team.id}
-                      type="button"
-                      onClick={() => {
-                        const ids = newInstruction.teamIds.includes(team.id)
-                          ? newInstruction.teamIds.filter(id => id !== team.id)
-                          : [...newInstruction.teamIds, team.id]
-                        setNewInstruction({ ...newInstruction, teamIds: ids })
-                      }}
-                      style={styles.teamChip(newInstruction.teamIds.includes(team.id))}
-                    >
-                      {team.name}
-                    </button>
+                    <button key={team.id} type="button" onClick={() => {
+                      const ids = newInstruction.teamIds.includes(team.id) ? newInstruction.teamIds.filter(id => id !== team.id) : [...newInstruction.teamIds, team.id]
+                      setNewInstruction({ ...newInstruction, teamIds: ids })
+                    }} style={styles.teamChip(newInstruction.teamIds.includes(team.id))}>{team.name}</button>
                   ))}
-                  {teams.length === 0 && (
-                    <span style={{ color: '#94A3B8', fontSize: 13 }}>Opprett team først</span>
-                  )}
                 </div>
               )}
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowCreateInstruction(false)}>
-                Avbryt
-              </button>
-              <button style={styles.btn} onClick={createInstruction} disabled={loading}>
-                {loading ? 'Oppretter...' : 'Opprett'}
-              </button>
+              <button style={styles.btnSecondary} onClick={() => setShowCreateInstruction(false)}>Avbryt</button>
+              <button style={styles.btn} onClick={createInstruction} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Instruction Modal */}
+      {showEditInstruction && editingInstruction && (
+        <div style={styles.modal} onClick={() => setShowEditInstruction(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger instruks</h2>
+            
+            <label style={styles.label}>Tittel</label>
+            <input style={styles.input} value={editInstructionTitle} onChange={e => setEditInstructionTitle(e.target.value)} />
+
+            <label style={styles.label}>Mappe</label>
+            <select style={styles.select} value={editInstructionFolder} onChange={e => setEditInstructionFolder(e.target.value)}>
+              <option value="">Ingen mappe</option>
+              {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
+            </select>
+
+            <label style={styles.label}>Status</label>
+            <select style={styles.select} value={editInstructionStatus} onChange={e => setEditInstructionStatus(e.target.value)}>
+              <option value="draft">Utkast</option>
+              <option value="published">Publisert</option>
+            </select>
+            
+            <label style={styles.label}>Innhold</label>
+            <textarea style={styles.textarea} value={editInstructionContent} onChange={e => setEditInstructionContent(e.target.value)} />
+            
+            <label style={styles.label}>Alvorlighet</label>
+            <select style={styles.select} value={editInstructionSeverity} onChange={e => setEditInstructionSeverity(e.target.value)}>
+              <option value="critical">Kritisk</option>
+              <option value="medium">Middels</option>
+              <option value="low">Lav</option>
+            </select>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button style={styles.btnSecondary} onClick={() => setShowEditInstruction(false)}>Avbryt</button>
+              <button style={styles.btn} onClick={saveEditInstruction} disabled={loading}>{loading ? 'Lagrer...' : 'Lagre'}</button>
             </div>
           </div>
         </div>
@@ -1037,44 +1309,52 @@ export default function AdminDashboard({
             <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Inviter bruker</h2>
             
             <label style={styles.label}>E-postadresse</label>
-            <input
-              style={styles.input}
-              type="email"
-              value={inviteEmail}
-              onChange={e => setInviteEmail(e.target.value)}
-              placeholder="bruker@bedrift.no"
-            />
+            <input style={styles.input} type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="bruker@bedrift.no" />
             
             <label style={styles.label}>Rolle</label>
-            <select
-              style={styles.select}
-              value={inviteRole}
-              onChange={e => setInviteRole(e.target.value)}
-            >
+            <select style={styles.select} value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
               <option value="employee">Ansatt</option>
               <option value="teamleader">Teamleder</option>
               <option value="admin">Sikkerhetsansvarlig</option>
             </select>
 
             <label style={styles.label}>Team</label>
-            <select
-              style={styles.select}
-              value={inviteTeam}
-              onChange={e => setInviteTeam(e.target.value)}
-            >
+            <select style={styles.select} value={inviteTeam} onChange={e => setInviteTeam(e.target.value)}>
               <option value="">Velg team...</option>
-              {teams.map(team => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
             </select>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowInviteUser(false)}>
-                Avbryt
-              </button>
-              <button style={styles.btn} onClick={inviteUser} disabled={loading}>
-                {loading ? 'Sender...' : 'Opprett invitasjon'}
-              </button>
+              <button style={styles.btnSecondary} onClick={() => setShowInviteUser(false)}>Avbryt</button>
+              <button style={styles.btn} onClick={inviteUser} disabled={loading}>{loading ? 'Sender...' : 'Opprett invitasjon'}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditUser && editingUser && (
+        <div style={styles.modal} onClick={() => setShowEditUser(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger bruker</h2>
+            <p style={{ color: '#64748B', marginBottom: 16 }}>{editingUser.full_name}</p>
+            
+            <label style={styles.label}>Rolle</label>
+            <select style={styles.select} value={editUserRole} onChange={e => setEditUserRole(e.target.value)}>
+              <option value="employee">Ansatt</option>
+              <option value="teamleader">Teamleder</option>
+              <option value="admin">Sikkerhetsansvarlig</option>
+            </select>
+
+            <label style={styles.label}>Team</label>
+            <select style={styles.select} value={editUserTeam} onChange={e => setEditUserTeam(e.target.value)}>
+              <option value="">Ingen team</option>
+              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+              <button style={styles.btnSecondary} onClick={() => setShowEditUser(false)}>Avbryt</button>
+              <button style={styles.btn} onClick={saveEditUser} disabled={loading}>{loading ? 'Lagrer...' : 'Lagre'}</button>
             </div>
           </div>
         </div>
@@ -1084,82 +1364,62 @@ export default function AdminDashboard({
       {showCreateAlert && (
         <div style={styles.modal} onClick={() => setShowCreateAlert(false)}>
           <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett avvik/varsel</h2>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett avvik</h2>
             
             <label style={styles.label}>Tittel</label>
-            <input
-              style={styles.input}
-              value={newAlert.title}
-              onChange={e => setNewAlert({ ...newAlert, title: e.target.value })}
-              placeholder="F.eks. Stengt nødutgang i 2. etasje"
-            />
+            <input style={styles.input} value={newAlert.title} onChange={e => setNewAlert({ ...newAlert, title: e.target.value })} placeholder="F.eks. Stengt nødutgang" />
             
-            <label style={styles.label}>Beskrivelse (valgfritt)</label>
-            <textarea
-              style={styles.textarea}
-              value={newAlert.description}
-              onChange={e => setNewAlert({ ...newAlert, description: e.target.value })}
-              placeholder="Mer informasjon om avviket..."
-            />
+            <label style={styles.label}>Beskrivelse</label>
+            <textarea style={styles.textarea} value={newAlert.description} onChange={e => setNewAlert({ ...newAlert, description: e.target.value })} />
             
             <label style={styles.label}>Alvorlighet</label>
-            <select
-              style={styles.select}
-              value={newAlert.severity}
-              onChange={e => setNewAlert({ ...newAlert, severity: e.target.value })}
-            >
+            <select style={styles.select} value={newAlert.severity} onChange={e => setNewAlert({ ...newAlert, severity: e.target.value })}>
               <option value="critical">Kritisk</option>
               <option value="medium">Middels</option>
               <option value="low">Lav</option>
             </select>
 
-            <label style={styles.label}>Hvem skal se dette?</label>
+            <label style={styles.label}>Synlig for</label>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={newAlert.allTeams}
-                  onChange={e => setNewAlert({ 
-                    ...newAlert, 
-                    allTeams: e.target.checked,
-                    teamIds: e.target.checked ? [] : newAlert.teamIds
-                  })}
-                />
-                <span style={{ fontSize: 14 }}>Alle team</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                <input type="checkbox" checked={newAlert.allTeams} onChange={e => setNewAlert({ ...newAlert, allTeams: e.target.checked, teamIds: [] })} />
+                <span>Alle team</span>
               </label>
-              
-              {!newAlert.allTeams && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {teams.map(team => (
-                    <button
-                      key={team.id}
-                      type="button"
-                      onClick={() => {
-                        const ids = newAlert.teamIds.includes(team.id)
-                          ? newAlert.teamIds.filter(id => id !== team.id)
-                          : [...newAlert.teamIds, team.id]
-                        setNewAlert({ ...newAlert, teamIds: ids })
-                      }}
-                      style={styles.teamChip(newAlert.teamIds.includes(team.id))}
-                    >
-                      {team.name}
-                    </button>
-                  ))}
-                  {teams.length === 0 && (
-                    <span style={{ color: '#94A3B8', fontSize: 13 }}>Opprett team først</span>
-                  )}
-                </div>
-              )}
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowCreateAlert(false)}>
-                Avbryt
-              </button>
-              <button style={styles.btn} onClick={createAlert} disabled={loading}>
-                {loading ? 'Oppretter...' : 'Opprett'}
-              </button>
+              <button style={styles.btnSecondary} onClick={() => setShowCreateAlert(false)}>Avbryt</button>
+              <button style={styles.btn} onClick={createAlert} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disclaimer Modal */}
+      {showDisclaimer && (
+        <div style={styles.modal} onClick={() => setShowDisclaimer(false)}>
+          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>ℹ️ Om AI-assistenten</h2>
+            
+            <div style={styles.disclaimer}>
+              <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Ansvarsfraskrivelse</h3>
+              <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
+                Tetra AI er et <strong>støtteverktøy</strong> som hjelper ansatte med å finne informasjon i bedriftens instrukser og prosedyrer.
+              </p>
+              <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
+                AI-assistenten svarer <strong>kun basert på publiserte dokumenter</strong> i systemet. Den bruker ikke ekstern kunnskap eller generell informasjon.
+              </p>
+              <p style={{ fontSize: 14, lineHeight: 1.6, color: '#92400E' }}>
+                <strong>Viktig:</strong> AI-svar er ikke juridisk bindende eller operativ fasit. Ved tvil, kontakt alltid ansvarlig leder.
+              </p>
+            </div>
+
+            <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Logging</h3>
+            <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
+              Alle spørsmål og svar logges for kvalitetssikring. Loggene er kun tilgjengelige for administratorer.
+            </p>
+
+            <button style={styles.btn} onClick={() => setShowDisclaimer(false)}>Lukk</button>
           </div>
         </div>
       )}

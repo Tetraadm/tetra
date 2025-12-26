@@ -18,24 +18,51 @@ export default async function AdminPage() {
     redirect('/login')
   }
 
-  // Fetch all data for the organization
-  const [teamsRes, usersRes, instructionsRes, foldersRes, alertsRes] = await Promise.all([
-    supabase.from('teams').select('*').eq('org_id', profile.org_id),
-    supabase.from('profiles').select('*').eq('org_id', profile.org_id),
-    supabase.from('instructions').select('*, folders(*)').eq('org_id', profile.org_id),
-    supabase.from('folders').select('*').eq('org_id', profile.org_id),
-    supabase.from('alerts').select('*').eq('org_id', profile.org_id).order('created_at', { ascending: false })
-  ])
+  const { data: teams } = await supabase
+    .from('teams')
+    .select('*')
+    .eq('org_id', profile.org_id)
+
+  const { data: users } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('org_id', profile.org_id)
+
+  const { data: instructions } = await supabase
+    .from('instructions')
+    .select('*, folders(*)')
+    .eq('org_id', profile.org_id)
+    .order('created_at', { ascending: false })
+
+  const { data: folders } = await supabase
+    .from('folders')
+    .select('*')
+    .eq('org_id', profile.org_id)
+
+  const { data: alerts } = await supabase
+    .from('alerts')
+    .select('*')
+    .eq('org_id', profile.org_id)
+    .order('created_at', { ascending: false })
+
+  // Hent AI-logger
+  const { data: aiLogs } = await supabase
+    .from('ask_tetra_logs')
+    .select('*, profiles(full_name), instructions(title)')
+    .eq('org_id', profile.org_id)
+    .order('created_at', { ascending: false })
+    .limit(100)
 
   return (
     <AdminDashboard
       profile={profile}
       organization={profile.organizations}
-      teams={teamsRes.data || []}
-      users={usersRes.data || []}
-      instructions={instructionsRes.data || []}
-      folders={foldersRes.data || []}
-      alerts={alertsRes.data || []}
+      teams={teams || []}
+      users={users || []}
+      instructions={instructions || []}
+      folders={folders || []}
+      alerts={alerts || []}
+      aiLogs={aiLogs || []}
     />
   )
 }

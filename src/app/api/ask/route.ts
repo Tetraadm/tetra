@@ -1,12 +1,12 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import Anthropic from '@anthropic-ai/sdk'
 
 const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!,
+  apiKey: process.env.ANTHROPIC_API_KEY!
 })
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     const { question, orgId, userId } = await request.json()
 
@@ -16,79 +16,103 @@ export async function POST(request: Request) {
 
     const supabase = await createClient()
 
+    // Hent KUN publiserte instrukser for denne organisasjonen
     const { data: instructions } = await supabase
       .from('instructions')
-      .select('id, title, content, severity')
+      .select('id, title, content, severity, folders(name)')
       .eq('org_id', orgId)
-      .eq('status', 'approved')
+      .eq('status', 'published')
+      .not('content', 'is', null)
 
     if (!instructions || instructions.length === 0) {
+      // Logg spørsmål uten svar
       await supabase.from('ask_tetra_logs').insert({
         org_id: orgId,
         user_id: userId,
         question,
-        answered: false
+        answer: 'Ingen publiserte instrukser tilgjengelig.',
+        source_instruction_id: null
       })
 
       return NextResponse.json({
-        answer: null,
-        message: 'Ingen instrukser funnet.'
+        answer: 'Det finnes ingen publiserte instrukser i systemet ennå. Kontakt ansvarlig leder.',
+        source: null
       })
     }
 
-    const instructionContext = instructions.map(inst => 
-      `[${inst.severity === 'critical' ? 'KRITISK' : inst.severity === 'medium' ? 'MIDDELS' : 'LAV'}] ${inst.title}: ${inst.content || 'Ingen beskrivelse'}`
-    ).join('\n\n')
+    // Bygg kontekst fra instrukser
+    const context = instructions.map(inst => {
+      const folderName = inst.folders?.name ? `[${inst.folders.name}] ` : ''
+      return `---
+DOKUMENT: ${folderName}${inst.title}
+ALVORLIGHET: ${inst.severity}
+INNHOLD:
+${inst.content}
+---`
+    }).join('\n\n')
 
-    const message = await anthropic.messages.create({
-      model: 'claude-3-haiku-20240307',
-      max_tokens: 512,
-      system: `Du er Tetra, en sikkerhetsassistent. Svar KORT og PRESIST basert på instruksene under.
+    const systemPrompt = `Du er Tetra, en intern HMS-assistent for en bedrift.
 
-REGLER:
-- Maks 2-3 setninger
-- Nevn instruksen du bruker
-- Si fra hvis du ikke finner svar
-- Svar på norsk
+KRITISKE REGLER DU MÅ FØLGE:
+1. Du skal KUN svare basert på informasjonen i DOKUMENTENE nedenfor.
+2. Du har IKKE lov til å bruke ekstern kunnskap, generell viten, eller egne meninger.
+3. Hvis svaret IKKE finnes i dokumentene, skal du svare NØYAKTIG dette:
+   "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."
+4. Du skal ALDRI dikte opp prosedyrer, regler eller informasjon.
+5. Du skal ALLTID referere til hvilket dokument svaret kommer fra.
+6. Hold svarene korte, presise og profesjonelle.
+7. Svar på norsk.
 
-INSTRUKSER:
-${instructionContext}`,
-      messages: [{ role: 'user', content: question }]
+TILGJENGELIGE DOKUMENTER:
+${context}
+
+Hvis brukeren spør om noe som IKKE dekkes av dokumentene ovenfor, bruk standardsvaret i punkt 3.`
+
+    const response = await anthropic.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 500,
+      temperature: 0, // KRITISK: Ingen kreativitet
+      system: systemPrompt,
+      messages: [
+        { role: 'user', content: question }
+      ]
     })
 
-    const answerText = message.content[0].type === 'text' ? message.content[0].text : ''
+    const answer = response.content[0].type === 'text' 
+      ? response.content[0].text 
+      : 'Kunne ikke generere svar.'
 
+    // Finn hvilken instruks som ble brukt (enkel matching)
     let sourceInstruction = null
     for (const inst of instructions) {
-      if (answerText.toLowerCase().includes(inst.title.toLowerCase().split(':')[0])) {
+      if (answer.toLowerCase().includes(inst.title.toLowerCase()) || 
+          (inst.content && answer.toLowerCase().includes(inst.content.substring(0, 50).toLowerCase()))) {
         sourceInstruction = inst
         break
       }
     }
 
+    // Logg spørsmål, svar og kilde
     await supabase.from('ask_tetra_logs').insert({
       org_id: orgId,
       user_id: userId,
       question,
-      answer: answerText,
-      source_instruction_id: sourceInstruction?.id || null,
-      answered: true
+      answer,
+      source_instruction_id: sourceInstruction?.id || null
     })
 
     return NextResponse.json({
-      answer: answerText,
+      answer,
       source: sourceInstruction ? {
         id: sourceInstruction.id,
         title: sourceInstruction.title,
+        folder: sourceInstruction.folders?.name || null,
         severity: sourceInstruction.severity
       } : null
     })
 
   } catch (error) {
-    console.error('Ask Tetra error:', error)
-    return NextResponse.json(
-      { error: 'Kunne ikke behandle spørsmålet' },
-      { status: 500 }
-    )
+    console.error('Ask API error:', error)
+    return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })
   }
 }
