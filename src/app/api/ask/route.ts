@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
 
     const { data: instructions } = await supabase
       .from('instructions')
-      .select('id, title, content, severity, folders(name)')
+      .select('id, title, content, severity, folder_id, folders(name)')
       .eq('org_id', orgId)
       .eq('status', 'published')
       .not('content', 'is', null)
@@ -39,8 +39,9 @@ export async function POST(request: NextRequest) {
     }
 
     const context = instructions.map(inst => {
-      const folder = inst.folders as { name: string } | null
-      const folderName = folder?.name ? '[' + folder.name + '] ' : ''
+      const foldersData = inst.folders as unknown
+      const folderObj = Array.isArray(foldersData) ? foldersData[0] : foldersData
+      const folderName = folderObj && typeof folderObj === 'object' && 'name' in folderObj ? '[' + folderObj.name + '] ' : ''
       return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + inst.severity + '\nINNHOLD:\n' + inst.content + '\n---'
     }).join('\n\n')
 
@@ -59,8 +60,7 @@ export async function POST(request: NextRequest) {
     let sourceInstruction = null
     for (const inst of instructions) {
       if (answer.toLowerCase().includes(inst.title.toLowerCase())) {
-        const folder = inst.folders as { name: string } | null
-        sourceInstruction = { ...inst, folders: folder }
+        sourceInstruction = inst
         break
       }
     }
@@ -73,12 +73,16 @@ export async function POST(request: NextRequest) {
       source_instruction_id: sourceInstruction?.id || null
     })
 
+    const sourceFolders = sourceInstruction?.folders as unknown
+    const sourceFolderObj = Array.isArray(sourceFolders) ? sourceFolders[0] : sourceFolders
+    const sourceFolderName = sourceFolderObj && typeof sourceFolderObj === 'object' && 'name' in sourceFolderObj ? (sourceFolderObj as {name: string}).name : null
+
     return NextResponse.json({
       answer,
       source: sourceInstruction ? {
         id: sourceInstruction.id,
         title: sourceInstruction.title,
-        folder: sourceInstruction.folders?.name || null,
+        folder: sourceFolderName,
         severity: sourceInstruction.severity
       } : null
     })
