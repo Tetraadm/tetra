@@ -1,5 +1,4 @@
-@'
-import { createClient } from '@/lib/supabase/server'
+﻿import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 
@@ -41,31 +40,11 @@ export async function POST(request: NextRequest) {
 
     const context = instructions.map(inst => {
       const folder = inst.folders as { name: string } | null
-      const folderName = folder?.name ? `[${folder.name}] ` : ''
-      return `---
-DOKUMENT: ${folderName}${inst.title}
-ALVORLIGHET: ${inst.severity}
-INNHOLD:
-${inst.content}
----`
+      const folderName = folder?.name ? '[' + folder.name + '] ' : ''
+      return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + inst.severity + '\nINNHOLD:\n' + inst.content + '\n---'
     }).join('\n\n')
 
-    const systemPrompt = `Du er Tetra, en intern HMS-assistent for en bedrift.
-
-KRITISKE REGLER DU MÅ FØLGE:
-1. Du skal KUN svare basert på informasjonen i DOKUMENTENE nedenfor.
-2. Du har IKKE lov til å bruke ekstern kunnskap, generell viten, eller egne meninger.
-3. Hvis svaret IKKE finnes i dokumentene, skal du svare NØYAKTIG dette:
-   "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."
-4. Du skal ALDRI dikte opp prosedyrer, regler eller informasjon.
-5. Du skal ALLTID referere til hvilket dokument svaret kommer fra.
-6. Hold svarene korte, presise og profesjonelle.
-7. Svar på norsk.
-
-TILGJENGELIGE DOKUMENTER:
-${context}
-
-Hvis brukeren spør om noe som IKKE dekkes av dokumentene ovenfor, bruk standardsvaret i punkt 3.`
+    const systemPrompt = 'Du er Tetra, en intern HMS-assistent for en bedrift.\n\nKRITISKE REGLER:\n1. Du skal KUN svare basert på DOKUMENTENE nedenfor.\n2. Du har IKKE lov til å bruke ekstern kunnskap.\n3. Hvis svaret IKKE finnes i dokumentene, svar: "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."\n4. Du skal ALDRI dikte opp prosedyrer.\n5. Referer til hvilket dokument svaret kommer fra.\n6. Svar kort og profesjonelt på norsk.\n\nTILGJENGELIGE DOKUMENTER:\n' + context
 
     const response = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022',
@@ -109,4 +88,3 @@ Hvis brukeren spør om noe som IKKE dekkes av dokumentene ovenfor, bruk standard
     return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })
   }
 }
-'@ | Out-File -FilePath "src/app/api/ask/route.ts" -Encoding UTF8
