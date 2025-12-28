@@ -1,3 +1,4 @@
+@'
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
@@ -16,7 +17,6 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Hent KUN publiserte instrukser for denne organisasjonen
     const { data: instructions } = await supabase
       .from('instructions')
       .select('id, title, content, severity, folders(name)')
@@ -25,7 +25,6 @@ export async function POST(request: NextRequest) {
       .not('content', 'is', null)
 
     if (!instructions || instructions.length === 0) {
-      // Logg spørsmål uten svar
       await supabase.from('ask_tetra_logs').insert({
         org_id: orgId,
         user_id: userId,
@@ -40,9 +39,9 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Bygg kontekst fra instrukser
     const context = instructions.map(inst => {
-      const folderName = inst.folders?.name ? `[${inst.folders.name}] ` : ''
+      const folder = inst.folders as { name: string } | null
+      const folderName = folder?.name ? `[${folder.name}] ` : ''
       return `---
 DOKUMENT: ${folderName}${inst.title}
 ALVORLIGHET: ${inst.severity}
@@ -71,28 +70,22 @@ Hvis brukeren spør om noe som IKKE dekkes av dokumentene ovenfor, bruk standard
     const response = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022',
       max_tokens: 500,
-      temperature: 0, // KRITISK: Ingen kreativitet
+      temperature: 0,
       system: systemPrompt,
-      messages: [
-        { role: 'user', content: question }
-      ]
+      messages: [{ role: 'user', content: question }]
     })
 
-    const answer = response.content[0].type === 'text' 
-      ? response.content[0].text 
-      : 'Kunne ikke generere svar.'
+    const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
 
-    // Finn hvilken instruks som ble brukt (enkel matching)
     let sourceInstruction = null
     for (const inst of instructions) {
-      if (answer.toLowerCase().includes(inst.title.toLowerCase()) || 
-          (inst.content && answer.toLowerCase().includes(inst.content.substring(0, 50).toLowerCase()))) {
-        sourceInstruction = inst
+      if (answer.toLowerCase().includes(inst.title.toLowerCase())) {
+        const folder = inst.folders as { name: string } | null
+        sourceInstruction = { ...inst, folders: folder }
         break
       }
     }
 
-    // Logg spørsmål, svar og kilde
     await supabase.from('ask_tetra_logs').insert({
       org_id: orgId,
       user_id: userId,
@@ -116,3 +109,4 @@ Hvis brukeren spør om noe som IKKE dekkes av dokumentene ovenfor, bruk standard
     return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })
   }
 }
+'@ | Out-File -FilePath "src/app/api/ask/route.ts" -Encoding UTF8
