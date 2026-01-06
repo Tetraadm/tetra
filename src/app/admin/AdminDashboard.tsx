@@ -1223,8 +1223,18 @@ export default function AdminDashboard({
               <option value="published">Publisert (synlig for ansatte og AI)</option>
             </select>
             
-            <label style={styles.label}>Innhold / Sammendrag (brukes av AI)</label>
-            <textarea style={styles.textarea} value={newInstruction.content} onChange={e => setNewInstruction({ ...newInstruction, content: e.target.value })} placeholder="Skriv instruksen her..." />
+            <label style={styles.label}>Innhold (brukes av AI)
+              <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', marginLeft: 8 }}>
+                • Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
+              </span>
+            </label>
+            <textarea
+              style={styles.textarea}
+              value={newInstruction.content}
+              onChange={e => setNewInstruction({ ...newInstruction, content: e.target.value })}
+              placeholder="Skriv eller lim inn tekst fra PDF her for at AI skal kunne svare på spørsmål om denne instruksen..."
+              rows={8}
+            />
             
             <label style={styles.label}>Alvorlighet</label>
             <select style={styles.select} value={newInstruction.severity} onChange={e => setNewInstruction({ ...newInstruction, severity: e.target.value })}>
