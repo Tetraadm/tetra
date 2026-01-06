@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import pdf from 'pdf-parse'
+import * as pdfParse from 'pdf-parse'
 
 export async function POST(request: NextRequest) {
   try {
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       try {
         const arrayBuffer = await file.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
-        const data = await pdf(buffer)
+        const data = await (pdfParse as any).default(buffer)
         extractedText = data.text
       } catch (pdfError) {
         console.error('PDF parse error:', pdfError)
