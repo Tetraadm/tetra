@@ -94,19 +94,18 @@ export default function LoginPage() {
         width: '100%'
       }}>
         <div style={{
-          width: 48,
-          height: 48,
-          background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-          borderRadius: 12,
           display: 'flex',
-          alignItems: 'center',
           justifyContent: 'center',
-          margin: '0 auto 24px',
-          color: 'white',
-          fontWeight: 800,
-          fontSize: 20
+          margin: '0 auto 24px'
         }}>
-          T
+          <img
+            src="/tetra-logo.png"
+            alt="Tetra Logo"
+            style={{
+              height: 64,
+              width: 'auto'
+            }}
+          />
         </div>
         
         <h1 style={{ 

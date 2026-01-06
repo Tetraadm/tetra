@@ -805,8 +805,8 @@ export default function AdminDashboard({
   return (
     <div style={styles.container}>
       <header style={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <span style={styles.logo}>Tetra</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
           <span style={styles.orgName}>{organization.name}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

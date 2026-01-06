@@ -209,8 +209,8 @@ export default function LeaderDashboard({
     <div style={styles.container}>
       {/* Header */}
       <header style={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          <span style={styles.logo}>Tetra</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
           <span style={styles.orgName}>{organization.name} – {team?.name || 'Ingen team'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

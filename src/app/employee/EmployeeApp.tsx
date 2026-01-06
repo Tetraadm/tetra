@@ -203,7 +203,9 @@ export default function EmployeeApp({ profile, organization, team, instructions,
     <div style={s.container}>
       <header style={s.header}>
         <div style={s.headerTop}>
-          <div style={s.logo}><div style={s.logoIcon}>T</div><span style={s.logoText}>Tetra</span></div>
+          <div style={s.logo}>
+            <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
+          </div>
           <div style={s.avatar} onClick={handleLogout} title="Logg ut">{getInitials(profile.full_name || 'U')}</div>
         </div>
         <div style={s.greeting}>God dag, <strong>{profile.full_name?.split(' ')[0] || 'bruker'}</strong></div>
