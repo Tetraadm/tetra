@@ -20,22 +20,22 @@ export default async function EmployeePage() {
 
   // Fetch instructions for this user's team
   let instructions = []
-  
+
   if (profile.team_id) {
     const { data } = await supabase
       .from('instructions')
       .select('id, title, content, severity, file_url, instruction_teams!inner(team_id)')
       .eq('instruction_teams.team_id', profile.team_id)
-      .eq('status', 'approved')
-      .order('severity')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
     instructions = data || []
   } else {
     const { data } = await supabase
       .from('instructions')
       .select('id, title, content, severity, file_url')
       .eq('org_id', profile.org_id)
-      .eq('status', 'approved')
-      .order('severity')
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
     instructions = data || []
   }
 

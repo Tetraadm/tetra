@@ -30,8 +30,8 @@ export default async function LeaderPage() {
     .from('instructions')
     .select('*, instruction_teams!inner(*)')
     .eq('instruction_teams.team_id', profile.team_id)
-    .eq('status', 'approved')
-    .order('severity')
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
 
   return (
     <LeaderDashboard
