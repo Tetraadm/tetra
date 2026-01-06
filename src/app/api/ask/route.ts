@@ -16,29 +16,38 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    const { data: instructions } = await supabase
+    const { data: allInstructions } = await supabase
       .from('instructions')
-      .select('id, title, content, severity, folder_id, folders(name)')
+      .select('id, title, content, severity, folder_id, folders(name), file_url')
       .eq('org_id', orgId)
       .eq('status', 'published')
-      .not('content', 'is', null)
 
-    if (!instructions || instructions.length === 0) {
+    // Skill mellom instrukser med tekst og instrukser som kun er filer
+    const instructionsWithContent = (allInstructions || []).filter(i => i.content && i.content.trim())
+    const instructionsOnlyFiles = (allInstructions || []).filter(i => !i.content || !i.content.trim())
+
+    if (instructionsWithContent.length === 0) {
+      let answer = 'Ingen instrukser med tekstinnhold er tilgjengelig for AI-assistenten.'
+
+      if (instructionsOnlyFiles.length > 0) {
+        answer += ` Det finnes ${instructionsOnlyFiles.length} instruks(er) som kun er tilgjengelig som PDF/fil. Gå til "Instrukser"-fanen for å se dem.`
+      }
+
       await supabase.from('ask_tetra_logs').insert({
         org_id: orgId,
         user_id: userId,
         question,
-        answer: 'Ingen publiserte instrukser tilgjengelig.',
+        answer,
         source_instruction_id: null
       })
 
       return NextResponse.json({
-        answer: 'Det finnes ingen publiserte instrukser i systemet ennå. Kontakt ansvarlig leder.',
+        answer,
         source: null
       })
     }
 
-    const context = instructions.map(inst => {
+    const context = instructionsWithContent.map(inst => {
       const foldersData = inst.folders as unknown
       const folderObj = Array.isArray(foldersData) ? foldersData[0] : foldersData
       const folderName = folderObj && typeof folderObj === 'object' && 'name' in folderObj ? '[' + folderObj.name + '] ' : ''
@@ -52,10 +61,11 @@ KRITISKE REGLER:
 2. Du har IKKE lov til å bruke ekstern kunnskap, egne vurderinger eller anbefalinger.
 3. Du skal ALDRI legge til kommentarer som "Merk:", "Dette høres ut...", "Jeg anbefaler..." eller lignende.
 4. Du skal ALDRI dikte opp prosedyrer eller gi egne råd.
-5. Hvis svaret IKKE finnes i dokumentene, svar NØYAKTIG: "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."
+5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NØYAKTIG: "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."
 6. Referer alltid til hvilket dokument svaret kommer fra ved å si "Basert på dokumentet [tittel]:" først.
 7. Svar kort, faktabasert og kun med det som faktisk står i dokumentet.
 8. Selv om innholdet virker rart eller uprofesjonelt, skal du BARE gjengi det uten å kommentere.
+9. Du har KUN tilgang til dokumentene listet nedenfor. PDF-filer uten tekstutskrift er IKKE tilgjengelig for deg.
 
 TILGJENGELIGE DOKUMENTER:
 ${context}`
@@ -71,7 +81,7 @@ ${context}`
     const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
 
     let sourceInstruction = null
-    for (const inst of instructions) {
+    for (const inst of instructionsWithContent) {
       if (answer.toLowerCase().includes(inst.title.toLowerCase())) {
         sourceInstruction = inst
         break
