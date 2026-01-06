@@ -825,16 +825,16 @@ export default function AdminDashboard({
       <div style={styles.main}>
         <aside style={styles.sidebar}>
           <button style={styles.navItem(tab === 'oversikt')} onClick={() => setTab('oversikt')}>
-            📊 Oversikt
+            🏠 Oversikt
           </button>
           <button style={styles.navItem(tab === 'brukere')} onClick={() => setTab('brukere')}>
             👥 Brukere
           </button>
           <button style={styles.navItem(tab === 'team')} onClick={() => setTab('team')}>
-            🏢 Team
+            👨‍👩‍👧‍👦 Team
           </button>
           <button style={styles.navItem(tab === 'instrukser')} onClick={() => setTab('instrukser')}>
-            📄 Instrukser
+            📋 Instrukser
           </button>
           <button style={styles.navItem(tab === 'avvik')} onClick={() => setTab('avvik')}>
             ⚠️ Avvik & Varsler
@@ -843,7 +843,7 @@ export default function AdminDashboard({
             🤖 AI-logg
           </button>
           <button style={styles.navItem(tab === 'innsikt')} onClick={() => setTab('innsikt')}>
-            📈 Innsikt
+            📊 Innsikt
           </button>
         </aside>
 

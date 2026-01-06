@@ -223,13 +223,13 @@ export default function LeaderDashboard({
         {/* Sidebar */}
         <aside style={styles.sidebar}>
           <button style={styles.navItem(tab === 'oversikt')} onClick={() => setTab('oversikt')}>
-            Oversikt
+            🏠 Oversikt
           </button>
           <button style={styles.navItem(tab === 'team')} onClick={() => setTab('team')}>
-            Mitt team
+            👥 Mitt team
           </button>
           <button style={styles.navItem(tab === 'instrukser')} onClick={() => setTab('instrukser')}>
-            Instrukser
+            📋 Instrukser
           </button>
         </aside>
 
