@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
-import * as pdfParse from 'pdf-parse'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,20 +32,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kunne ikke laste opp fil' }, { status: 500 })
     }
 
-    // Ekstraher tekst fra filer
+    // Ekstraher tekst fra .txt filer
+    // PDF-parsing er deaktivert pga serverless kompatibilitet
     let extractedText = ''
     if (file.type === 'text/plain') {
       extractedText = await file.text()
-    } else if (file.type === 'application/pdf') {
-      try {
-        const arrayBuffer = await file.arrayBuffer()
-        const buffer = Buffer.from(arrayBuffer)
-        const data = await (pdfParse as any).default(buffer)
-        extractedText = data.text
-      } catch (pdfError) {
-        console.error('PDF parse error:', pdfError)
-        // Fortsetter uten ekstrahert tekst
-      }
     }
 
     // Opprett instruks i databasen
