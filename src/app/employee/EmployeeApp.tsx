@@ -53,7 +53,8 @@ type Props = {
 
 function FileLink({ fileUrl, supabase }: { fileUrl: string, supabase: ReturnType<typeof createClient> }) {
   const [signedUrl, setSignedUrl] = useState<string | null>(null)
-  
+  const [isOpening, setIsOpening] = useState(false)
+
   useEffect(() => {
     const getUrl = async () => {
       const { data } = await supabase.storage
@@ -66,12 +67,50 @@ function FileLink({ fileUrl, supabase }: { fileUrl: string, supabase: ReturnType
     getUrl()
   }, [fileUrl, supabase])
 
+  const handleOpenPdf = async () => {
+    if (!signedUrl) return
+
+    setIsOpening(true)
+
+    // Detect iOS
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+
+    if (isIOS) {
+      // iOS Safari: Use window.location for reliable PDF opening
+      window.location.href = signedUrl
+    } else {
+      // Other browsers: Open in new tab
+      window.open(signedUrl, '_blank', 'noopener,noreferrer')
+    }
+
+    // Reset opening state after a delay
+    setTimeout(() => setIsOpening(false), 1000)
+  }
+
   if (!signedUrl) return <p style={{ color: '#64748B', fontSize: 14 }}>Laster vedlegg...</p>
 
   return (
-    <a href={signedUrl} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 8, color: '#2563EB', fontWeight: 600, fontSize: 14, textDecoration: 'none', width: '100%', boxSizing: 'border-box' as const }}>
-      📄 Åpne vedlegg (PDF)
-    </a>
+    <button
+      onClick={handleOpenPdf}
+      disabled={isOpening}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        padding: '12px 16px',
+        background: isOpening ? '#DBEAFE' : '#EFF6FF',
+        border: '1px solid #BFDBFE',
+        borderRadius: 8,
+        color: '#2563EB',
+        fontWeight: 600,
+        fontSize: 14,
+        width: '100%',
+        cursor: isOpening ? 'wait' : 'pointer',
+        boxSizing: 'border-box' as const
+      }}
+    >
+      📄 {isOpening ? 'Åpner...' : 'Åpne vedlegg (PDF)'}
+    </button>
   )
 }
 
