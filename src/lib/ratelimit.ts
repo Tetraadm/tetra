@@ -7,11 +7,11 @@ import { Redis } from '@upstash/redis'
 
 class InMemoryRatelimit {
   private requests: Map<string, number[]> = new Map()
-  private limit: number
+  private maxRequests: number
   private window: number
 
   constructor(limit: number, window: number) {
-    this.limit = limit
+    this.maxRequests = limit
     this.window = window
   }
 
@@ -22,12 +22,12 @@ class InMemoryRatelimit {
     // Remove old timestamps outside the window
     const validTimestamps = timestamps.filter(ts => now - ts < this.window)
 
-    if (validTimestamps.length >= this.limit) {
+    if (validTimestamps.length >= this.maxRequests) {
       const oldestTimestamp = validTimestamps[0]
       const resetTime = oldestTimestamp + this.window
       return {
         success: false,
-        limit: this.limit,
+        limit: this.maxRequests,
         remaining: 0,
         reset: resetTime,
       }
@@ -38,8 +38,8 @@ class InMemoryRatelimit {
 
     return {
       success: true,
-      limit: this.limit,
-      remaining: this.limit - validTimestamps.length,
+      limit: this.maxRequests,
+      remaining: this.maxRequests - validTimestamps.length,
       reset: now + this.window,
     }
   }
