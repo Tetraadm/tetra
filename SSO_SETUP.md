@@ -1,30 +1,6 @@
 # SSO Setup Guide for Tetra
 
-For å aktivere Google og Microsoft innlogging må du konfigurere OAuth providers i Supabase.
-
-## 🔵 Google OAuth Setup
-
-### 1. Opprett Google OAuth App
-1. Gå til [Google Cloud Console](https://console.cloud.google.com/)
-2. Velg eller opprett et prosjekt
-3. Gå til **APIs & Services** → **Credentials**
-4. Klikk **Create Credentials** → **OAuth client ID**
-5. Velg **Web application**
-6. Legg til **Authorized redirect URIs**:
-   ```
-   https://[YOUR-SUPABASE-PROJECT-ID].supabase.co/auth/v1/callback
-   ```
-7. Kopier **Client ID** og **Client Secret**
-
-### 2. Konfigurer i Supabase
-1. Gå til [Supabase Dashboard](https://supabase.com/dashboard)
-2. Velg ditt prosjekt
-3. Gå til **Authentication** → **Providers**
-4. Aktiver **Google**
-5. Lim inn **Client ID** og **Client Secret**
-6. Klikk **Save**
-
----
+For å aktivere Microsoft innlogging må du konfigurere Azure AD OAuth provider i Supabase.
 
 ## 🟦 Microsoft/Azure AD OAuth Setup
 
@@ -71,7 +47,7 @@ For å aktivere Google og Microsoft innlogging må du konfigurere OAuth provider
 ## ✅ Testing
 
 1. Gå til login-siden: `https://tetra.onl`
-2. Klikk på **Fortsett med Google** eller **Fortsett med Microsoft**
+2. Klikk på **Fortsett med Microsoft**
 3. Godkjenn tilgangene
 4. Du blir redirectet tilbake og logget inn automatisk
 
@@ -84,6 +60,6 @@ For å aktivere Google og Microsoft innlogging må du konfigurere OAuth provider
 
 ## 📝 Notater
 
-- Google OAuth krever verifisert domene for produksjon (over 100 brukere)
-- Microsoft/Azure AD fungerer best for bedriftsbrukere med M365 kontoer
+- Microsoft/Azure AD er ideelt for bedriftsbrukere med M365 kontoer
 - Magic link (e-post) er fortsatt tilgjengelig som backup
+- SSO fungerer både for ny registrering og påfølgende innlogginger
