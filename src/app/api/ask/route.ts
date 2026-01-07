@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'Ugyldig input', details: validation.error.errors },
+        { error: 'Ugyldig input' },
         { status: 400 }
       )
     }
