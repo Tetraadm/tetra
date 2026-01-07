@@ -1,8 +1,30 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { uploadRatelimit, getClientIp } from '@/lib/ratelimit'
+
+const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request)
+    const { success, limit, remaining, reset } = await uploadRatelimit.limit(ip)
+
+    if (!success) {
+      return NextResponse.json(
+        { error: 'For mange opplastinger. Prøv igjen om litt.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': new Date(reset).toISOString(),
+          },
+        }
+      )
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
     const title = formData.get('title') as string
@@ -15,6 +37,22 @@ export async function POST(request: NextRequest) {
 
     if (!file || !title || !orgId) {
       return NextResponse.json({ error: 'Mangler påkrevde felt' }, { status: 400 })
+    }
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json(
+        { error: `Filen er for stor. Maks størrelse er ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { status: 400 }
+      )
+    }
+
+    // Validate file type
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return NextResponse.json(
+        { error: 'Ugyldig filtype. Tillatte typer: PDF, TXT, PNG, JPG' },
+        { status: 400 }
+      )
     }
 
     const supabase = await createClient()

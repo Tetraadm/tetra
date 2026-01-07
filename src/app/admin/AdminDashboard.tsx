@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import toast from 'react-hot-toast'
 
 type Profile = {
   id: string
@@ -83,7 +84,16 @@ export default function AdminDashboard({
   const [instructions, setInstructions] = useState(initialInstructions)
   const [folders, setFolders] = useState(initialFolders)
   const [alerts, setAlerts] = useState(initialAlerts)
-  
+  const [isMobile, setIsMobile] = useState(false)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
   // Modal states
   const [showCreateTeam, setShowCreateTeam] = useState(false)
   const [showCreateInstruction, setShowCreateInstruction] = useState(false)
@@ -239,7 +249,7 @@ export default function AdminDashboard({
         const result = await response.json()
 
         if (result.error) {
-          alert(result.error)
+          toast.error(result.error)
           setLoading(false)
           return
         }
@@ -267,7 +277,7 @@ export default function AdminDashboard({
           .single()
 
         if (error) {
-          alert('Kunne ikke opprette instruks')
+          toast.error('Kunne ikke opprette instruks')
           setLoading(false)
           return
         }
@@ -291,7 +301,7 @@ export default function AdminDashboard({
       setShowCreateInstruction(false)
     } catch (error) {
       console.error('Error:', error)
-      alert('Noe gikk galt')
+      toast.error('Noe gikk galt')
     }
 
     setLoading(false)
@@ -364,7 +374,7 @@ export default function AdminDashboard({
 
   const deleteUser = async (userId: string) => {
     if (userId === profile.id) {
-      alert('Du kan ikke slette deg selv')
+      toast.error('Du kan ikke slette deg selv')
       return
     }
     if (!confirm('Fjerne denne brukeren?')) return
@@ -432,7 +442,7 @@ export default function AdminDashboard({
     if (!error) {
       const inviteUrl = `${window.location.origin}/invite/${token}`
       navigator.clipboard.writeText(inviteUrl)
-      alert(`Invitasjonslenke kopiert!\n\n${inviteUrl}`)
+      toast.success('Invitasjonslenke kopiert!')
       setInviteEmail('')
       setInviteRole('employee')
       setInviteTeam('')
@@ -564,13 +574,27 @@ export default function AdminDashboard({
       borderRadius: 8,
       cursor: 'pointer',
     },
-    main: { display: 'flex' },
+    main: {
+      display: 'flex',
+      flexDirection: isMobile ? 'column' as const : 'row' as const,
+    },
     sidebar: {
-      width: 220,
+      width: isMobile ? '100%' : 220,
       background: 'white',
-      borderRight: '1px solid #E2E8F0',
-      minHeight: 'calc(100vh - 65px)',
-      padding: '16px 0',
+      borderRight: isMobile ? 'none' : '1px solid #E2E8F0',
+      borderBottom: isMobile ? '1px solid #E2E8F0' : 'none',
+      minHeight: isMobile ? 'auto' : 'calc(100vh - 65px)',
+      padding: isMobile ? '8px 0' : '16px 0',
+      display: isMobile && !showMobileMenu ? 'none' : 'block',
+    },
+    mobileMenuBtn: {
+      display: isMobile ? 'block' : 'none',
+      padding: '8px 12px',
+      fontSize: 14,
+      background: 'none',
+      border: '1px solid #E2E8F0',
+      borderRadius: 8,
+      cursor: 'pointer',
     },
     navItem: (active: boolean) => ({
       display: 'block',
@@ -584,7 +608,10 @@ export default function AdminDashboard({
       textAlign: 'left' as const,
       cursor: 'pointer',
     }),
-    content: { flex: 1, padding: 24 },
+    content: {
+      flex: 1,
+      padding: isMobile ? 16 : 24,
+    },
     pageTitle: { fontSize: 24, fontWeight: 700, marginBottom: 8 },
     pageSubtitle: { fontSize: 14, color: '#64748B', marginBottom: 24 },
     card: {
@@ -604,7 +631,7 @@ export default function AdminDashboard({
     cardBody: { padding: 20 },
     statsGrid: {
       display: 'grid',
-      gridTemplateColumns: 'repeat(4, 1fr)',
+      gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
       gap: 16,
       marginBottom: 24,
     },
@@ -806,43 +833,55 @@ export default function AdminDashboard({
     <div style={styles.container}>
       <header style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {isMobile && (
+            <button
+              style={styles.mobileMenuBtn}
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+            >
+              {showMobileMenu ? '✕' : '☰'}
+            </button>
+          )}
           <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
-          <span style={styles.orgName}>{organization.name}</span>
+          {!isMobile && <span style={styles.orgName}>{organization.name}</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button 
-            style={styles.btnSmall} 
-            onClick={() => setShowDisclaimer(true)}
-            title="Om AI-assistenten"
-          >
-            ⓘ AI-info
+          {!isMobile && (
+            <button
+              style={styles.btnSmall}
+              onClick={() => setShowDisclaimer(true)}
+              title="Om AI-assistenten"
+            >
+              ⓘ AI-info
+            </button>
+          )}
+          {!isMobile && <span style={{ fontSize: 14, color: '#64748B' }}>{profile.full_name}</span>}
+          <button style={styles.logoutBtn} onClick={handleLogout}>
+            {isMobile ? 'Ut' : 'Logg ut'}
           </button>
-          <span style={{ fontSize: 14, color: '#64748B' }}>{profile.full_name}</span>
-          <button style={styles.logoutBtn} onClick={handleLogout}>Logg ut</button>
         </div>
       </header>
 
       <div style={styles.main}>
         <aside style={styles.sidebar}>
-          <button style={styles.navItem(tab === 'oversikt')} onClick={() => setTab('oversikt')}>
+          <button style={styles.navItem(tab === 'oversikt')} onClick={() => { setTab('oversikt'); setShowMobileMenu(false); }}>
             🏠 Oversikt
           </button>
-          <button style={styles.navItem(tab === 'brukere')} onClick={() => setTab('brukere')}>
+          <button style={styles.navItem(tab === 'brukere')} onClick={() => { setTab('brukere'); setShowMobileMenu(false); }}>
             👥 Brukere
           </button>
-          <button style={styles.navItem(tab === 'team')} onClick={() => setTab('team')}>
+          <button style={styles.navItem(tab === 'team')} onClick={() => { setTab('team'); setShowMobileMenu(false); }}>
             👨‍👩‍👧‍👦 Team
           </button>
-          <button style={styles.navItem(tab === 'instrukser')} onClick={() => setTab('instrukser')}>
+          <button style={styles.navItem(tab === 'instrukser')} onClick={() => { setTab('instrukser'); setShowMobileMenu(false); }}>
             📋 Instrukser
           </button>
-          <button style={styles.navItem(tab === 'avvik')} onClick={() => setTab('avvik')}>
+          <button style={styles.navItem(tab === 'avvik')} onClick={() => { setTab('avvik'); setShowMobileMenu(false); }}>
             ⚠️ Avvik & Varsler
           </button>
-          <button style={styles.navItem(tab === 'ailogg')} onClick={() => setTab('ailogg')}>
+          <button style={styles.navItem(tab === 'ailogg')} onClick={() => { setTab('ailogg'); setShowMobileMenu(false); }}>
             🤖 AI-logg
           </button>
-          <button style={styles.navItem(tab === 'innsikt')} onClick={() => setTab('innsikt')}>
+          <button style={styles.navItem(tab === 'innsikt')} onClick={() => { setTab('innsikt'); setShowMobileMenu(false); }}>
             📊 Innsikt
           </button>
         </aside>

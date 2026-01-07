@@ -1,18 +1,51 @@
 ﻿import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
+import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
+import { z } from 'zod'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!
 })
 
+const askSchema = z.object({
+  question: z.string().min(1).max(1000),
+  orgId: z.string().uuid(),
+  userId: z.string().uuid().optional(),
+})
+
 export async function POST(request: NextRequest) {
   try {
-    const { question, orgId, userId } = await request.json()
+    // Rate limiting
+    const ip = getClientIp(request)
+    const { success, limit, remaining, reset } = await aiRatelimit.limit(ip)
 
-    if (!question || !orgId) {
-      return NextResponse.json({ error: 'Mangler spørsmål eller org' }, { status: 400 })
+    if (!success) {
+      return NextResponse.json(
+        { error: 'For mange forespørsler. Prøv igjen om litt.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': new Date(reset).toISOString(),
+          },
+        }
+      )
     }
+
+    // Input validation
+    const body = await request.json()
+    const validation = askSchema.safeParse(body)
+
+    if (!validation.success) {
+      return NextResponse.json(
+        { error: 'Ugyldig input', details: validation.error.errors },
+        { status: 400 }
+      )
+    }
+
+    const { question, orgId, userId } = validation.data
 
     const supabase = await createClient()
 
