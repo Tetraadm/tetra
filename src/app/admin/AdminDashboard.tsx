@@ -1842,7 +1842,7 @@ export default function AdminDashboard({
             <input style={styles.input} value={newTeamName} onChange={e => setNewTeamName(e.target.value)} placeholder="F.eks. Lager, Butikk" />
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button style={styles.btnSecondary} onClick={() => setShowCreateTeam(false)}>Avbryt</button>
-              <button style={styles.btn} onClick={createTeam} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
+              <button style={{...styles.btn, ...(loading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createTeam} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
             </div>
           </div>
         </div>
@@ -1857,7 +1857,7 @@ export default function AdminDashboard({
             <input style={styles.input} value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="F.eks. Brann, HMS" />
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(false)}>Avbryt</button>
-              <button style={styles.btn} onClick={createFolder} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
+              <button style={{...styles.btn, ...(loading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createFolder} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
             </div>
           </div>
         </div>
@@ -1928,7 +1928,7 @@ export default function AdminDashboard({
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button style={styles.btnSecondary} onClick={() => setShowCreateInstruction(false)}>Avbryt</button>
-              <button style={styles.btn} onClick={createInstruction} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
+              <button style={{...styles.btn, ...(loading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createInstruction} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
             </div>
           </div>
         </div>
@@ -1967,7 +1967,7 @@ export default function AdminDashboard({
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button style={styles.btnSecondary} onClick={() => setShowEditInstruction(false)}>Avbryt</button>
-              <button style={styles.btn} onClick={saveEditInstruction} disabled={loading}>{loading ? 'Lagrer...' : 'Lagre'}</button>
+              <button style={{...styles.btn, ...(loading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={saveEditInstruction} disabled={loading}>{loading ? 'Lagrer...' : 'Lagre'}</button>
             </div>
           </div>
         </div>
@@ -1997,7 +1997,7 @@ export default function AdminDashboard({
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button style={styles.btnSecondary} onClick={() => setShowInviteUser(false)}>Avbryt</button>
-              <button style={styles.btn} onClick={inviteUser} disabled={loading}>{loading ? 'Sender...' : 'Opprett invitasjon'}</button>
+              <button style={{...styles.btn, ...(loading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={inviteUser} disabled={loading}>{loading ? 'Sender...' : 'Opprett invitasjon'}</button>
             </div>
           </div>
         </div>
@@ -2025,7 +2025,7 @@ export default function AdminDashboard({
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button style={styles.btnSecondary} onClick={() => setShowEditUser(false)}>Avbryt</button>
-              <button style={styles.btn} onClick={saveEditUser} disabled={loading}>{loading ? 'Lagrer...' : 'Lagre'}</button>
+              <button style={{...styles.btn, ...(loading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={saveEditUser} disabled={loading}>{loading ? 'Lagrer...' : 'Lagre'}</button>
             </div>
           </div>
         </div>
@@ -2060,7 +2060,7 @@ export default function AdminDashboard({
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
               <button style={styles.btnSecondary} onClick={() => setShowCreateAlert(false)}>Avbryt</button>
-              <button style={styles.btn} onClick={createAlert} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
+              <button style={{...styles.btn, ...(loading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createAlert} disabled={loading}>{loading ? 'Oppretter...' : 'Opprett'}</button>
             </div>
           </div>
         </div>
