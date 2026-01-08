@@ -59,11 +59,19 @@ function FileLink({ fileUrl, supabase }: { fileUrl: string, supabase: ReturnType
 
   useEffect(() => {
     const getUrl = async () => {
-      const { data } = await supabase.storage
-        .from('instructions')
-        .createSignedUrl(fileUrl, 3600)
-      if (data?.signedUrl) {
-        setSignedUrl(data.signedUrl)
+      try {
+        const { data, error } = await supabase.storage
+          .from('instructions')
+          .createSignedUrl(fileUrl, 3600)
+
+        if (error) throw error
+
+        if (data?.signedUrl) {
+          setSignedUrl(data.signedUrl)
+        }
+      } catch (error) {
+        console.error('Get signed URL error:', error)
+        // TODO: Vis feilmelding til bruker
       }
     }
     getUrl()
@@ -134,13 +142,21 @@ export default function EmployeeApp({ profile, organization, team, instructions,
   // Load confirmed instructions on mount
   useEffect(() => {
     const loadConfirmed = async () => {
-      const { data } = await supabase
-        .from('instruction_reads')
-        .select('instruction_id')
-        .eq('user_id', profile.id)
-        .eq('confirmed', true)
-      if (data) {
-        setConfirmedInstructions(new Set(data.map(r => r.instruction_id)))
+      try {
+        const { data, error } = await supabase
+          .from('instruction_reads')
+          .select('instruction_id')
+          .eq('user_id', profile.id)
+          .eq('confirmed', true)
+
+        if (error) throw error
+
+        if (data) {
+          setConfirmedInstructions(new Set(data.map(r => r.instruction_id)))
+        }
+      } catch (error) {
+        console.error('Load confirmed instructions error:', error)
+        // Silent fail - ikke kritisk for UX
       }
     }
     loadConfirmed()
@@ -163,15 +179,26 @@ export default function EmployeeApp({ profile, organization, team, instructions,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ instructionId })
       })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
       const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
       if (data.success) {
         setConfirmedInstructions(prev => new Set(prev).add(instructionId))
         toast.success('Bekreftet! Du har lest og forstått instruksen.')
       } else {
-        toast.error('Kunne ikke bekrefte lesing')
+        throw new Error('Ugyldig respons fra server')
       }
     } catch (error) {
-      toast.error('Noe gikk galt')
+      console.error('Confirm read error:', error)
+      toast.error('Kunne ikke bekrefte lesing. Prøv igjen.')
     } finally {
       setConfirmingInstruction(null)
     }
@@ -190,12 +217,40 @@ export default function EmployeeApp({ profile, organization, team, instructions,
     setChatInput('')
     setIsTyping(true)
     try {
-      const response = await fetch('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question, orgId: profile.org_id, userId: profile.id }) })
+      const response = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, orgId: profile.org_id, userId: profile.id })
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
+
       const data = await response.json()
-      if (data.answer) setMessages(prev => [...prev, { type: 'bot', text: data.answer, citation: data.source?.title || undefined }])
-      else setMessages(prev => [...prev, { type: 'notfound', text: '' }])
-    } catch (error) { setMessages(prev => [...prev, { type: 'notfound', text: 'Kunne ikke koble til Tetra.' }]) }
-    setIsTyping(false)
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
+
+      if (data.answer) {
+        setMessages(prev => [...prev, {
+          type: 'bot',
+          text: data.answer,
+          citation: data.source?.title || undefined
+        }])
+      } else {
+        setMessages(prev => [...prev, { type: 'notfound', text: '' }])
+      }
+    } catch (error) {
+      console.error('Ask error:', error)
+      setMessages(prev => [...prev, {
+        type: 'notfound',
+        text: 'Kunne ikke koble til Tetra. Sjekk nettforbindelsen din og prøv igjen.'
+      }])
+    } finally {
+      setIsTyping(false)
+    }
   }
 
   const handleSuggestion = (q: string) => setChatInput(q)
