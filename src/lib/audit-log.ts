@@ -25,22 +25,22 @@ type AuditLogParams = {
  * Client-side audit logging function (for Client Components)
  * Use this in client components like AdminDashboard.tsx
  */
-export function logAuditEventClient(
+export async function logAuditEventClient(
   supabase: SupabaseClient,
   params: AuditLogParams
 ): Promise<void> {
-  return supabase
-    .from('audit_logs')
-    .insert({
-      org_id: params.orgId,
-      user_id: params.userId,
-      action_type: params.actionType,
-      entity_type: params.entityType,
-      entity_id: params.entityId || null,
-      details: params.details || {}
-    })
-    .then(() => {})
-    .catch((error) => {
-      console.error('Failed to log audit event:', error)
-    })
+  try {
+    await supabase
+      .from('audit_logs')
+      .insert({
+        org_id: params.orgId,
+        user_id: params.userId,
+        action_type: params.actionType,
+        entity_type: params.entityType,
+        entity_id: params.entityId || null,
+        details: params.details || {}
+      })
+  } catch (error) {
+    console.error('Failed to log audit event:', error)
+  }
 }
