@@ -6,6 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { trackInstructionRead } from '@/lib/read-tracking'
 import toast from 'react-hot-toast'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
+import AuthWatcher from '@/components/AuthWatcher'
 
 type Profile = {
   id: string
@@ -309,7 +310,9 @@ export default function EmployeeApp({ profile, organization, team, instructions,
   }
 
   return (
-    <div style={s.container}>
+    <>
+      <AuthWatcher />
+      <div style={s.container}>
       <header style={s.header}>
         <div style={s.headerTop}>
           <div style={s.logo}>
@@ -332,6 +335,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
       <nav style={s.nav}><button style={s.navItem(tab === 'home')} onClick={() => setTab('home')}><span style={{ fontSize: 20 }}>🏡</span><span>Hjem</span></button><button style={s.navItem(tab === 'instructions')} onClick={() => setTab('instructions')}><span style={{ fontSize: 20 }}>📋</span><span>Instrukser</span></button><button style={s.navItem(tab === 'ask')} onClick={() => setTab('ask')}><span style={{ fontSize: 20 }}>🤖</span><span>Spør Tetra</span></button></nav>
       {selectedInstruction && (<div style={s.modal} onClick={() => setSelectedInstruction(null)}><div style={s.modalContent} onClick={e => e.stopPropagation()}><div style={s.modalHeader}><div><span style={s.badge(severityColor(selectedInstruction.severity).bg, severityColor(selectedInstruction.severity).color)}>{severityLabel(selectedInstruction.severity)}</span><h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 8 }}>{selectedInstruction.title}</h2></div><button style={s.modalClose} onClick={() => setSelectedInstruction(null)}>✕</button></div><div style={s.modalBody}>{selectedInstruction.content && <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 16 }}>{selectedInstruction.content}</div>}{selectedInstruction.file_url && <FileLink fileUrl={selectedInstruction.file_url} supabase={supabase} />}{!selectedInstruction.content && !selectedInstruction.file_url && <p style={{ color: '#64748B', fontStyle: 'italic' }}>Ingen beskrivelse tilgjengelig.</p>}<div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #E2E8F0' }}>{confirmedInstructions.has(selectedInstruction.id) ? (<div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#ECFDF5', border: '1px solid #10B981', borderRadius: 8, color: '#065F46', fontSize: 14, fontWeight: 600 }}>✓ Du har bekreftet at du har lest og forstått denne instruksen</div>) : (<button onClick={() => handleConfirmRead(selectedInstruction.id)} disabled={confirmingInstruction === selectedInstruction.id} style={{ width: '100%', padding: '14px 20px', background: confirmingInstruction === selectedInstruction.id ? '#9CA3AF' : 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)', border: 'none', borderRadius: 8, color: 'white', fontSize: 15, fontWeight: 700, cursor: confirmingInstruction === selectedInstruction.id ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>{confirmingInstruction === selectedInstruction.id ? '⏳ Bekrefter...' : '✓ Jeg har lest og forstått'}</button>)}</div></div></div></div>)}
       <style>{`@keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }`}</style>
-    </div>
+      </div>
+    </>
   )
 }

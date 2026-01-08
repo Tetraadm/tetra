@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
+import AuthWatcher from '@/components/AuthWatcher'
 
 type Profile = {
   id: string
@@ -212,7 +213,9 @@ export default function LeaderDashboard({
   }
 
   return (
-    <div style={styles.container}>
+    <>
+      <AuthWatcher />
+      <div style={styles.container}>
       {/* Header */}
       <header style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
@@ -359,6 +362,7 @@ export default function LeaderDashboard({
           )}
         </main>
       </div>
-    </div>
+      </div>
+    </>
   )
 }

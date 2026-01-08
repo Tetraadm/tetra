@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 import { logAuditEventClient } from '@/lib/audit-log'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
+import AuthWatcher from '@/components/AuthWatcher'
 
 type Profile = {
   id: string
@@ -1187,8 +1188,10 @@ export default function AdminDashboard({
   }
 
   return (
-    <div style={styles.container}>
-      <header style={styles.header}>
+    <>
+      <AuthWatcher />
+      <div style={styles.container}>
+        <header style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           {isMobile && (
             <button
@@ -2094,6 +2097,7 @@ export default function AdminDashboard({
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   )
 }
