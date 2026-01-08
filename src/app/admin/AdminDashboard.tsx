@@ -179,13 +179,23 @@ export default function AdminDashboard({
       if (auditFilter.endDate) params.append('end_date', auditFilter.endDate)
 
       const response = await fetch(`/api/audit-logs?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
       const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
 
       if (data.logs) {
         setAuditLogs(data.logs)
       }
     } catch (error) {
-      toast.error('Kunne ikke laste aktivitetslogg')
+      console.error('Load audit logs error:', error)
+      toast.error('Kunne ikke laste aktivitetslogg. Prøv igjen.')
     } finally {
       setAuditLogsLoading(false)
     }
@@ -201,13 +211,23 @@ export default function AdminDashboard({
     setReadReportLoading(true)
     try {
       const response = await fetch('/api/read-confirmations')
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+      }
+
       const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error)
+      }
 
       if (data.report) {
         setReadReport(data.report)
       }
     } catch (error) {
-      toast.error('Kunne ikke laste lesebekreftelser')
+      console.error('Load read report error:', error)
+      toast.error('Kunne ikke laste lesebekreftelser. Prøv igjen.')
     } finally {
       setReadReportLoading(false)
     }
@@ -299,30 +319,43 @@ export default function AdminDashboard({
     if (!newTeamName.trim()) return
     setLoading(true)
 
-    const { data, error } = await supabase
-      .from('teams')
-      .insert({ name: newTeamName, org_id: profile.org_id })
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('teams')
+        .insert({ name: newTeamName, org_id: profile.org_id })
+        .select()
+        .single()
 
-    if (!error && data) {
+      if (error) throw error
+
       setTeams([...teams, data])
       setNewTeamName('')
       setShowCreateTeam(false)
+      toast.success('Team opprettet')
+    } catch (error) {
+      console.error('Create team error:', error)
+      toast.error('Kunne ikke opprette team. Prøv igjen.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const deleteTeam = async (teamId: string) => {
     if (!confirm('Er du sikker på at du vil slette dette teamet?')) return
-    
-    const { error } = await supabase
-      .from('teams')
-      .delete()
-      .eq('id', teamId)
 
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('teams')
+        .delete()
+        .eq('id', teamId)
+
+      if (error) throw error
+
       setTeams(teams.filter(t => t.id !== teamId))
+      toast.success('Team slettet')
+    } catch (error) {
+      console.error('Delete team error:', error)
+      toast.error('Kunne ikke slette team. Prøv igjen.')
     }
   }
 
@@ -330,33 +363,46 @@ export default function AdminDashboard({
     if (!newFolderName.trim()) return
     setLoading(true)
 
-    const { data, error } = await supabase
-      .from('folders')
-      .insert({ name: newFolderName, org_id: profile.org_id })
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('folders')
+        .insert({ name: newFolderName, org_id: profile.org_id })
+        .select()
+        .single()
 
-    if (!error && data) {
+      if (error) throw error
+
       setFolders([...folders, data])
       setNewFolderName('')
       setShowCreateFolder(false)
+      toast.success('Mappe opprettet')
+    } catch (error) {
+      console.error('Create folder error:', error)
+      toast.error('Kunne ikke opprette mappe. Prøv igjen.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const deleteFolder = async (folderId: string) => {
     if (!confirm('Slette mappen? Instrukser i mappen beholdes.')) return
-    
-    const { error } = await supabase
-      .from('folders')
-      .delete()
-      .eq('id', folderId)
 
-    if (!error) {
+    try {
+      const { error } = await supabase
+        .from('folders')
+        .delete()
+        .eq('id', folderId)
+
+      if (error) throw error
+
       setFolders(folders.filter(f => f.id !== folderId))
-      setInstructions(instructions.map(i => 
+      setInstructions(instructions.map(i =>
         i.folder_id === folderId ? { ...i, folder_id: null, folders: null } : i
       ))
+      toast.success('Mappe slettet')
+    } catch (error) {
+      console.error('Delete folder error:', error)
+      toast.error('Kunne ikke slette mappe. Prøv igjen.')
     }
   }
 
@@ -461,15 +507,18 @@ export default function AdminDashboard({
   const deleteInstruction = async (instructionId: string) => {
     if (!confirm('Slette instruksen? Dette fjerner også tilhørende data.')) return
 
-    const instructionToDelete = instructions.find(i => i.id === instructionId)
+    try {
+      const instructionToDelete = instructions.find(i => i.id === instructionId)
 
-    const { error } = await supabase
-      .from('instructions')
-      .delete()
-      .eq('id', instructionId)
+      const { error } = await supabase
+        .from('instructions')
+        .delete()
+        .eq('id', instructionId)
 
-    if (!error) {
+      if (error) throw error
+
       setInstructions(instructions.filter(i => i.id !== instructionId))
+      toast.success('Instruks slettet')
 
       // Log audit event
       await logAuditEventClient(supabase, {
@@ -479,25 +528,34 @@ export default function AdminDashboard({
         entityType: 'instruction',
         entityId: instructionId,
         details: {
-          instruction_title: instructionToDelete?.title,
-          severity: instructionToDelete?.severity
+          instruction_title: instructionToDelete?.title || 'Ukjent',
+          severity: instructionToDelete?.severity || 'unknown'
         }
       })
+    } catch (error) {
+      console.error('Delete instruction error:', error)
+      toast.error('Kunne ikke slette instruks. Prøv igjen.')
     }
   }
 
   const toggleInstructionStatus = async (instruction: Instruction) => {
     const newStatus = instruction.status === 'published' ? 'draft' : 'published'
-    
-    const { error } = await supabase
-      .from('instructions')
-      .update({ status: newStatus })
-      .eq('id', instruction.id)
 
-    if (!error) {
-      setInstructions(instructions.map(i => 
+    try {
+      const { error } = await supabase
+        .from('instructions')
+        .update({ status: newStatus })
+        .eq('id', instruction.id)
+
+      if (error) throw error
+
+      setInstructions(instructions.map(i =>
         i.id === instruction.id ? { ...i, status: newStatus } : i
       ))
+      toast.success(newStatus === 'published' ? 'Instruks publisert' : 'Instruks avpublisert')
+    } catch (error) {
+      console.error('Toggle instruction status error:', error)
+      toast.error('Kunne ikke endre status. Prøv igjen.')
     }
   }
 
@@ -515,33 +573,36 @@ export default function AdminDashboard({
     if (!editingInstruction) return
     setLoading(true)
 
-    const wasPublished = editingInstruction.status === 'published'
-    const willBePublished = editInstructionStatus === 'published'
+    try {
+      const wasPublished = editingInstruction.status === 'published'
+      const willBePublished = editInstructionStatus === 'published'
 
-    // Extract keywords from updated content
-    const textForKeywords = `${editInstructionTitle} ${editInstructionContent}`.trim()
-    const keywords = extractKeywords(textForKeywords, 10)
+      // Extract keywords from updated content
+      const textForKeywords = `${editInstructionTitle} ${editInstructionContent}`.trim()
+      const keywords = extractKeywords(textForKeywords, 10)
 
-    const { data, error } = await supabase
-      .from('instructions')
-      .update({
-        title: editInstructionTitle,
-        content: editInstructionContent,
-        severity: editInstructionSeverity,
-        status: editInstructionStatus,
-        folder_id: editInstructionFolder || null,
-        keywords: keywords
-      })
-      .eq('id', editingInstruction.id)
-      .select('*, folders(*)')
-      .single()
+      const { data, error } = await supabase
+        .from('instructions')
+        .update({
+          title: editInstructionTitle,
+          content: editInstructionContent,
+          severity: editInstructionSeverity,
+          status: editInstructionStatus,
+          folder_id: editInstructionFolder || null,
+          keywords: keywords
+        })
+        .eq('id', editingInstruction.id)
+        .select('*, folders(*)')
+        .single()
 
-    if (!error && data) {
+      if (error) throw error
+
       setInstructions(instructions.map(i =>
         i.id === editingInstruction.id ? data : i
       ))
       setShowEditInstruction(false)
       setEditingInstruction(null)
+      toast.success('Instruks oppdatert')
 
       // Log audit event if status changed to/from published
       if (!wasPublished && willBePublished) {
@@ -569,8 +630,12 @@ export default function AdminDashboard({
           }
         })
       }
+    } catch (error) {
+      console.error('Save edit instruction error:', error)
+      toast.error('Kunne ikke lagre endringer. Prøv igjen.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const deleteUser = async (userId: string) => {
@@ -580,15 +645,18 @@ export default function AdminDashboard({
     }
     if (!confirm('Fjerne denne brukeren?')) return
 
-    const userToDelete = users.find(u => u.id === userId)
+    try {
+      const userToDelete = users.find(u => u.id === userId)
 
-    const { error } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId)
+      const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId)
 
-    if (!error) {
+      if (error) throw error
+
       setUsers(users.filter(u => u.id !== userId))
+      toast.success('Bruker fjernet')
 
       // Log audit event
       await logAuditEventClient(supabase, {
@@ -598,10 +666,13 @@ export default function AdminDashboard({
         entityType: 'user',
         entityId: userId,
         details: {
-          user_name: userToDelete?.full_name,
-          user_role: userToDelete?.role
+          user_name: userToDelete?.full_name || 'Ukjent',
+          user_role: userToDelete?.role || 'unknown'
         }
       })
+    } catch (error) {
+      console.error('Delete user error:', error)
+      toast.error('Kunne ikke fjerne bruker. Prøv igjen.')
     }
   }
 
@@ -616,23 +687,26 @@ export default function AdminDashboard({
     if (!editingUser) return
     setLoading(true)
 
-    const roleChanged = editingUser.role !== editUserRole
+    try {
+      const roleChanged = editingUser.role !== editUserRole
 
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        role: editUserRole,
-        team_id: editUserTeam || null
-      })
-      .eq('id', editingUser.id)
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          role: editUserRole,
+          team_id: editUserTeam || null
+        })
+        .eq('id', editingUser.id)
 
-    if (!error) {
+      if (error) throw error
+
       setUsers(users.map(u =>
         u.id === editingUser.id
           ? { ...u, role: editUserRole, team_id: editUserTeam || null }
           : u
       ))
       setShowEditUser(false)
+      toast.success('Bruker oppdatert')
 
       // Log audit event if role changed
       if (roleChanged) {
@@ -651,34 +725,40 @@ export default function AdminDashboard({
       }
 
       setEditingUser(null)
+    } catch (error) {
+      console.error('Save edit user error:', error)
+      toast.error('Kunne ikke oppdatere bruker. Prøv igjen.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const inviteUser = async () => {
     if (!inviteEmail.trim()) return
     setLoading(true)
 
-    const token = crypto.randomUUID()
-    const expiresAt = new Date()
-    expiresAt.setDate(expiresAt.getDate() + 7)
+    try {
+      const token = crypto.randomUUID()
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7)
 
-    const { data, error } = await supabase
-      .from('invites')
-      .insert({
-        email: inviteEmail,
-        role: inviteRole,
-        team_id: inviteTeam || null,
-        org_id: profile.org_id,
-        token,
-        expires_at: expiresAt.toISOString()
-      })
-      .select()
-      .single()
+      const { data, error } = await supabase
+        .from('invites')
+        .insert({
+          email: inviteEmail,
+          role: inviteRole,
+          team_id: inviteTeam || null,
+          org_id: profile.org_id,
+          token,
+          expires_at: expiresAt.toISOString()
+        })
+        .select()
+        .single()
 
-    if (!error) {
+      if (error) throw error
+
       const inviteUrl = `${window.location.origin}/invite/${token}`
-      navigator.clipboard.writeText(inviteUrl)
+      await navigator.clipboard.writeText(inviteUrl)
       toast.success('Invitasjonslenke kopiert!')
       setInviteEmail('')
       setInviteRole('employee')
@@ -691,75 +771,99 @@ export default function AdminDashboard({
         userId: profile.id,
         actionType: 'invite_user',
         entityType: 'invite',
-        entityId: data?.id,
+        entityId: data.id,
         details: {
           invited_email: inviteEmail,
           invited_role: inviteRole
         }
       })
+    } catch (error) {
+      console.error('Invite user error:', error)
+      toast.error('Kunne ikke opprette invitasjon. Prøv igjen.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const createAlert = async () => {
     if (!newAlert.title.trim()) return
     setLoading(true)
 
-    const { data, error } = await supabase
-      .from('alerts')
-      .insert({
-        title: newAlert.title,
-        description: newAlert.description,
-        severity: newAlert.severity,
-        org_id: profile.org_id,
-        created_by: profile.id,
-        active: true
-      })
-      .select()
-      .single()
+    try {
+      const { data, error } = await supabase
+        .from('alerts')
+        .insert({
+          title: newAlert.title,
+          description: newAlert.description,
+          severity: newAlert.severity,
+          org_id: profile.org_id,
+          created_by: profile.id,
+          active: true
+        })
+        .select()
+        .single()
 
-    if (!error && data) {
-      const teamIdsToLink = newAlert.allTeams 
-        ? teams.map(t => t.id) 
+      if (error) throw error
+
+      const teamIdsToLink = newAlert.allTeams
+        ? teams.map(t => t.id)
         : newAlert.teamIds
 
       if (teamIdsToLink.length > 0) {
-        await supabase.from('alert_teams').insert(
+        const { error: teamError } = await supabase.from('alert_teams').insert(
           teamIdsToLink.map(teamId => ({
             alert_id: data.id,
             team_id: teamId
           }))
         )
+        if (teamError) console.error('Alert teams link error:', teamError)
       }
-      
+
       setAlerts([data, ...alerts])
       setNewAlert({ title: '', description: '', severity: 'medium', teamIds: [], allTeams: true })
       setShowCreateAlert(false)
+      toast.success('Avvik opprettet')
+    } catch (error) {
+      console.error('Create alert error:', error)
+      toast.error('Kunne ikke opprette avvik. Prøv igjen.')
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
 
   const toggleAlert = async (alertId: string, active: boolean) => {
-    const { error } = await supabase
-      .from('alerts')
-      .update({ active: !active })
-      .eq('id', alertId)
+    try {
+      const { error } = await supabase
+        .from('alerts')
+        .update({ active: !active })
+        .eq('id', alertId)
 
-    if (!error) {
+      if (error) throw error
+
       setAlerts(alerts.map(a => a.id === alertId ? { ...a, active: !active } : a))
+      toast.success(active ? 'Avvik deaktivert' : 'Avvik aktivert')
+    } catch (error) {
+      console.error('Toggle alert error:', error)
+      toast.error('Kunne ikke endre avviksstatus. Prøv igjen.')
     }
   }
 
   const deleteAlert = async (alertId: string) => {
     if (!confirm('Slette dette avviket?')) return
 
-    const { error } = await supabase
-      .from('alerts')
-      .delete()
-      .eq('id', alertId)
+    try {
+      const { error } = await supabase
+        .from('alerts')
+        .delete()
+        .eq('id', alertId)
 
-    if (!error) {
+      if (error) throw error
+
       setAlerts(alerts.filter(a => a.id !== alertId))
+      toast.success('Avvik slettet')
+    } catch (error) {
+      console.error('Delete alert error:', error)
+      toast.error('Kunne ikke slette avvik. Prøv igjen.')
     }
   }
 
