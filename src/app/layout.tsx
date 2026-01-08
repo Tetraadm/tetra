@@ -1,5 +1,6 @@
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
+import OfflineBanner from '@/components/OfflineBanner'
 
 export const metadata = {
   title: 'Tetra',
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="no">
       <body>
+        <OfflineBanner />
         {children}
         <Toaster
           position="top-right"
