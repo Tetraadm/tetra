@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
 import { trackInstructionRead } from '@/lib/read-tracking'
 import toast from 'react-hot-toast'
+import { cleanupInviteData } from '@/lib/invite-cleanup'
 
 type Profile = {
   id: string
@@ -138,6 +139,11 @@ export default function EmployeeApp({ profile, organization, team, instructions,
   const supabase = createClient()
 
   useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight }, [messages])
+
+  // Cleanup invite data on mount
+  useEffect(() => {
+    cleanupInviteData()
+  }, [])
 
   // Load confirmed instructions on mount
   useEffect(() => {

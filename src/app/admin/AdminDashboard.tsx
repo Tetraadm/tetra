@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 import { logAuditEventClient } from '@/lib/audit-log'
 import { extractKeywords } from '@/lib/keyword-extraction'
+import { cleanupInviteData } from '@/lib/invite-cleanup'
 
 type Profile = {
   id: string
@@ -93,6 +94,8 @@ export default function AdminDashboard({
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
     checkMobile()
     window.addEventListener('resize', checkMobile)
+    // Cleanup invite data on mount (hvis bruker kom fra invite flow)
+    cleanupInviteData()
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 

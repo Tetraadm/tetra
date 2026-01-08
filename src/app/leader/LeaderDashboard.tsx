@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { cleanupInviteData } from '@/lib/invite-cleanup'
 
 type Profile = {
   id: string
@@ -48,6 +49,11 @@ export default function LeaderDashboard({
   const [tab, setTab] = useState<'oversikt' | 'team' | 'instrukser'>('oversikt')
   const router = useRouter()
   const supabase = createClient()
+
+  // Cleanup invite data on mount
+  useEffect(() => {
+    cleanupInviteData()
+  }, [])
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
