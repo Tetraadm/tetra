@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
 import { z } from 'zod'
+import { extractKeywords, filterAndRankInstructions, type InstructionWithKeywords } from '@/lib/keyword-extraction'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!
@@ -51,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     const { data: allInstructions } = await supabase
       .from('instructions')
-      .select('id, title, content, severity, folder_id, folders(name), file_url')
+      .select('id, title, content, severity, folder_id, folders(name), file_url, keywords')
       .eq('org_id', orgId)
       .eq('status', 'published')
 
@@ -80,7 +81,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const context = instructionsWithContent.map(inst => {
+    // NEW: Filter and rank instructions based on query keywords
+    const relevantInstructions = filterAndRankInstructions(
+      question,
+      instructionsWithContent as InstructionWithKeywords[],
+      10 // Limit to top 10 most relevant instructions
+    )
+
+    // If no relevant instructions found, fall back to all instructions (up to 10)
+    const instructionsToUse = relevantInstructions.length > 0
+      ? relevantInstructions
+      : instructionsWithContent.slice(0, 10)
+
+    // Build context from filtered instructions
+    const context = instructionsToUse.map(inst => {
       const foldersData = inst.folders as unknown
       const folderObj = Array.isArray(foldersData) ? foldersData[0] : foldersData
       const folderName = folderObj && typeof folderObj === 'object' && 'name' in folderObj ? '[' + folderObj.name + '] ' : ''

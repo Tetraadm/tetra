@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit, getClientIp } from '@/lib/ratelimit'
+import { extractKeywords } from '@/lib/keyword-extraction'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
@@ -77,6 +78,10 @@ export async function POST(request: NextRequest) {
       extractedText = await file.text()
     }
 
+    // NEW: Extract keywords from title and content
+    const textForKeywords = `${title} ${extractedText}`.trim()
+    const keywords = extractKeywords(textForKeywords, 10)
+
     // Opprett instruks i databasen
     const { data: instruction, error: insertError } = await supabase
       .from('instructions')
@@ -88,7 +93,8 @@ export async function POST(request: NextRequest) {
         org_id: orgId,
         created_by: userId,
         folder_id: folderId || null,
-        file_url: fileName
+        file_url: fileName,
+        keywords: keywords // NEW
       })
       .select()
       .single()

@@ -3,6 +3,8 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState, useRef, useEffect } from 'react'
+import { trackInstructionRead } from '@/lib/read-tracking'
+import toast from 'react-hot-toast'
 
 type Profile = {
   id: string
@@ -121,13 +123,59 @@ export default function EmployeeApp({ profile, organization, team, instructions,
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isTyping, setIsTyping] = useState(false)
   const [selectedInstruction, setSelectedInstruction] = useState<Instruction | null>(null)
+  const [confirmedInstructions, setConfirmedInstructions] = useState<Set<string>>(new Set())
+  const [confirmingInstruction, setConfirmingInstruction] = useState<string | null>(null)
   const chatRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight }, [messages])
 
+  // Load confirmed instructions on mount
+  useEffect(() => {
+    const loadConfirmed = async () => {
+      const { data } = await supabase
+        .from('instruction_reads')
+        .select('instruction_id')
+        .eq('user_id', profile.id)
+        .eq('confirmed', true)
+      if (data) {
+        setConfirmedInstructions(new Set(data.map(r => r.instruction_id)))
+      }
+    }
+    loadConfirmed()
+  }, [profile.id, supabase])
+
+  // Track passive read when instruction opens
+  useEffect(() => {
+    if (selectedInstruction) {
+      trackInstructionRead(supabase, selectedInstruction.id, profile.id, profile.org_id)
+    }
+  }, [selectedInstruction, supabase, profile.id, profile.org_id])
+
   const handleLogout = async () => { await supabase.auth.signOut(); router.push('/login') }
+
+  const handleConfirmRead = async (instructionId: string) => {
+    setConfirmingInstruction(instructionId)
+    try {
+      const response = await fetch('/api/confirm-read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instructionId })
+      })
+      const data = await response.json()
+      if (data.success) {
+        setConfirmedInstructions(prev => new Set(prev).add(instructionId))
+        toast.success('Bekreftet! Du har lest og forstått instruksen.')
+      } else {
+        toast.error('Kunne ikke bekrefte lesing')
+      }
+    } catch (error) {
+      toast.error('Noe gikk galt')
+    } finally {
+      setConfirmingInstruction(null)
+    }
+  }
 
   const severityLabel = (s: string) => s === 'critical' ? 'Kritisk' : s === 'medium' ? 'Middels' : 'Lav'
   const severityColor = (s: string) => s === 'critical' ? { bg: '#FEF2F2', color: '#DC2626' } : s === 'medium' ? { bg: '#FFFBEB', color: '#F59E0B' } : { bg: '#ECFDF5', color: '#10B981' }
@@ -221,7 +269,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
         {tab === 'ask' && (<div style={s.chatContainer}><div style={s.chatMessages} ref={chatRef}>{messages.length === 0 ? (<div style={s.chatEmpty}><div style={s.chatEmptyIcon}>🤖</div><h3 style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Spør Tetra</h3><p style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>Still spørsmål om rutiner, sikkerhet eller prosedyrer.</p><button style={s.chatSuggestion} onClick={() => handleSuggestion('Hva gjør jeg ved brann?')}>🔥 Hva gjør jeg ved brann?</button><button style={s.chatSuggestion} onClick={() => handleSuggestion('Hvilket verneutstyr trenger jeg?')}>🦺 Hvilket verneutstyr trenger jeg?</button><button style={s.chatSuggestion} onClick={() => handleSuggestion('Hvordan rapporterer jeg avvik?')}>✍️ Hvordan rapporterer jeg avvik?</button></div>) : (<>{messages.map((msg, idx) => (<div key={idx}>{msg.type === 'user' && <div style={s.message(true)}><div style={s.messageBubble(true)}>{msg.text}</div></div>}{msg.type === 'bot' && <div style={s.message(false)}><div style={s.messageBubble(false)}>{msg.text}{msg.citation && <div style={s.citation}>📄 Kilde: {msg.citation}</div>}</div></div>}{msg.type === 'notfound' && <div style={s.message(false)}><div style={s.notFoundBubble}><strong>Fant ikke relevant instruks.</strong><div style={{ fontSize: 13, marginTop: 4 }}>Kontakt din nærmeste leder hvis dette haster.</div></div></div>}</div>))}{isTyping && <div style={s.message(false)}><div style={s.typingIndicator}><div style={{ ...s.typingDot, animationDelay: '0s' }}></div><div style={{ ...s.typingDot, animationDelay: '0.2s' }}></div><div style={{ ...s.typingDot, animationDelay: '0.4s' }}></div></div></div>}</>)}</div><div style={s.chatInputContainer}><input style={s.chatInput} placeholder="Skriv et spørsmål..." value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleAsk()} /><button style={s.sendBtn} onClick={handleAsk}>➤</button></div></div>)}
       </div>
       <nav style={s.nav}><button style={s.navItem(tab === 'home')} onClick={() => setTab('home')}><span style={{ fontSize: 20 }}>🏡</span><span>Hjem</span></button><button style={s.navItem(tab === 'instructions')} onClick={() => setTab('instructions')}><span style={{ fontSize: 20 }}>📋</span><span>Instrukser</span></button><button style={s.navItem(tab === 'ask')} onClick={() => setTab('ask')}><span style={{ fontSize: 20 }}>🤖</span><span>Spør Tetra</span></button></nav>
-      {selectedInstruction && (<div style={s.modal} onClick={() => setSelectedInstruction(null)}><div style={s.modalContent} onClick={e => e.stopPropagation()}><div style={s.modalHeader}><div><span style={s.badge(severityColor(selectedInstruction.severity).bg, severityColor(selectedInstruction.severity).color)}>{severityLabel(selectedInstruction.severity)}</span><h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 8 }}>{selectedInstruction.title}</h2></div><button style={s.modalClose} onClick={() => setSelectedInstruction(null)}>✕</button></div><div style={s.modalBody}>{selectedInstruction.content && <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 16 }}>{selectedInstruction.content}</div>}{selectedInstruction.file_url && <FileLink fileUrl={selectedInstruction.file_url} supabase={supabase} />}{!selectedInstruction.content && !selectedInstruction.file_url && <p style={{ color: '#64748B', fontStyle: 'italic' }}>Ingen beskrivelse tilgjengelig.</p>}</div></div></div>)}
+      {selectedInstruction && (<div style={s.modal} onClick={() => setSelectedInstruction(null)}><div style={s.modalContent} onClick={e => e.stopPropagation()}><div style={s.modalHeader}><div><span style={s.badge(severityColor(selectedInstruction.severity).bg, severityColor(selectedInstruction.severity).color)}>{severityLabel(selectedInstruction.severity)}</span><h2 style={{ fontSize: 18, fontWeight: 700, marginTop: 8 }}>{selectedInstruction.title}</h2></div><button style={s.modalClose} onClick={() => setSelectedInstruction(null)}>✕</button></div><div style={s.modalBody}>{selectedInstruction.content && <div style={{ fontSize: 14, lineHeight: 1.7, whiteSpace: 'pre-wrap', marginBottom: 16 }}>{selectedInstruction.content}</div>}{selectedInstruction.file_url && <FileLink fileUrl={selectedInstruction.file_url} supabase={supabase} />}{!selectedInstruction.content && !selectedInstruction.file_url && <p style={{ color: '#64748B', fontStyle: 'italic' }}>Ingen beskrivelse tilgjengelig.</p>}<div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid #E2E8F0' }}>{confirmedInstructions.has(selectedInstruction.id) ? (<div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', background: '#ECFDF5', border: '1px solid #10B981', borderRadius: 8, color: '#065F46', fontSize: 14, fontWeight: 600 }}>✓ Du har bekreftet at du har lest og forstått denne instruksen</div>) : (<button onClick={() => handleConfirmRead(selectedInstruction.id)} disabled={confirmingInstruction === selectedInstruction.id} style={{ width: '100%', padding: '14px 20px', background: confirmingInstruction === selectedInstruction.id ? '#9CA3AF' : 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)', border: 'none', borderRadius: 8, color: 'white', fontSize: 15, fontWeight: 700, cursor: confirmingInstruction === selectedInstruction.id ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>{confirmingInstruction === selectedInstruction.id ? '⏳ Bekrefter...' : '✓ Jeg har lest og forstått'}</button>)}</div></div></div></div>)}
       <style>{`@keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }`}</style>
     </div>
   )

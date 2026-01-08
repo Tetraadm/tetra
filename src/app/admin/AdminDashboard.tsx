@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { logAuditEventClient } from '@/lib/audit-log'
+import { extractKeywords } from '@/lib/keyword-extraction'
 
 type Profile = {
   id: string
@@ -78,7 +80,7 @@ export default function AdminDashboard({
   alerts: initialAlerts,
   aiLogs
 }: Props) {
-  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'avvik' | 'ailogg' | 'innsikt'>('oversikt')
+  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'avvik' | 'ailogg' | 'innsikt' | 'auditlog' | 'lesebekreftelser'>('oversikt')
   const [teams, setTeams] = useState(initialTeams)
   const [users, setUsers] = useState(initialUsers)
   const [instructions, setInstructions] = useState(initialInstructions)
@@ -142,7 +144,21 @@ export default function AdminDashboard({
   // Filter state
   const [selectedFolder, setSelectedFolder] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
-  
+
+  // Audit log states
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false)
+  const [auditFilter, setAuditFilter] = useState({
+    actionType: 'all',
+    startDate: '',
+    endDate: ''
+  })
+
+  // Read confirmations states
+  const [readReport, setReadReport] = useState<any[]>([])
+  const [readReportLoading, setReadReportLoading] = useState(false)
+  const [expandedInstructions, setExpandedInstructions] = useState<Set<string>>(new Set())
+
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
@@ -151,6 +167,132 @@ export default function AdminDashboard({
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  // Helper functions for audit logs and read confirmations
+  const loadAuditLogs = async () => {
+    setAuditLogsLoading(true)
+    try {
+      const params = new URLSearchParams()
+      if (auditFilter.actionType !== 'all') params.append('action_type', auditFilter.actionType)
+      if (auditFilter.startDate) params.append('start_date', auditFilter.startDate)
+      if (auditFilter.endDate) params.append('end_date', auditFilter.endDate)
+
+      const response = await fetch(`/api/audit-logs?${params.toString()}`)
+      const data = await response.json()
+
+      if (data.logs) {
+        setAuditLogs(data.logs)
+      }
+    } catch (error) {
+      toast.error('Kunne ikke laste aktivitetslogg')
+    } finally {
+      setAuditLogsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (tab === 'auditlog') {
+      loadAuditLogs()
+    }
+  }, [tab])
+
+  const loadReadReport = async () => {
+    setReadReportLoading(true)
+    try {
+      const response = await fetch('/api/read-confirmations')
+      const data = await response.json()
+
+      if (data.report) {
+        setReadReport(data.report)
+      }
+    } catch (error) {
+      toast.error('Kunne ikke laste lesebekreftelser')
+    } finally {
+      setReadReportLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (tab === 'lesebekreftelser') {
+      loadReadReport()
+    }
+  }, [tab])
+
+  const exportAuditLogsCSV = () => {
+    const headers = ['Tidspunkt', 'Bruker', 'Handling', 'Entitet', 'Detaljer']
+    const rows = auditLogs.map(log => [
+      new Date(log.created_at).toLocaleString('nb-NO'),
+      log.profiles?.full_name || 'Ukjent',
+      formatActionType(log.action_type),
+      log.entity_type,
+      JSON.stringify(log.details)
+    ])
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+  }
+
+  const exportReadReportCSV = () => {
+    const rows: string[][] = []
+
+    readReport.forEach(item => {
+      item.user_statuses.forEach((userStatus: any) => {
+        rows.push([
+          item.instruction_title,
+          userStatus.user_name,
+          userStatus.user_email,
+          userStatus.read ? 'Ja' : 'Nei',
+          userStatus.confirmed ? 'Ja' : 'Nei',
+          userStatus.read_at ? new Date(userStatus.read_at).toLocaleString('nb-NO') : '',
+          userStatus.confirmed_at ? new Date(userStatus.confirmed_at).toLocaleString('nb-NO') : ''
+        ])
+      })
+    })
+
+    const headers = ['Instruks', 'Bruker', 'E-post', 'Lest', 'Bekreftet', 'Lest tidspunkt', 'Bekreftet tidspunkt']
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n')
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = `lesebekreftelser-${new Date().toISOString().split('T')[0]}.csv`
+    link.click()
+  }
+
+  const formatActionType = (actionType: string) => {
+    const translations: Record<string, string> = {
+      'publish_instruction': 'Publisert instruks',
+      'unpublish_instruction': 'Avpublisert instruks',
+      'delete_instruction': 'Slettet instruks',
+      'create_user': 'Opprettet bruker',
+      'edit_user': 'Redigert bruker',
+      'delete_user': 'Slettet bruker',
+      'invite_user': 'Invitert bruker',
+      'change_role': 'Endret rolle'
+    }
+    return translations[actionType] || actionType
+  }
+
+  const toggleInstructionExpansion = (instructionId: string) => {
+    const newExpanded = new Set(expandedInstructions)
+    if (newExpanded.has(instructionId)) {
+      newExpanded.delete(instructionId)
+    } else {
+      newExpanded.add(instructionId)
+    }
+    setExpandedInstructions(newExpanded)
   }
 
   const createTeam = async () => {
@@ -240,6 +382,10 @@ export default function AdminDashboard({
         if (newInstruction.folderId) {
           formData.append('folderId', newInstruction.folderId)
         }
+        // Extract keywords for file upload
+        const textForKeywords = `${newInstruction.title} ${newInstruction.content}`.trim()
+        const keywords = extractKeywords(textForKeywords, 10)
+        formData.append('keywords', JSON.stringify(keywords))
 
         const response = await fetch('/api/upload', {
           method: 'POST',
@@ -262,6 +408,10 @@ export default function AdminDashboard({
           }, ...instructions])
         }
       } else {
+        // Extract keywords from title and content
+        const textForKeywords = `${newInstruction.title} ${newInstruction.content}`.trim()
+        const keywords = extractKeywords(textForKeywords, 10)
+
         const { data, error } = await supabase
           .from('instructions')
           .insert({
@@ -271,7 +421,8 @@ export default function AdminDashboard({
             status: newInstruction.status,
             org_id: profile.org_id,
             created_by: profile.id,
-            folder_id: newInstruction.folderId || null
+            folder_id: newInstruction.folderId || null,
+            keywords: keywords
           })
           .select('*, folders(*)')
           .single()
@@ -310,6 +461,8 @@ export default function AdminDashboard({
   const deleteInstruction = async (instructionId: string) => {
     if (!confirm('Slette instruksen? Dette fjerner også tilhørende data.')) return
 
+    const instructionToDelete = instructions.find(i => i.id === instructionId)
+
     const { error } = await supabase
       .from('instructions')
       .delete()
@@ -317,6 +470,19 @@ export default function AdminDashboard({
 
     if (!error) {
       setInstructions(instructions.filter(i => i.id !== instructionId))
+
+      // Log audit event
+      await logAuditEventClient(supabase, {
+        orgId: profile.org_id,
+        userId: profile.id,
+        actionType: 'delete_instruction',
+        entityType: 'instruction',
+        entityId: instructionId,
+        details: {
+          instruction_title: instructionToDelete?.title,
+          severity: instructionToDelete?.severity
+        }
+      })
     }
   }
 
@@ -349,6 +515,13 @@ export default function AdminDashboard({
     if (!editingInstruction) return
     setLoading(true)
 
+    const wasPublished = editingInstruction.status === 'published'
+    const willBePublished = editInstructionStatus === 'published'
+
+    // Extract keywords from updated content
+    const textForKeywords = `${editInstructionTitle} ${editInstructionContent}`.trim()
+    const keywords = extractKeywords(textForKeywords, 10)
+
     const { data, error } = await supabase
       .from('instructions')
       .update({
@@ -356,18 +529,46 @@ export default function AdminDashboard({
         content: editInstructionContent,
         severity: editInstructionSeverity,
         status: editInstructionStatus,
-        folder_id: editInstructionFolder || null
+        folder_id: editInstructionFolder || null,
+        keywords: keywords
       })
       .eq('id', editingInstruction.id)
       .select('*, folders(*)')
       .single()
 
     if (!error && data) {
-      setInstructions(instructions.map(i => 
+      setInstructions(instructions.map(i =>
         i.id === editingInstruction.id ? data : i
       ))
       setShowEditInstruction(false)
       setEditingInstruction(null)
+
+      // Log audit event if status changed to/from published
+      if (!wasPublished && willBePublished) {
+        await logAuditEventClient(supabase, {
+          orgId: profile.org_id,
+          userId: profile.id,
+          actionType: 'publish_instruction',
+          entityType: 'instruction',
+          entityId: data.id,
+          details: {
+            instruction_title: data.title,
+            severity: data.severity
+          }
+        })
+      } else if (wasPublished && !willBePublished) {
+        await logAuditEventClient(supabase, {
+          orgId: profile.org_id,
+          userId: profile.id,
+          actionType: 'unpublish_instruction',
+          entityType: 'instruction',
+          entityId: data.id,
+          details: {
+            instruction_title: data.title,
+            severity: data.severity
+          }
+        })
+      }
     }
     setLoading(false)
   }
@@ -379,6 +580,8 @@ export default function AdminDashboard({
     }
     if (!confirm('Fjerne denne brukeren?')) return
 
+    const userToDelete = users.find(u => u.id === userId)
+
     const { error } = await supabase
       .from('profiles')
       .delete()
@@ -386,6 +589,19 @@ export default function AdminDashboard({
 
     if (!error) {
       setUsers(users.filter(u => u.id !== userId))
+
+      // Log audit event
+      await logAuditEventClient(supabase, {
+        orgId: profile.org_id,
+        userId: profile.id,
+        actionType: 'delete_user',
+        entityType: 'user',
+        entityId: userId,
+        details: {
+          user_name: userToDelete?.full_name,
+          user_role: userToDelete?.role
+        }
+      })
     }
   }
 
@@ -400,6 +616,8 @@ export default function AdminDashboard({
     if (!editingUser) return
     setLoading(true)
 
+    const roleChanged = editingUser.role !== editUserRole
+
     const { error } = await supabase
       .from('profiles')
       .update({
@@ -409,12 +627,29 @@ export default function AdminDashboard({
       .eq('id', editingUser.id)
 
     if (!error) {
-      setUsers(users.map(u => 
-        u.id === editingUser.id 
+      setUsers(users.map(u =>
+        u.id === editingUser.id
           ? { ...u, role: editUserRole, team_id: editUserTeam || null }
           : u
       ))
       setShowEditUser(false)
+
+      // Log audit event if role changed
+      if (roleChanged) {
+        await logAuditEventClient(supabase, {
+          orgId: profile.org_id,
+          userId: profile.id,
+          actionType: 'change_role',
+          entityType: 'user',
+          entityId: editingUser.id,
+          details: {
+            user_name: editingUser.full_name,
+            previous_role: editingUser.role,
+            new_role: editUserRole
+          }
+        })
+      }
+
       setEditingUser(null)
     }
     setLoading(false)
@@ -428,7 +663,7 @@ export default function AdminDashboard({
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 7)
 
-    const { error } = await supabase
+    const { data, error } = await supabase
       .from('invites')
       .insert({
         email: inviteEmail,
@@ -438,6 +673,8 @@ export default function AdminDashboard({
         token,
         expires_at: expiresAt.toISOString()
       })
+      .select()
+      .single()
 
     if (!error) {
       const inviteUrl = `${window.location.origin}/invite/${token}`
@@ -447,6 +684,19 @@ export default function AdminDashboard({
       setInviteRole('employee')
       setInviteTeam('')
       setShowInviteUser(false)
+
+      // Log audit event
+      await logAuditEventClient(supabase, {
+        orgId: profile.org_id,
+        userId: profile.id,
+        actionType: 'invite_user',
+        entityType: 'invite',
+        entityId: data?.id,
+        details: {
+          invited_email: inviteEmail,
+          invited_role: inviteRole
+        }
+      })
     }
     setLoading(false)
   }
@@ -884,6 +1134,12 @@ export default function AdminDashboard({
           <button style={styles.navItem(tab === 'innsikt')} onClick={() => { setTab('innsikt'); setShowMobileMenu(false); }}>
             📊 Innsikt
           </button>
+          <button style={styles.navItem(tab === 'auditlog')} onClick={() => { setTab('auditlog'); setShowMobileMenu(false); }}>
+            📝 Aktivitetslogg
+          </button>
+          <button style={styles.navItem(tab === 'lesebekreftelser')} onClick={() => { setTab('lesebekreftelser'); setShowMobileMenu(false); }}>
+            ✓ Lesebekreftelser
+          </button>
         </aside>
 
         <main style={styles.content}>
@@ -1206,6 +1462,265 @@ export default function AdminDashboard({
                   </div>
                 </div>
               </div>
+            </>
+          )}
+
+          {tab === 'auditlog' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <div>
+                  <h1 style={styles.pageTitle}>Aktivitetslogg</h1>
+                  <p style={styles.pageSubtitle}>Sporbar logg over kritiske admin-handlinger</p>
+                </div>
+                <button style={styles.btn} onClick={exportAuditLogsCSV}>
+                  📥 Eksporter CSV
+                </button>
+              </div>
+
+              <div style={styles.card}>
+                <div style={styles.cardHeader}>Filtrer aktivitetslogg</div>
+                <div style={styles.cardBody}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, marginBottom: 16 }}>
+                    <div>
+                      <label style={styles.label}>Handlingstype</label>
+                      <select
+                        style={styles.select}
+                        value={auditFilter.actionType}
+                        onChange={(e) => setAuditFilter({ ...auditFilter, actionType: e.target.value })}
+                      >
+                        <option value="all">Alle handlinger</option>
+                        <option value="publish_instruction">Publiser instruks</option>
+                        <option value="unpublish_instruction">Avpubliser instruks</option>
+                        <option value="delete_instruction">Slett instruks</option>
+                        <option value="create_user">Opprett bruker</option>
+                        <option value="edit_user">Rediger bruker</option>
+                        <option value="delete_user">Slett bruker</option>
+                        <option value="invite_user">Inviter bruker</option>
+                        <option value="change_role">Endre rolle</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={styles.label}>Fra dato</label>
+                      <input
+                        type="date"
+                        style={styles.input}
+                        value={auditFilter.startDate}
+                        onChange={(e) => setAuditFilter({ ...auditFilter, startDate: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <label style={styles.label}>Til dato</label>
+                      <input
+                        type="date"
+                        style={styles.input}
+                        value={auditFilter.endDate}
+                        onChange={(e) => setAuditFilter({ ...auditFilter, endDate: e.target.value })}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-end' }}>
+                      <button style={styles.btn} onClick={loadAuditLogs} disabled={auditLogsLoading}>
+                        {auditLogsLoading ? 'Laster...' : 'Filtrer'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={styles.card}>
+                <div style={styles.cardHeader}>Aktivitetslogg ({auditLogs.length} hendelser)</div>
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                        <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Tidspunkt</th>
+                        <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Bruker</th>
+                        <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Handling</th>
+                        <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Detaljer</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {auditLogsLoading ? (
+                        <tr>
+                          <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: '#64748B' }}>
+                            Laster aktivitetslogg...
+                          </td>
+                        </tr>
+                      ) : auditLogs.length === 0 ? (
+                        <tr>
+                          <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: '#64748B' }}>
+                            Ingen aktivitet funnet
+                          </td>
+                        </tr>
+                      ) : (
+                        auditLogs.map((log) => (
+                          <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                            <td style={{ padding: 12, fontSize: 13 }}>
+                              {new Date(log.created_at).toLocaleString('no-NO', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td style={{ padding: 12, fontSize: 13 }}>
+                              <div style={{ fontWeight: 500 }}>{log.profiles?.full_name || 'Ukjent'}</div>
+                              <div style={{ fontSize: 12, color: '#64748B' }}>{log.profiles?.email || ''}</div>
+                            </td>
+                            <td style={{ padding: 12, fontSize: 13 }}>
+                              <span style={{
+                                padding: '4px 8px',
+                                borderRadius: 4,
+                                fontSize: 12,
+                                fontWeight: 500,
+                                backgroundColor: log.action_type.includes('delete') ? '#FEE2E2' : log.action_type.includes('publish') ? '#D1FAE5' : '#DBEAFE',
+                                color: log.action_type.includes('delete') ? '#DC2626' : log.action_type.includes('publish') ? '#10B981' : '#3B82F6'
+                              }}>
+                                {formatActionType(log.action_type)}
+                              </span>
+                            </td>
+                            <td style={{ padding: 12, fontSize: 13 }}>
+                              {log.details && typeof log.details === 'object' && (
+                                <div style={{ fontSize: 12, color: '#64748B' }}>
+                                  {Object.entries(log.details).map(([key, value]) => (
+                                    <div key={key}>
+                                      <strong>{key}:</strong> {String(value)}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )}
+
+          {tab === 'lesebekreftelser' && (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <div>
+                  <h1 style={styles.pageTitle}>Lesebekreftelser</h1>
+                  <p style={styles.pageSubtitle}>Oversikt over hvem som har lest og bekreftet instrukser</p>
+                </div>
+                <button style={styles.btn} onClick={exportReadReportCSV}>
+                  📥 Eksporter CSV
+                </button>
+              </div>
+
+              {readReportLoading ? (
+                <div style={{ ...styles.card, padding: 48, textAlign: 'center', color: '#64748B' }}>
+                  Laster lesebekreftelser...
+                </div>
+              ) : readReport.length === 0 ? (
+                <div style={{ ...styles.card, padding: 48, textAlign: 'center', color: '#64748B' }}>
+                  Ingen publiserte instrukser funnet
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {readReport.map((instruction) => {
+                    const isExpanded = expandedInstructions.has(instruction.instruction_id)
+                    return (
+                      <div key={instruction.instruction_id} style={styles.card}>
+                        <div
+                          style={{
+                            ...styles.cardHeader,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center'
+                          }}
+                          onClick={() => toggleInstructionExpansion(instruction.instruction_id)}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <span>{isExpanded ? '▼' : '▶'}</span>
+                            <span style={{ fontWeight: 600 }}>{instruction.instruction_title}</span>
+                          </div>
+                          <div style={{ display: 'flex', gap: 16, fontSize: 13 }}>
+                            <div>
+                              <span style={{ color: '#64748B' }}>Lest: </span>
+                              <span style={{ fontWeight: 600, color: '#3B82F6' }}>
+                                {instruction.read_count}/{instruction.total_users} ({instruction.read_percentage}%)
+                              </span>
+                            </div>
+                            <div>
+                              <span style={{ color: '#64748B' }}>Bekreftet: </span>
+                              <span style={{ fontWeight: 600, color: '#10B981' }}>
+                                {instruction.confirmed_count}/{instruction.total_users} ({instruction.confirmed_percentage}%)
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {isExpanded && (
+                          <div style={styles.cardBody}>
+                            <div style={{ overflowX: 'auto' }}>
+                              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <thead>
+                                  <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
+                                    <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Ansatt</th>
+                                    <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>E-post</th>
+                                    <th style={{ padding: 12, textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Lest</th>
+                                    <th style={{ padding: 12, textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Bekreftet</th>
+                                    <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Dato</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {instruction.user_statuses?.map((user: any) => (
+                                    <tr key={user.user_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
+                                      <td style={{ padding: 12, fontSize: 13, fontWeight: 500 }}>{user.user_name}</td>
+                                      <td style={{ padding: 12, fontSize: 13, color: '#64748B' }}>{user.user_email}</td>
+                                      <td style={{ padding: 12, textAlign: 'center' }}>
+                                        {user.read ? (
+                                          <span style={{ color: '#3B82F6', fontSize: 16 }}>✓</span>
+                                        ) : (
+                                          <span style={{ color: '#CBD5E1', fontSize: 16 }}>○</span>
+                                        )}
+                                      </td>
+                                      <td style={{ padding: 12, textAlign: 'center' }}>
+                                        {user.confirmed ? (
+                                          <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
+                                        ) : (
+                                          <span style={{ color: '#CBD5E1', fontSize: 16 }}>○</span>
+                                        )}
+                                      </td>
+                                      <td style={{ padding: 12, fontSize: 13, color: '#64748B' }}>
+                                        {user.confirmed_at ? (
+                                          new Date(user.confirmed_at).toLocaleString('no-NO', {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })
+                                        ) : user.read_at ? (
+                                          new Date(user.read_at).toLocaleString('no-NO', {
+                                            year: 'numeric',
+                                            month: '2-digit',
+                                            day: '2-digit',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                          })
+                                        ) : (
+                                          '-'
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </>
           )}
         </main>
