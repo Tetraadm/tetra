@@ -8,6 +8,7 @@ import { logAuditEventClient } from '@/lib/audit-log'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
+import EmptyState from '@/components/EmptyState'
 
 type Profile = {
   id: string
@@ -1657,8 +1658,17 @@ export default function AdminDashboard({
                         </tr>
                       ) : auditLogs.length === 0 ? (
                         <tr>
-                          <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: '#64748B' }}>
-                            Ingen aktivitet funnet
+                          <td colSpan={4} style={{ padding: 0 }}>
+                            <EmptyState
+                              icon="📊"
+                              title="Ingen aktivitet funnet"
+                              description="Prøv å endre filtrene eller kom tilbake senere."
+                              actionLabel="Nullstill filter"
+                              onAction={() => {
+                                setAuditFilter({ actionType: 'all', startDate: '', endDate: '' })
+                                loadAuditLogs()
+                              }}
+                            />
                           </td>
                         </tr>
                       ) : (
@@ -1727,8 +1737,12 @@ export default function AdminDashboard({
                   Laster lesebekreftelser...
                 </div>
               ) : readReport.length === 0 ? (
-                <div style={{ ...styles.card, padding: 48, textAlign: 'center', color: '#64748B' }}>
-                  Ingen publiserte instrukser funnet
+                <div style={styles.card}>
+                  <EmptyState
+                    icon="📋"
+                    title="Ingen lesebekreftelser ennå"
+                    description="Når ansatte begynner å lese og bekrefte instrukser, vil de vises her."
+                  />
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
