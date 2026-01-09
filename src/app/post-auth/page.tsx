@@ -16,7 +16,7 @@ export default async function PostAuthPage() {
     .single();
 
   if (profileError || !profile) {
-    redirect(`/login?error=${encodeURIComponent("Du må bli invitert for å bruke Tetra")}`);
+    redirect(`/login?error=${encodeURIComponent(`NO_PROFILE for ${user.email} (${user.id})`)}`);
   }
 
   if (profile.role === "admin") redirect("/admin");
