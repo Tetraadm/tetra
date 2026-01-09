@@ -17,7 +17,8 @@
       "Bash(npm ci:*)",
       "Bash(npm run lint)",
       "Bash(npx next lint:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(npm run dev:*)"
     ]
   }
 }

@@ -1,10 +1,29 @@
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
+import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit, getClientIp } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
+
+// Service role client for storage operations (bypasses RLS)
+function createServiceClient() {
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      cookies: {
+        get() { return undefined },
+        set() {},
+        remove() {}
+      }
+    }
+  )
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -58,13 +77,43 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    // Last opp fil til Storage
+    // Authenticate and verify user session
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+    }
+
+    // Verify user profile and check if user belongs to the org
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('role, org_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      return NextResponse.json({ error: 'Profil ikke funnet' }, { status: 403 })
+    }
+
+    // Verify orgId matches user's org (prevent uploading to other orgs)
+    if (profile.org_id !== orgId) {
+      return NextResponse.json({ error: 'Ikke tilgang til denne organisasjonen' }, { status: 403 })
+    }
+
+    // Last opp fil til Storage using service role (bypasses RLS)
     const fileExt = file.name.split('.').pop()
     const fileName = `${orgId}/${crypto.randomUUID()}.${fileExt}`
-    
-    const { error: uploadError } = await supabase.storage
+
+    // Convert file to buffer for service client
+    const fileBuffer = await file.arrayBuffer()
+    const fileBytes = new Uint8Array(fileBuffer)
+
+    const adminClient = createServiceClient()
+    const { error: uploadError } = await adminClient.storage
       .from('instructions')
-      .upload(fileName, file)
+      .upload(fileName, fileBytes, {
+        contentType: file.type,
+        upsert: false
+      })
 
     if (uploadError) {
       console.error('Upload error:', uploadError)
