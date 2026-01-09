@@ -3,7 +3,7 @@
 -- ============================================================================
 
 -- Get invite by token (bypasses RLS for public invite viewing)
-create or replace function public.get_invite(p_token text)
+create or replace function public.get_invite_by_token(p_token text)
 returns table (
   id uuid,
   token text,
@@ -92,5 +92,5 @@ end;
 $$;
 
 -- Grant execute permissions
-grant execute on function public.get_invite(text) to anon, authenticated;
+grant execute on function public.get_invite_by_token(text) to anon, authenticated;
 grant execute on function public.accept_invite(text, text) to authenticated;

@@ -24,7 +24,7 @@ export default async function InvitePage({ params }: Props) {
 
   // Get invite via RPC (bypasses RLS)
   const { data: inviteData, error } = await supabase
-    .rpc('get_invite', { p_token: token })
+    .rpc('get_invite_by_token', { p_token: token })
     .single() as { data: InviteRpcResult | null, error: any }
 
   if (error || !inviteData) {
