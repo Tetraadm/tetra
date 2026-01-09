@@ -158,7 +158,12 @@ ${context}`
     })
 
   } catch (error) {
-    console.error('Ask API error:', error)
-    return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })
+    console.error('ASK_FATAL:', error)
+    const message = error instanceof Error ? error.message : 'Unknown error'
+    return NextResponse.json({
+      error: process.env.NODE_ENV === 'production'
+        ? 'Kunne ikke behandle spørsmålet'
+        : `Feil: ${message}`
+    }, { status: 500 })
   }
 }

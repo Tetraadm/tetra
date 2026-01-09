@@ -53,12 +53,13 @@ export async function updateSession(request: NextRequest) {
       .from('profiles')
       .select('role')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     const url = request.nextUrl.clone()
-    
+
     if (!profile) {
-      url.pathname = '/login'
+      // Redirect to post-auth to handle profile lookup in fresh request
+      url.pathname = '/post-auth'
     } else if (profile.role === 'admin') {
       url.pathname = '/admin'
     } else if (profile.role === 'teamleader') {
@@ -66,7 +67,7 @@ export async function updateSession(request: NextRequest) {
     } else {
       url.pathname = '/employee'
     }
-    
+
     return NextResponse.redirect(url)
   }
 
