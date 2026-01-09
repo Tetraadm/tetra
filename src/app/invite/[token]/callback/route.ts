@@ -53,12 +53,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=Mangler invite token`)
   }
 
-  // Get localStorage data for full_name (stored client-side before auth)
-  // Since we can't access localStorage here, we'll use email as fallback
-  // and expect client to update profile later if needed
-
   // Use RPC function for atomic invite acceptance
-  const { data: profile, error: acceptError } = await supabase.rpc('accept_invite', {
+  const { error: acceptError } = await supabase.rpc('accept_invite', {
     p_token: token,
     p_full_name: user.email?.split('@')[0] || 'Bruker'
   })
@@ -67,16 +63,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(acceptError.message)}`)
   }
 
-  if (!profile) {
-    return NextResponse.redirect(`${origin}/login?error=Kunne ikke akseptere invitasjon`)
-  }
-
-  // Redirect based on role
-  const dest =
-    profile.role === 'admin' ? '/admin' :
-    profile.role === 'teamleader' ? '/leader' :
-    '/employee'
-
-  response.headers.set('Location', new URL(dest, origin).toString())
+  // Redirect to post-auth for role routing in new request (cookies fully settled)
+  response.headers.set('Location', new URL('/post-auth', origin).toString())
   return response
 }

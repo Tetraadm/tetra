@@ -51,34 +51,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=missing_params", origin));
   }
 
-  // Get session directly (more stable than getUser in same request)
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user;
-
-  if (!user) {
-    return NextResponse.redirect(
-      new URL(`/login?error=no_user`, origin)
-    );
-  }
-
-  // Invite-first: må ha profile
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (!profile) {
-    return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent("Du må bli invitert for å bruke Tetra")}`, origin)
-    );
-  }
-
-  const dest =
-    profile.role === "admin" ? "/admin" :
-    profile.role === "teamleader" ? "/leader" :
-    "/employee";
-
-  response.headers.set("Location", new URL(dest, origin).toString());
+  // Redirect to post-auth for profile check in new request (cookies fully settled)
+  response.headers.set("Location", new URL("/post-auth", origin).toString());
   return response;
 }
