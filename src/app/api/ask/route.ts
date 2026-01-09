@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
     const { data: allInstructions } = await supabase
       .from('instructions')
-      .select('id, title, content, severity, folder_id, folders(name), file_url, keywords')
+      .select('id, title, content, severity, folder_id, folders(name), file_path, keywords')
       .eq('org_id', orgId)
       .eq('status', 'published')
 

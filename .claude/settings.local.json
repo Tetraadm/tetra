@@ -8,7 +8,11 @@
       "Bash(npm run build:*)",
       "Bash(npm uninstall:*)",
       "Bash(rm:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(supabase db dump:*)",
+      "Bash(where:*)",
+      "Bash(npx supabase:*)"
     ]
   }
 }

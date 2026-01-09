@@ -36,7 +36,7 @@ type Instruction = {
   severity: string
   status: string
   folder_id: string | null
-  file_url: string | null
+  file_path: string | null
   folders: { name: string } | null
 }
 
@@ -743,26 +743,19 @@ export default function AdminDashboard({
     setLoading(true)
 
     try {
-      const token = crypto.randomUUID()
-      const expiresAt = new Date()
-      expiresAt.setDate(expiresAt.getDate() + 7)
-
       const { data, error } = await supabase
         .from('invites')
         .insert({
-          email: inviteEmail,
           role: inviteRole,
           team_id: inviteTeam || null,
-          org_id: profile.org_id,
-          token,
-          expires_at: expiresAt.toISOString()
+          org_id: profile.org_id
         })
         .select()
         .single()
 
       if (error) throw error
 
-      const inviteUrl = `${window.location.origin}/invite/${token}`
+      const inviteUrl = `${window.location.origin}/invite/${data.token}`
       await navigator.clipboard.writeText(inviteUrl)
       toast.success('Invitasjonslenke kopiert!')
       setInviteEmail('')
@@ -802,7 +795,6 @@ export default function AdminDashboard({
           description: newAlert.description,
           severity: newAlert.severity,
           org_id: profile.org_id,
-          created_by: profile.id,
           active: true
         })
         .select()
@@ -1430,7 +1422,7 @@ export default function AdminDashboard({
                       <tr key={inst.id}>
                         <td style={styles.td}>
                           {inst.title}
-                          {inst.file_url && <span style={{ marginLeft: 8, color: '#64748B' }}>📎</span>}
+                          {inst.file_path && <span style={{ marginLeft: 8, color: '#64748B' }}>📎</span>}
                         </td>
                         <td style={styles.td}>{inst.folders?.name || '—'}</td>
                         <td style={styles.td}>

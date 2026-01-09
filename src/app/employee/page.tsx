@@ -24,7 +24,7 @@ export default async function EmployeePage() {
   if (profile.team_id) {
     const { data } = await supabase
       .from('instructions')
-      .select('id, title, content, severity, file_url, instruction_teams!inner(team_id)')
+      .select('id, title, content, severity, file_path, instruction_teams!inner(team_id)')
       .eq('instruction_teams.team_id', profile.team_id)
       .eq('status', 'published')
       .order('created_at', { ascending: false })
@@ -32,7 +32,7 @@ export default async function EmployeePage() {
   } else {
     const { data } = await supabase
       .from('instructions')
-      .select('id, title, content, severity, file_url')
+      .select('id, title, content, severity, file_path')
       .eq('org_id', profile.org_id)
       .eq('status', 'published')
       .order('created_at', { ascending: false })

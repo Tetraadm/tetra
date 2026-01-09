@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         org_id: orgId,
         created_by: userId,
         folder_id: folderId || null,
-        file_url: fileName,
+        file_path: fileName,
         keywords: keywords // NEW
       })
       .select()
