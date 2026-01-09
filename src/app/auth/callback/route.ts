@@ -51,11 +51,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=missing_params", origin));
   }
 
-  // Nå skal session være i cookies på response
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
+  // Get session directly (more stable than getUser in same request)
+  const { data: { session } } = await supabase.auth.getSession();
+  const user = session?.user;
+
+  if (!user) {
     return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(userError?.message || "no_user")}`, origin)
+      new URL(`/login?error=no_user`, origin)
     );
   }
 

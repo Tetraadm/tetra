@@ -37,8 +37,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
   }
 
-  // Get user
-  const { data: { user } } = await supabase.auth.getUser()
+  // Get session directly (more stable than getUser in same request)
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   if (!user) {
     return NextResponse.redirect(`${origin}/login?error=Kunne ikke hente bruker`)
