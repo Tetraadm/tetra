@@ -20,6 +20,11 @@ security definer
 set search_path = public
 as $$
 begin
+  -- SECURITY: Prevent cross-user data access
+  if auth.uid() is null or auth.uid() <> p_user_id then
+    raise exception 'forbidden';
+  end if;
+
   return query
   select
     p.id,
@@ -57,6 +62,11 @@ as $$
 declare
   v_profile profiles%rowtype;
 begin
+  -- SECURITY: Prevent cross-user data access
+  if auth.uid() is null or auth.uid() <> p_user_id then
+    raise exception 'forbidden';
+  end if;
+
   -- Get user's profile
   select * into v_profile from profiles where id = p_user_id;
 
@@ -115,6 +125,11 @@ as $$
 declare
   v_profile profiles%rowtype;
 begin
+  -- SECURITY: Prevent cross-user data access
+  if auth.uid() is null or auth.uid() <> p_user_id then
+    raise exception 'forbidden';
+  end if;
+
   -- Get user's profile
   select * into v_profile from profiles where id = p_user_id;
 
