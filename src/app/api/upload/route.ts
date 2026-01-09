@@ -116,8 +116,12 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
-      console.error('Upload error:', uploadError)
-      return NextResponse.json({ error: 'Kunne ikke laste opp fil' }, { status: 500 })
+      console.error('STORAGE_UPLOAD_ERROR', uploadError)
+      return NextResponse.json({
+        error: uploadError.message,
+        code: (uploadError as any).code,
+        details: (uploadError as any).details
+      }, { status: 500 })
     }
 
     // Ekstraher tekst fra .txt filer
@@ -149,8 +153,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('Insert error:', insertError)
-      return NextResponse.json({ error: 'Kunne ikke opprette instruks' }, { status: 500 })
+      console.error('INSTRUCTION_INSERT_ERROR', insertError)
+      return NextResponse.json({
+        error: insertError.message,
+        code: (insertError as any).code,
+        details: (insertError as any).details,
+        hint: (insertError as any).hint
+      }, { status: 500 })
     }
 
     // Koble til team
