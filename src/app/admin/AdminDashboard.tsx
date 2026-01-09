@@ -416,8 +416,9 @@ export default function AdminDashboard({
     setLoading(true)
 
     try {
-      const teamIdsToLink = newInstruction.allTeams 
-        ? teams.map(t => t.id) 
+      // "Alle team" = no mappings (empty array), not all team IDs
+      const teamIdsToLink = newInstruction.allTeams
+        ? []
         : newInstruction.teamIds
 
       if (selectedFile) {
@@ -742,12 +743,17 @@ export default function AdminDashboard({
     if (!inviteEmail.trim()) return
     setLoading(true)
 
+    // Capture state before resetting
+    const emailToLog = inviteEmail.trim()
+    const roleToLog = inviteRole
+    const teamToLog = inviteTeam || null
+
     try {
       const { data, error } = await supabase
         .from('invites')
         .insert({
-          role: inviteRole,
-          team_id: inviteTeam || null,
+          role: roleToLog,
+          team_id: teamToLog,
           org_id: profile.org_id
         })
         .select()
@@ -757,13 +763,8 @@ export default function AdminDashboard({
 
       const inviteUrl = `${window.location.origin}/invite/${data.token}`
       await navigator.clipboard.writeText(inviteUrl)
-      toast.success('Invitasjonslenke kopiert!')
-      setInviteEmail('')
-      setInviteRole('employee')
-      setInviteTeam('')
-      setShowInviteUser(false)
 
-      // Log audit event
+      // Log audit event BEFORE resetting state
       await logAuditEventClient(supabase, {
         orgId: profile.org_id,
         userId: profile.id,
@@ -771,10 +772,17 @@ export default function AdminDashboard({
         entityType: 'invite',
         entityId: data.id,
         details: {
-          invited_email: inviteEmail,
-          invited_role: inviteRole
+          invited_email: emailToLog,
+          invited_role: roleToLog,
+          invited_team_id: teamToLog
         }
       })
+
+      toast.success('Invitasjonslenke kopiert!')
+      setInviteEmail('')
+      setInviteRole('employee')
+      setInviteTeam('')
+      setShowInviteUser(false)
     } catch (error) {
       console.error('Invite user error:', error)
       toast.error('Kunne ikke opprette invitasjon. Prøv igjen.')
@@ -802,8 +810,9 @@ export default function AdminDashboard({
 
       if (error) throw error
 
+      // "Alle team" = no mappings (empty array), not all team IDs
       const teamIdsToLink = newAlert.allTeams
-        ? teams.map(t => t.id)
+        ? []
         : newAlert.teamIds
 
       if (teamIdsToLink.length > 0) {
@@ -1296,7 +1305,7 @@ export default function AdminDashboard({
                   <p style={styles.pageSubtitle}>Administrer ansatte og teamledere</p>
                 </div>
                 <button style={styles.btn} onClick={() => setShowInviteUser(true)}>
-                  + Inviter bruker
+                  + Lag invitasjonslenke
                 </button>
               </div>
 
@@ -1986,10 +1995,13 @@ export default function AdminDashboard({
       {showInviteUser && (
         <div style={styles.modal} onClick={() => setShowInviteUser(false)}>
           <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Inviter bruker</h2>
-            
-            <label style={styles.label}>E-postadresse</label>
+            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Lag invitasjonslenke</h2>
+
+            <label style={styles.label}>E-post (kun for referanse)</label>
             <input style={styles.input} type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="bruker@bedrift.no" />
+            <p style={{ fontSize: 13, color: '#64748B', marginTop: -12, marginBottom: 16 }}>
+              E-posten lagres ikke i databasen. Den brukes kun for logging og referanse.
+            </p>
             
             <label style={styles.label}>Rolle</label>
             <select style={styles.select} value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
