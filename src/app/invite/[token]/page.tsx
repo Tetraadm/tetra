@@ -22,8 +22,10 @@ export default async function InvitePage({ params }: Props) {
     redirect('/login?error=Invitasjonen er ugyldig eller utløpt')
   }
 
-  // Check if expired
-  if (new Date(invite.expires_at) < new Date()) {
+  // Check if expired (7 days from created_at)
+  const createdAt = new Date(invite.created_at)
+  const expiresAt = new Date(createdAt.getTime() + 7 * 24 * 60 * 60 * 1000)
+  if (expiresAt < new Date()) {
     redirect('/login?error=Invitasjonen har utløpt')
   }
 

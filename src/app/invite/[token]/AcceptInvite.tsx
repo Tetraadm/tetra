@@ -7,10 +7,10 @@ import toast from 'react-hot-toast'
 
 type Invite = {
   id: string
-  email: string
   role: string
   org_id: string
   team_id: string | null
+  token: string
 }
 
 type Organization = {
@@ -32,6 +32,7 @@ type Props = {
 
 export default function AcceptInvite({ invite, organization, team, token }: Props) {
   const [fullName, setFullName] = useState('')
+  const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<'form' | 'check-email'>('form')
   const router = useRouter()
@@ -45,7 +46,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
 
   const handleAccept = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName.trim()) return
+    if (!fullName.trim() || !email.trim()) return
 
     setLoading(true)
 
@@ -60,7 +61,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
 
     // Send magic link
     const { error } = await supabase.auth.signInWithOtp({
-      email: invite.email,
+      email: email.trim(),
       options: {
         emailRedirectTo: `${window.location.origin}/invite/${token}/callback`,
       },
@@ -217,7 +218,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
           <div style={styles.checkIcon}>✓</div>
           <h1 style={styles.title}>Sjekk e-posten din</h1>
           <p style={styles.subtitle}>
-            Vi har sendt en innloggingslenke til <strong>{invite.email}</strong>
+            Vi har sendt en innloggingslenke til <strong>{email}</strong>
           </p>
         </div>
       </div>
@@ -248,10 +249,6 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
               <span style={styles.infoValue}>{team.name}</span>
             </div>
           )}
-          <div style={styles.infoRow}>
-            <span style={styles.infoLabel}>E-post</span>
-            <span style={styles.infoValue}>{invite.email}</span>
-          </div>
         </div>
 
         <div>
@@ -262,6 +259,16 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
             value={fullName}
             onChange={e => setFullName(e.target.value)}
             placeholder="Ola Nordmann"
+            required
+          />
+
+          <label style={styles.label}>E-postadresse</label>
+          <input
+            style={styles.input}
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="ola@bedrift.no"
             required
           />
 

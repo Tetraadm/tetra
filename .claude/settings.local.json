@@ -13,7 +13,11 @@
       "Bash(supabase db dump:*)",
       "Bash(where:*)",
       "Bash(npx supabase:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(npm ci:*)",
+      "Bash(npm run lint)",
+      "Bash(npx next lint:*)",
+      "Bash(npx eslint:*)"
     ]
   }
 }
