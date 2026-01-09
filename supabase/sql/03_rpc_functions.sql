@@ -35,6 +35,8 @@ begin
   left join organizations o on o.id = i.org_id
   left join teams t on t.id = i.team_id
   where i.token = p_token
+    and i.used = false  -- SECURITY: Only return unused invites
+    and i.created_at + interval '7 days' > now()  -- SECURITY: Only return non-expired invites
   limit 1;
 end;
 $$;
