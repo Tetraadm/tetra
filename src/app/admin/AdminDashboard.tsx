@@ -367,6 +367,33 @@ export default function AdminDashboard({
             ...result.instruction, 
             folders: folder ? { name: folder.name } : null 
           }, ...instructions])
+
+          await logAuditEventClient(supabase, {
+            orgId: profile.org_id,
+            userId: profile.id,
+            actionType: 'create_instruction',
+            entityType: 'instruction',
+            entityId: result.instruction.id,
+            details: {
+              instruction_title: result.instruction.title,
+              severity: result.instruction.severity,
+              status: result.instruction.status
+            }
+          })
+
+          if (result.instruction.status === 'published') {
+            await logAuditEventClient(supabase, {
+              orgId: profile.org_id,
+              userId: profile.id,
+              actionType: 'publish_instruction',
+              entityType: 'instruction',
+              entityId: result.instruction.id,
+              details: {
+                instruction_title: result.instruction.title,
+                severity: result.instruction.severity
+              }
+            })
+          }
         }
       } else {
         // Extract keywords from title and content
@@ -405,6 +432,33 @@ export default function AdminDashboard({
 
         if (data) {
           setInstructions([data, ...instructions])
+
+          await logAuditEventClient(supabase, {
+            orgId: profile.org_id,
+            userId: profile.id,
+            actionType: 'create_instruction',
+            entityType: 'instruction',
+            entityId: data.id,
+            details: {
+              instruction_title: data.title,
+              severity: data.severity,
+              status: data.status
+            }
+          })
+
+          if (data.status === 'published') {
+            await logAuditEventClient(supabase, {
+              orgId: profile.org_id,
+              userId: profile.id,
+              actionType: 'publish_instruction',
+              entityType: 'instruction',
+              entityId: data.id,
+              details: {
+                instruction_title: data.title,
+                severity: data.severity
+              }
+            })
+          }
         }
       }
 
@@ -468,6 +522,18 @@ export default function AdminDashboard({
         i.id === instruction.id ? { ...i, status: newStatus } : i
       ))
       toast.success(newStatus === 'published' ? 'Instruks publisert' : 'Instruks avpublisert')
+
+      await logAuditEventClient(supabase, {
+        orgId: profile.org_id,
+        userId: profile.id,
+        actionType: newStatus === 'published' ? 'publish_instruction' : 'unpublish_instruction',
+        entityType: 'instruction',
+        entityId: instruction.id,
+        details: {
+          instruction_title: instruction.title,
+          severity: instruction.severity
+        }
+      })
     } catch (error) {
       console.error('Toggle instruction status error:', error)
       toast.error('Kunne ikke endre status. Prøv igjen.')
@@ -1212,6 +1278,7 @@ export default function AdminDashboard({
                         onChange={(e) => setAuditFilter({ ...auditFilter, actionType: e.target.value })}
                       >
                         <option value="all">Alle handlinger</option>
+                        <option value="create_instruction">Opprett instruks</option>
                         <option value="publish_instruction">Publiser instruks</option>
                         <option value="unpublish_instruction">Avpubliser instruks</option>
                         <option value="delete_instruction">Slett instruks</option>

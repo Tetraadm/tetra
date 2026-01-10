@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
 export type AuditActionType =
+  | 'create_instruction'
   | 'publish_instruction'
   | 'unpublish_instruction'
   | 'delete_instruction'

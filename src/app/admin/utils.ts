@@ -7,6 +7,7 @@
  */
 export function formatActionType(actionType: string): string {
   const translations: Record<string, string> = {
+    'create_instruction': 'Opprettet instruks',
     'publish_instruction': 'Publisert instruks',
     'unpublish_instruction': 'Avpublisert instruks',
     'delete_instruction': 'Slettet instruks',
