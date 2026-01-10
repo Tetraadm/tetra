@@ -24,6 +24,12 @@ import {
   roleLabel,
   statusColor
 } from '@/lib/ui-helpers'
+import { createAdminStyles } from './styles'
+import {
+  formatActionType as formatActionTypeFn,
+  exportAuditLogsCSV as exportAuditCSV,
+  exportReadReportCSV as exportReadCSV
+} from './utils'
 
 type Props = {
   profile: Profile
@@ -207,71 +213,6 @@ export default function AdminDashboard({
     }
   }, [tab])
 
-  const exportAuditLogsCSV = () => {
-    const headers = ['Tidspunkt', 'Bruker', 'Handling', 'Entitet', 'Detaljer']
-    const rows = auditLogs.map(log => [
-      new Date(log.created_at).toLocaleString('nb-NO'),
-      log.profiles?.full_name || 'Ukjent',
-      formatActionType(log.action_type),
-      log.entity_type,
-      JSON.stringify(log.details)
-    ])
-
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`
-    link.click()
-  }
-
-  const exportReadReportCSV = () => {
-    const rows: string[][] = []
-
-    readReport.forEach(item => {
-      item.user_statuses.forEach((userStatus: any) => {
-        rows.push([
-          item.instruction_title,
-          userStatus.user_name,
-          userStatus.user_email,
-          userStatus.read ? 'Ja' : 'Nei',
-          userStatus.confirmed ? 'Ja' : 'Nei',
-          userStatus.read_at ? new Date(userStatus.read_at).toLocaleString('nb-NO') : '',
-          userStatus.confirmed_at ? new Date(userStatus.confirmed_at).toLocaleString('nb-NO') : ''
-        ])
-      })
-    })
-
-    const headers = ['Instruks', 'Bruker', 'E-post', 'Lest', 'Bekreftet', 'Lest tidspunkt', 'Bekreftet tidspunkt']
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-    ].join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    link.href = URL.createObjectURL(blob)
-    link.download = `lesebekreftelser-${new Date().toISOString().split('T')[0]}.csv`
-    link.click()
-  }
-
-  const formatActionType = (actionType: string) => {
-    const translations: Record<string, string> = {
-      'publish_instruction': 'Publisert instruks',
-      'unpublish_instruction': 'Avpublisert instruks',
-      'delete_instruction': 'Slettet instruks',
-      'create_user': 'Opprettet bruker',
-      'edit_user': 'Redigert bruker',
-      'delete_user': 'Slettet bruker',
-      'invite_user': 'Invitert bruker',
-      'change_role': 'Endret rolle'
-    }
-    return translations[actionType] || actionType
-  }
 
   const toggleInstructionExpansion = (instructionId: string) => {
     const newExpanded = new Set(expandedInstructions)
@@ -756,6 +697,10 @@ export default function AdminDashboard({
 
   const createAlert = async () => {
     if (!newAlert.title.trim()) return
+    if (!newAlert.allTeams && newAlert.teamIds.length === 0) {
+      toast.error('Velg minst ett team eller bruk Alle team')
+      return
+    }
     setLoading(true)
 
     try {
@@ -848,286 +793,7 @@ export default function AdminDashboard({
     return folderMatch && statusMatch
   })
 
-  const styles = {
-    container: { minHeight: '100vh', background: '#F8FAFC' },
-    header: {
-      background: 'white',
-      borderBottom: '1px solid #E2E8F0',
-      padding: '16px 24px',
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    logo: {
-      fontSize: 20,
-      fontWeight: 800,
-      background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)',
-      WebkitBackgroundClip: 'text',
-      WebkitTextFillColor: 'transparent',
-    },
-    orgName: { fontSize: 14, color: '#64748B', marginLeft: 16 },
-    logoutBtn: {
-      padding: '8px 16px',
-      fontSize: 14,
-      background: 'none',
-      border: '1px solid #E2E8F0',
-      borderRadius: 8,
-      cursor: 'pointer',
-    },
-    main: {
-      display: 'flex',
-      flexDirection: isMobile ? 'column' as const : 'row' as const,
-    },
-    sidebar: {
-      width: isMobile ? '100%' : 220,
-      background: 'white',
-      borderRight: isMobile ? 'none' : '1px solid #E2E8F0',
-      borderBottom: isMobile ? '1px solid #E2E8F0' : 'none',
-      minHeight: isMobile ? 'auto' : 'calc(100vh - 65px)',
-      padding: isMobile ? '8px 0' : '16px 0',
-      display: isMobile && !showMobileMenu ? 'none' : 'block',
-    },
-    mobileMenuBtn: {
-      display: isMobile ? 'block' : 'none',
-      padding: '8px 12px',
-      fontSize: 14,
-      background: 'none',
-      border: '1px solid #E2E8F0',
-      borderRadius: 8,
-      cursor: 'pointer',
-    },
-    navItem: (active: boolean) => ({
-      display: 'block',
-      width: '100%',
-      padding: '12px 24px',
-      fontSize: 14,
-      fontWeight: active ? 600 : 400,
-      color: active ? '#1E3A5F' : '#64748B',
-      background: active ? '#EFF6FF' : 'transparent',
-      border: 'none',
-      textAlign: 'left' as const,
-      cursor: 'pointer',
-    }),
-    content: {
-      flex: 1,
-      padding: isMobile ? 16 : 24,
-    },
-    pageTitle: { fontSize: 24, fontWeight: 700, marginBottom: 8 },
-    pageSubtitle: { fontSize: 14, color: '#64748B', marginBottom: 24 },
-    card: {
-      background: 'white',
-      borderRadius: 12,
-      border: '1px solid #E2E8F0',
-      marginBottom: 16,
-    },
-    cardHeader: {
-      padding: '16px 20px',
-      borderBottom: '1px solid #E2E8F0',
-      fontWeight: 600,
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    cardBody: { padding: 20 },
-    statsGrid: {
-      display: 'grid',
-      gridTemplateColumns: isMobile ? '1fr' : 'repeat(4, 1fr)',
-      gap: 16,
-      marginBottom: 24,
-    },
-    statCard: {
-      background: 'white',
-      borderRadius: 12,
-      border: '1px solid #E2E8F0',
-      padding: 20,
-    },
-    statValue: { fontSize: 28, fontWeight: 700 },
-    statLabel: { fontSize: 13, color: '#64748B', marginTop: 4 },
-    btn: {
-      padding: '10px 16px',
-      fontSize: 14,
-      fontWeight: 600,
-      color: 'white',
-      background: '#1E3A5F',
-      border: 'none',
-      borderRadius: 8,
-      cursor: 'pointer',
-    },
-    btnSecondary: {
-      padding: '10px 16px',
-      fontSize: 14,
-      fontWeight: 500,
-      color: '#64748B',
-      background: 'white',
-      border: '1px solid #E2E8F0',
-      borderRadius: 8,
-      cursor: 'pointer',
-    },
-    btnDanger: {
-      padding: '6px 12px',
-      fontSize: 12,
-      fontWeight: 500,
-      color: '#DC2626',
-      background: '#FEF2F2',
-      border: '1px solid #FECACA',
-      borderRadius: 6,
-      cursor: 'pointer',
-    },
-    btnSmall: {
-      padding: '6px 12px',
-      fontSize: 12,
-      fontWeight: 500,
-      color: '#64748B',
-      background: 'white',
-      border: '1px solid #E2E8F0',
-      borderRadius: 6,
-      cursor: 'pointer',
-    },
-    btnSuccess: {
-      padding: '6px 12px',
-      fontSize: 12,
-      fontWeight: 500,
-      color: '#10B981',
-      background: '#ECFDF5',
-      border: '1px solid #A7F3D0',
-      borderRadius: 6,
-      cursor: 'pointer',
-    },
-    table: { width: '100%', borderCollapse: 'collapse' as const },
-    th: {
-      textAlign: 'left' as const,
-      padding: '12px 16px',
-      fontSize: 12,
-      fontWeight: 600,
-      color: '#64748B',
-      textTransform: 'uppercase' as const,
-      borderBottom: '1px solid #E2E8F0',
-    },
-    td: {
-      padding: '12px 16px',
-      fontSize: 14,
-      borderBottom: '1px solid #E2E8F0',
-    },
-    badge: (bg: string, color: string) => ({
-      display: 'inline-block',
-      padding: '4px 10px',
-      fontSize: 11,
-      fontWeight: 600,
-      borderRadius: 999,
-      background: bg,
-      color: color,
-    }),
-    modal: {
-      position: 'fixed' as const,
-      inset: 0,
-      background: 'rgba(0,0,0,0.4)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      zIndex: 50,
-    },
-    modalContent: {
-      background: 'white',
-      borderRadius: 16,
-      padding: 24,
-      width: '100%',
-      maxWidth: 500,
-      maxHeight: '90vh',
-      overflowY: 'auto' as const,
-    },
-    input: {
-      width: '100%',
-      padding: '12px 16px',
-      fontSize: 14,
-      border: '1px solid #E2E8F0',
-      borderRadius: 8,
-      marginBottom: 16,
-      boxSizing: 'border-box' as const,
-    },
-    textarea: {
-      width: '100%',
-      padding: '12px 16px',
-      fontSize: 14,
-      border: '1px solid #E2E8F0',
-      borderRadius: 8,
-      marginBottom: 16,
-      boxSizing: 'border-box' as const,
-      minHeight: 100,
-      resize: 'vertical' as const,
-    },
-    select: {
-      width: '100%',
-      padding: '12px 16px',
-      fontSize: 14,
-      border: '1px solid #E2E8F0',
-      borderRadius: 8,
-      marginBottom: 16,
-      boxSizing: 'border-box' as const,
-    },
-    label: {
-      display: 'block',
-      fontSize: 13,
-      fontWeight: 600,
-      marginBottom: 6,
-      color: '#334155',
-    },
-    teamChip: (selected: boolean) => ({
-      padding: '8px 14px',
-      fontSize: 13,
-      fontWeight: 500,
-      borderRadius: 999,
-      border: selected ? 'none' : '1px solid #E2E8F0',
-      background: selected ? '#1E3A5F' : 'white',
-      color: selected ? 'white' : '#64748B',
-      cursor: 'pointer',
-    }),
-    folderChip: (selected: boolean) => ({
-      padding: '8px 14px',
-      fontSize: 13,
-      fontWeight: 500,
-      borderRadius: 8,
-      border: selected ? '2px solid #1E3A5F' : '1px solid #E2E8F0',
-      background: selected ? '#EFF6FF' : 'white',
-      color: selected ? '#1E3A5F' : '#64748B',
-      cursor: 'pointer',
-      marginRight: 8,
-      marginBottom: 8,
-    }),
-    alertCard: (severity: string, active: boolean) => ({
-      background: active ? severityColor(severity).bg : '#F8FAFC',
-      border: `1px solid ${active ? severityColor(severity).color : '#E2E8F0'}`,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-      opacity: active ? 1 : 0.6,
-    }),
-    filterBar: {
-      display: 'flex',
-      flexWrap: 'wrap' as const,
-      alignItems: 'center',
-      gap: 8,
-      marginBottom: 16,
-      padding: 16,
-      background: 'white',
-      borderRadius: 12,
-      border: '1px solid #E2E8F0',
-    },
-    actionBtns: { display: 'flex', gap: 8 },
-    logCard: {
-      background: '#F8FAFC',
-      border: '1px solid #E2E8F0',
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 12,
-    },
-    disclaimer: {
-      background: '#FEF3C7',
-      border: '1px solid #FDE68A',
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 24,
-    },
-  }
+  const styles = createAdminStyles(isMobile)
 
   return (
     <>
@@ -1164,7 +830,7 @@ export default function AdminDashboard({
       </header>
 
       <div style={styles.main}>
-        <aside style={styles.sidebar}>
+        <aside style={styles.sidebar(showMobileMenu)}>
           <button style={styles.navItem(tab === 'oversikt')} onClick={() => { setTab('oversikt'); setShowMobileMenu(false); }}>
             🏠 Oversikt
           </button>
@@ -1524,7 +1190,7 @@ export default function AdminDashboard({
                   <h1 style={styles.pageTitle}>Aktivitetslogg</h1>
                   <p style={styles.pageSubtitle}>Sporbar logg over kritiske admin-handlinger</p>
                 </div>
-                <button style={styles.btn} onClick={exportAuditLogsCSV}>
+                <button style={styles.btn} onClick={() => exportAuditCSV(auditLogs, formatActionTypeFn)}>
                   📥 Eksporter CSV
                 </button>
               </div>
@@ -1637,7 +1303,7 @@ export default function AdminDashboard({
                                 backgroundColor: log.action_type.includes('delete') ? '#FEE2E2' : log.action_type.includes('publish') ? '#D1FAE5' : '#DBEAFE',
                                 color: log.action_type.includes('delete') ? '#DC2626' : log.action_type.includes('publish') ? '#10B981' : '#3B82F6'
                               }}>
-                                {formatActionType(log.action_type)}
+                                {formatActionTypeFn(log.action_type)}
                               </span>
                             </td>
                             <td style={{ padding: 12, fontSize: 13 }}>
@@ -1668,7 +1334,7 @@ export default function AdminDashboard({
                   <h1 style={styles.pageTitle}>Lesebekreftelser</h1>
                   <p style={styles.pageSubtitle}>Oversikt over hvem som har lest og bekreftet instrukser</p>
                 </div>
-                <button style={styles.btn} onClick={exportReadReportCSV}>
+                <button style={styles.btn} onClick={() => exportReadCSV(readReport)}>
                   📥 Eksporter CSV
                 </button>
               </div>

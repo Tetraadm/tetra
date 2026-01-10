@@ -51,7 +51,6 @@ export async function POST(request: NextRequest) {
     const severity = formData.get('severity') as string
     const status = formData.get('status') as string || 'draft'
     const orgId = formData.get('orgId') as string
-    const userId = formData.get('userId') as string
     const folderId = formData.get('folderId') as string || null
     const teamIds = JSON.parse(formData.get('teamIds') as string || '[]')
 
@@ -144,7 +143,7 @@ export async function POST(request: NextRequest) {
         severity,
         status,
         org_id: orgId,
-        created_by: userId,
+        created_by: user.id,
         folder_id: folderId || null,
         file_path: fileName,
         keywords: keywords // NEW

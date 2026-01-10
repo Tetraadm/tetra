@@ -56,7 +56,7 @@ create table if not exists public.instructions (
   folder_id uuid references folders(id) on delete set null,
   org_id uuid not null references organizations(id) on delete cascade,
   created_by uuid references profiles(id) on delete set null,
-  keywords text[],
+  keywords jsonb,
   created_at timestamptz default now() not null
 );
 

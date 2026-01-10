@@ -139,3 +139,15 @@ Fikset ambiguity i `supabase/sql/04_security_helpers.sql` ved å kvalifisere `pro
 
 ## Assistent
 Startet opprydding ved å fjerne ubrukte filer: `src/lib/responsive.ts`, `src/components/Pagination.tsx`, og `src/lib/audit-log-server.ts`. Ingen referanser gjenstår.
+
+## Bruker
+Ønsker at du nå går igjennom hele vscode mappen til tetra sjekker alle mulige koder etter feil og evt sier ifra om det er noen forbedringer vi burde gjøre, også gå igjennom supabase og let etter feil sqler og kom med innspill om nye ting. etter det kan du evt gi meg en ny promt om du mener det er noe valude må gjøre
+
+## Assistent
+Gikk gjennom repoet og policy-oppsett (basert på nåværende filer og policy-listen) og ga anbefalte forbedringer: sikkerhets-/integritetsfix i /api/upload, avstemming av keywords-type (jsonb vs text[]), storage-policy for bucket access, og noen mindre UX/valideringsforbedringer. Foreslo også å oppdatere 01_schema.sql til å matche faktisk keywords-type, og lage en ryddig migrasjonsstruktur.
+
+## Bruker
+Ønsker at du nå går igjennom hele vscode mappen til tetra ...
+
+## Assistent
+Gjennomgang og tiltak: godkjente Claude sin AdminDashboard-refaktor (ny styles/utils/types), men `src/app/admin/types.ts` er foreløpig ubrukt. Implementerte forbedringer: `created_by` bruker session-user i upload API, `keywords` i 01_schema settes til jsonb, ny storage-policy for `instructions`-bucket (`07_storage_policies.sql`), og validering av teamvalg for avvik. Noterte at Supabase MCP ikke kan listes i denne sesjonen, så gjennomgang er basert på repo og tidligere policy-listing.
