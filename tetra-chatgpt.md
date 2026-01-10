@@ -115,3 +115,9 @@ okey, admin kan oprette nå. men det vises enda ikke på employee siden.
 
 ## Assistent
 For å feilsøke trenger jeg å vite om det er instrukser eller avvik som ikke vises, samt status/team-tilknytning. Be brukeren bekrefte at instruksen er publisert og om den er koblet til team, og evt. kjøre en kort SQL for å se om get_user_instructions returnerer den.
+
+## Bruker
+admin kan oprette nå. men det vises enda ikke på employee siden.
+
+## Assistent
+La inn `export const dynamic = 'force-dynamic'` i `src/app/employee/page.tsx` og `src/app/leader/page.tsx` for å tvinge dynamisk rendering og unngå cache som kan skjule ferske data. Videre feilsøking krever test av RPC-respons med `set local request.jwt.claims` eller app-logging.

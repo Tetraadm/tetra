@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import EmployeeApp from './EmployeeApp'
 
+export const dynamic = 'force-dynamic'
+
 export default async function EmployeePage() {
   const supabase = await createClient()
   

@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import LeaderDashboard from './LeaderDashboard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function LeaderPage() {
   const supabase = await createClient()
   
