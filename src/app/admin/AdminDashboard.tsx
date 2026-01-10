@@ -317,6 +317,10 @@ export default function AdminDashboard({
 
   const createInstruction = async () => {
     if (!newInstruction.title.trim()) return
+    if (!newInstruction.allTeams && newInstruction.teamIds.length === 0) {
+      toast.error('Velg minst ett team eller bruk Alle team')
+      return
+    }
     setLoading(true)
 
     try {

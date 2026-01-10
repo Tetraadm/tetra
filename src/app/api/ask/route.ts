@@ -15,6 +15,25 @@ const askSchema = z.object({
   userId: z.string().uuid().optional(),
 })
 
+function normalizeKeywords(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === 'string')
+  }
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value)
+      if (Array.isArray(parsed)) {
+        return parsed.filter((item): item is string => typeof item === 'string')
+      }
+    } catch {
+      return []
+    }
+  }
+
+  return []
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
@@ -77,9 +96,14 @@ export async function POST(request: NextRequest) {
       allInstructions = (data || []) as InstructionWithKeywords[]
     }
 
+    const normalizedInstructions = (allInstructions || []).map(inst => ({
+      ...inst,
+      keywords: normalizeKeywords(inst.keywords)
+    }))
+
     // Skill mellom instrukser med tekst og instrukser som kun er filer
-    const instructionsWithContent = (allInstructions || []).filter(i => i.content && i.content.trim())
-    const instructionsOnlyFiles = (allInstructions || []).filter(i => !i.content || !i.content.trim())
+    const instructionsWithContent = normalizedInstructions.filter(i => i.content && i.content.trim())
+    const instructionsOnlyFiles = normalizedInstructions.filter(i => !i.content || !i.content.trim())
 
     if (instructionsWithContent.length === 0) {
       let answer = 'Ingen instrukser med tekstinnhold er tilgjengelig for AI-assistenten.'
