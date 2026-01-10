@@ -50,6 +50,16 @@ function getFolderNameFromInstruction(
   return ''
 }
 
+function getSeverityFromInstruction(
+  inst: InstructionWithKeywords & { severity?: unknown }
+): string {
+  if (!('severity' in inst)) {
+    return ''
+  }
+
+  return typeof inst.severity === 'string' ? inst.severity : ''
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
@@ -157,7 +167,8 @@ export async function POST(request: NextRequest) {
     // Build context from filtered instructions
     const context = instructionsToUse.map(inst => {
       const folderName = getFolderNameFromInstruction(inst)
-      return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + inst.severity + '\nINNHOLD:\n' + inst.content + '\n---'
+      const severity = getSeverityFromInstruction(inst)
+      return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + severity + '\nINNHOLD:\n' + inst.content + '\n---'
     }).join('\n\n')
 
     const systemPrompt = `Du er Tetra, en intern HMS-assistent for en bedrift.
@@ -206,7 +217,7 @@ ${context}`
         id: sourceInstruction.id,
         title: sourceInstruction.title,
         folder: sourceFolderName || null,
-        severity: sourceInstruction.severity
+        severity: getSeverityFromInstruction(sourceInstruction) || null
       } : null
     })
 
