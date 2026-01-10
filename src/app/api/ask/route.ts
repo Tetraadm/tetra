@@ -34,6 +34,22 @@ function normalizeKeywords(value: unknown): string[] {
   return []
 }
 
+function getFolderNameFromInstruction(
+  inst: InstructionWithKeywords & { folders?: unknown }
+): string {
+  if (!('folders' in inst)) {
+    return ''
+  }
+
+  const foldersData = inst.folders as unknown
+  const folderObj = Array.isArray(foldersData) ? foldersData[0] : foldersData
+  if (folderObj && typeof folderObj === 'object' && 'name' in folderObj) {
+    return '[' + (folderObj as { name: string }).name + '] '
+  }
+
+  return ''
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
@@ -140,9 +156,7 @@ export async function POST(request: NextRequest) {
 
     // Build context from filtered instructions
     const context = instructionsToUse.map(inst => {
-      const foldersData = inst.folders as unknown
-      const folderObj = Array.isArray(foldersData) ? foldersData[0] : foldersData
-      const folderName = folderObj && typeof folderObj === 'object' && 'name' in folderObj ? '[' + folderObj.name + '] ' : ''
+      const folderName = getFolderNameFromInstruction(inst)
       return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + inst.severity + '\nINNHOLD:\n' + inst.content + '\n---'
     }).join('\n\n')
 
@@ -182,16 +196,16 @@ ${context}`
       source_instruction_id: sourceInstruction?.id || null
     })
 
-    const sourceFolders = sourceInstruction?.folders as unknown
-    const sourceFolderObj = Array.isArray(sourceFolders) ? sourceFolders[0] : sourceFolders
-    const sourceFolderName = sourceFolderObj && typeof sourceFolderObj === 'object' && 'name' in sourceFolderObj ? (sourceFolderObj as {name: string}).name : null
+    const sourceFolderName = sourceInstruction
+      ? getFolderNameFromInstruction(sourceInstruction)
+      : ''
 
     return NextResponse.json({
       answer,
       source: sourceInstruction ? {
         id: sourceInstruction.id,
         title: sourceInstruction.title,
-        folder: sourceFolderName,
+        folder: sourceFolderName || null,
         severity: sourceInstruction.severity
       } : null
     })
