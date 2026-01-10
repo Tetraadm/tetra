@@ -84,10 +84,10 @@ create policy "Teamleader read team profiles"
   on public.profiles for select
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid()
-        and p.role = 'teamleader'
-        and p.team_id = profiles.team_id
+      select 1
+      from public.get_profile_context(auth.uid()) pc
+      where pc.role = 'teamleader'
+        and pc.team_id = profiles.team_id
     )
   );
 
@@ -95,10 +95,10 @@ create policy "Admin read org profiles"
   on public.profiles for select
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid()
-        and p.role = 'admin'
-        and p.org_id = profiles.org_id
+      select 1
+      from public.get_profile_context(auth.uid()) pc
+      where pc.role = 'admin'
+        and pc.org_id = profiles.org_id
     )
   );
 
@@ -112,10 +112,10 @@ create policy "Admins can update profiles in their org"
   on public.profiles for update
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid()
-        and p.role = 'admin'
-        and p.org_id = profiles.org_id
+      select 1
+      from public.get_profile_context(auth.uid()) pc
+      where pc.role = 'admin'
+        and pc.org_id = profiles.org_id
     )
   );
 
@@ -123,10 +123,10 @@ create policy "Admins can delete profiles in their org"
   on public.profiles for delete
   using (
     exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid()
-        and p.role = 'admin'
-        and p.org_id = profiles.org_id
+      select 1
+      from public.get_profile_context(auth.uid()) pc
+      where pc.role = 'admin'
+        and pc.org_id = profiles.org_id
     )
   );
 
