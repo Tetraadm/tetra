@@ -5,6 +5,7 @@
 export type Profile = {
   id: string
   full_name: string
+  email?: string | null
   role: string
   org_id: string
   team_id: string | null

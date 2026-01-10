@@ -32,6 +32,7 @@ create table if not exists public.teams (
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   full_name text,
+  email text,
   role text not null check (role in ('admin', 'teamleader', 'employee')),
   org_id uuid not null references organizations(id) on delete cascade,
   team_id uuid references teams(id) on delete set null,
