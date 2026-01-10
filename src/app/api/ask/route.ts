@@ -1,4 +1,4 @@
-ï»¿import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
 
     if (!success) {
       return NextResponse.json(
-        { error: 'For mange forespÃ¸rsler. PrÃ¸v igjen om litt.' },
+        { error: 'For mange forespørsler. Prøv igjen om litt.' },
         {
           status: 429,
           headers: {
@@ -132,10 +132,10 @@ export async function POST(request: NextRequest) {
     const instructionsOnlyFiles = normalizedInstructions.filter(i => !i.content || !i.content.trim())
 
     if (instructionsWithContent.length === 0) {
-      let answer = 'Ingen instrukser med tekstinnhold er tilgjengelig for AI-assistenten.'
+      let answer = 'Finner ingen instrukser med dette innholdet. Kontakt din naermeste leder eller sikkerhetsansvarlig.'
 
       if (instructionsOnlyFiles.length > 0) {
-        answer += ` Det finnes ${instructionsOnlyFiles.length} instruks(er) som kun er tilgjengelig som PDF/fil. GÃ¥ til "Instrukser"-fanen for Ã¥ se dem.`
+        answer += ` Det finnes ${instructionsOnlyFiles.length} instruks(er) som kun er tilgjengelig som PDF/fil. Gå til "Instrukser"-fanen for å se dem.`
       }
 
       await supabase.from('ask_tetra_logs').insert({
@@ -175,13 +175,13 @@ export async function POST(request: NextRequest) {
 
 KRITISKE REGLER:
 1. Du skal KUN sitere og gjengi informasjon fra DOKUMENTENE nedenfor.
-2. Du har IKKE lov til Ã¥ bruke ekstern kunnskap, egne vurderinger eller anbefalinger.
-3. Du skal ALDRI legge til kommentarer som "Merk:", "Dette hÃ¸res ut...", "Jeg anbefaler..." eller lignende.
-4. Du skal ALDRI dikte opp prosedyrer eller gi egne rÃ¥d.
-5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NÃ˜YAKTIG: "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."
-6. Referer alltid til hvilket dokument svaret kommer fra ved Ã¥ si "Basert pÃ¥ dokumentet [tittel]:" fÃ¸rst.
-7. Svar kort, faktabasert og kun med det som faktisk stÃ¥r i dokumentet.
-8. Selv om innholdet virker rart eller uprofesjonelt, skal du BARE gjengi det uten Ã¥ kommentere.
+2. Du har IKKE lov til å bruke ekstern kunnskap, egne vurderinger eller anbefalinger.
+3. Du skal ALDRI legge til kommentarer som "Merk:", "Dette høres ut...", "Jeg anbefaler..." eller lignende.
+4. Du skal ALDRI dikte opp prosedyrer eller gi egne råd.
+5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NØYAKTIG: "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."
+6. Referer alltid til hvilket dokument svaret kommer fra ved å si "Basert på dokumentet [tittel]:" først.
+7. Svar kort, faktabasert og kun med det som faktisk står i dokumentet.
+8. Selv om innholdet virker rart eller uprofesjonelt, skal du BARE gjengi det uten å kommentere.
 9. Du har KUN tilgang til dokumentene listet nedenfor. PDF-filer uten tekstutskrift er IKKE tilgjengelig for deg.
 
 TILGJENGELIGE DOKUMENTER:
@@ -226,8 +226,9 @@ ${context}`
     const message = error instanceof Error ? error.message : 'Unknown error'
     return NextResponse.json({
       error: process.env.NODE_ENV === 'production'
-        ? 'Kunne ikke behandle spÃ¸rsmÃ¥let'
+        ? 'Kunne ikke behandle spørsmålet'
         : `Feil: ${message}`
     }, { status: 500 })
   }
 }
+

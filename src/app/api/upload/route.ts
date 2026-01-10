@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData()
     const file = formData.get('file') as File
     const title = formData.get('title') as string
+    const content = formData.get('content') as string
     const severity = formData.get('severity') as string
     const status = formData.get('status') as string || 'draft'
     const orgId = formData.get('orgId') as string
@@ -139,7 +140,8 @@ export async function POST(request: NextRequest) {
     }
 
     // NEW: Extract keywords from title and content
-    const textForKeywords = `${title} ${extractedText}`.trim()
+    const effectiveContent = content?.trim() ? content.trim() : (extractedText || '')
+    const textForKeywords = `${title} ${effectiveContent}`.trim()
     const keywords = extractKeywords(textForKeywords, 10)
 
     // Opprett instruks i databasen
@@ -147,7 +149,7 @@ export async function POST(request: NextRequest) {
       .from('instructions')
       .insert({
         title,
-        content: extractedText || null,
+        content: effectiveContent || null,
         severity,
         status,
         org_id: orgId,

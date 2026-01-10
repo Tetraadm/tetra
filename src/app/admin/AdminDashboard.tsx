@@ -333,6 +333,7 @@ export default function AdminDashboard({
         const formData = new FormData()
         formData.append('file', selectedFile)
         formData.append('title', newInstruction.title)
+        formData.append('content', newInstruction.content || '')
         formData.append('severity', newInstruction.severity)
         formData.append('status', newInstruction.status)
         formData.append('orgId', profile.org_id)
