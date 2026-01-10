@@ -51,7 +51,8 @@ export default async function InvitePage({ params }: Props) {
 
   const team = inviteData.team_id ? {
     id: inviteData.team_id,
-    name: inviteData.team_name ?? 'Team'
+    name: inviteData.team_name ?? 'Team',
+    org_id: inviteData.org_id
   } : null
 
   const invite = {

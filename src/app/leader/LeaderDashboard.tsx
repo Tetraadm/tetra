@@ -5,25 +5,10 @@ import { useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
+import type { Profile, Organization, Team } from '@/lib/types'
+import { severityLabel, severityColor, roleLabel } from '@/lib/ui-helpers'
 
-type Profile = {
-  id: string
-  full_name: string
-  role: string
-  org_id: string
-  team_id: string | null
-}
-
-type Organization = {
-  id: string
-  name: string
-}
-
-type Team = {
-  id: string
-  name: string
-}
-
+// Simplified Instruction type for leader view
 type Instruction = {
   id: string
   title: string
@@ -59,24 +44,6 @@ export default function LeaderDashboard({
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
-  }
-
-  const severityLabel = (s: string) => {
-    if (s === 'critical') return 'Kritisk'
-    if (s === 'medium') return 'Middels'
-    return 'Lav'
-  }
-
-  const severityColor = (s: string) => {
-    if (s === 'critical') return { bg: '#FEF2F2', color: '#DC2626' }
-    if (s === 'medium') return { bg: '#FFFBEB', color: '#F59E0B' }
-    return { bg: '#ECFDF5', color: '#10B981' }
-  }
-
-  const roleLabel = (r: string) => {
-    if (r === 'admin') return 'Sikkerhetsansvarlig'
-    if (r === 'teamleader') return 'Teamleder'
-    return 'Ansatt'
   }
 
   const styles = {

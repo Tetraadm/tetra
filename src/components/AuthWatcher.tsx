@@ -20,10 +20,6 @@ export default function AuthWatcher() {
           toast.error('Din sesjon er utløpt. Vennligst logg inn på nytt.')
           router.push('/login')
         }
-
-        if (event === 'TOKEN_REFRESHED') {
-          console.log('Session refreshed successfully')
-        }
       }
     )
 

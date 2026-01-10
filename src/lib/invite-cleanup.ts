@@ -12,19 +12,3 @@ export function cleanupInviteData() {
   }
 }
 
-/**
- * Get invite data from localStorage if it exists
- */
-export function getInviteData() {
-  if (typeof window !== 'undefined') {
-    try {
-      const data = localStorage.getItem('invite_data')
-      if (data) {
-        return JSON.parse(data)
-      }
-    } catch (error) {
-      console.error('Failed to get invite data:', error)
-    }
-  }
-  return null
-}

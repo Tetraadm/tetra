@@ -69,26 +69,3 @@ export async function confirmInstructionRead(
   }
 }
 
-/**
- * Check if a user has confirmed reading a specific instruction
- */
-export async function checkInstructionConfirmed(
-  supabase: SupabaseClient,
-  instructionId: string,
-  userId: string
-): Promise<boolean> {
-  try {
-    const { data, error } = await supabase
-      .from('instruction_reads')
-      .select('confirmed')
-      .eq('instruction_id', instructionId)
-      .eq('user_id', userId)
-      .single()
-
-    if (error || !data) return false
-
-    return data.confirmed
-  } catch (error) {
-    return false
-  }
-}

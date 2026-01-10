@@ -7,25 +7,17 @@ import { trackInstructionRead } from '@/lib/read-tracking'
 import toast from 'react-hot-toast'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
+import FileLink from '@/components/FileLink'
+import type {
+  Profile,
+  Organization,
+  Team,
+  Alert,
+  ChatMessage
+} from '@/lib/types'
+import { severityLabel, severityColor } from '@/lib/ui-helpers'
 
-type Profile = {
-  id: string
-  full_name: string
-  role: string
-  org_id: string
-  team_id: string | null
-}
-
-type Organization = {
-  id: string
-  name: string
-}
-
-type Team = {
-  id: string
-  name: string
-}
-
+// Simplified Instruction type for employee view (without admin-specific fields)
 type Instruction = {
   id: string
   title: string
@@ -34,97 +26,12 @@ type Instruction = {
   file_path: string | null
 }
 
-type Alert = {
-  id: string
-  title: string
-  description: string | null
-  severity: string
-}
-
-type ChatMessage = {
-  type: 'user' | 'bot' | 'notfound'
-  text: string
-  citation?: string
-  sourceId?: string
-}
-
 type Props = {
   profile: Profile
   organization: Organization
   team: Team | null
   instructions: Instruction[]
   alerts: Alert[]
-}
-
-function FileLink({ fileUrl, supabase }: { fileUrl: string, supabase: ReturnType<typeof createClient> }) {
-  const [signedUrl, setSignedUrl] = useState<string | null>(null)
-  const [isOpening, setIsOpening] = useState(false)
-
-  useEffect(() => {
-    const getUrl = async () => {
-      try {
-        const { data, error } = await supabase.storage
-          .from('instructions')
-          .createSignedUrl(fileUrl, 3600)
-
-        if (error) throw error
-
-        if (data?.signedUrl) {
-          setSignedUrl(data.signedUrl)
-        }
-      } catch (error) {
-        console.error('Get signed URL error:', error)
-        // TODO: Vis feilmelding til bruker
-      }
-    }
-    getUrl()
-  }, [fileUrl, supabase])
-
-  const handleOpenPdf = async () => {
-    if (!signedUrl) return
-
-    setIsOpening(true)
-
-    // Detect iOS
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-
-    if (isIOS) {
-      // iOS Safari: Use window.location for reliable PDF opening
-      window.location.href = signedUrl
-    } else {
-      // Other browsers: Open in new tab
-      window.open(signedUrl, '_blank', 'noopener,noreferrer')
-    }
-
-    // Reset opening state after a delay
-    setTimeout(() => setIsOpening(false), 1000)
-  }
-
-  if (!signedUrl) return <p style={{ color: '#64748B', fontSize: 14 }}>Laster vedlegg...</p>
-
-  return (
-    <button
-      onClick={handleOpenPdf}
-      disabled={isOpening}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        padding: '12px 16px',
-        background: isOpening ? '#DBEAFE' : '#EFF6FF',
-        border: '1px solid #BFDBFE',
-        borderRadius: 8,
-        color: '#2563EB',
-        fontWeight: 600,
-        fontSize: 14,
-        width: '100%',
-        cursor: isOpening ? 'wait' : 'pointer',
-        boxSizing: 'border-box' as const
-      }}
-    >
-      📄 {isOpening ? 'Åpner...' : 'Åpne vedlegg (PDF)'}
-    </button>
-  )
 }
 
 export default function EmployeeApp({ profile, organization, team, instructions, alerts }: Props) {
@@ -211,9 +118,6 @@ export default function EmployeeApp({ profile, organization, team, instructions,
       setConfirmingInstruction(null)
     }
   }
-
-  const severityLabel = (s: string) => s === 'critical' ? 'Kritisk' : s === 'medium' ? 'Middels' : 'Lav'
-  const severityColor = (s: string) => s === 'critical' ? { bg: '#FEF2F2', color: '#DC2626' } : s === 'medium' ? { bg: '#FFFBEB', color: '#F59E0B' } : { bg: '#ECFDF5', color: '#10B981' }
 
   const filteredInstructions = instructions.filter(inst => inst.title.toLowerCase().includes(searchQuery.toLowerCase()) || (inst.content && inst.content.toLowerCase().includes(searchQuery.toLowerCase())))
   const criticalInstructions = instructions.filter(i => i.severity === 'critical')

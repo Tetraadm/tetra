@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
+import type { Organization, Team } from '@/lib/types'
+import { roleLabel } from '@/lib/ui-helpers'
 
 type Invite = {
   id: string
@@ -13,20 +15,10 @@ type Invite = {
   token: string
 }
 
-type Organization = {
-  id: string
-  name: string
-}
-
-type Team = {
-  id: string
-  name: string
-} | null
-
 type Props = {
   invite: Invite
   organization: Organization
-  team: Team
+  team: Team | null
   token: string
 }
 
@@ -37,12 +29,6 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
   const [step, setStep] = useState<'form' | 'check-email'>('form')
   const router = useRouter()
   const supabase = createClient()
-
-  const roleLabel = (r: string) => {
-    if (r === 'admin') return 'Sikkerhetsansvarlig'
-    if (r === 'teamleader') return 'Teamleder'
-    return 'Ansatt'
-  }
 
   const handleAccept = async (e: React.FormEvent) => {
     e.preventDefault()

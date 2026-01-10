@@ -133,3 +133,9 @@ Error: Failed to run sql query: ERROR: 42702: column reference "id" is ambiguous
 
 ## Assistent
 Fikset ambiguity i `supabase/sql/04_security_helpers.sql` ved å kvalifisere `profiles.id` i begge funksjoner. Be brukeren droppe og re-opprette funksjonene ved å kjøre 04 igjen etter `drop function`.
+
+## Bruker
+ du kan starte opprydding
+
+## Assistent
+Startet opprydding ved å fjerne ubrukte filer: `src/lib/responsive.ts`, `src/components/Pagination.tsx`, og `src/lib/audit-log-server.ts`. Ingen referanser gjenstår.

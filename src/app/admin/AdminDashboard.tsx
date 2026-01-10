@@ -9,58 +9,21 @@ import { extractKeywords } from '@/lib/keyword-extraction'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
 import EmptyState from '@/components/EmptyState'
-
-type Profile = {
-  id: string
-  full_name: string
-  role: string
-  org_id: string
-  team_id: string | null
-}
-
-type Organization = {
-  id: string
-  name: string
-}
-
-type Team = {
-  id: string
-  name: string
-  org_id: string
-}
-
-type Instruction = {
-  id: string
-  title: string
-  content: string | null
-  severity: string
-  status: string
-  folder_id: string | null
-  file_path: string | null
-  folders: { name: string } | null
-}
-
-type Folder = {
-  id: string
-  name: string
-}
-
-type Alert = {
-  id: string
-  title: string
-  description: string | null
-  severity: string
-  active: boolean
-  created_at: string
-}
-
-type AiLog = {
-  id: string
-  question: string
-  answer: string
-  created_at: string
-  instructions: { title: string } | null
-}
+import type {
+  Profile,
+  Organization,
+  Team,
+  Instruction,
+  Folder,
+  Alert,
+  AiLog
+} from '@/lib/types'
+import {
+  severityLabel,
+  severityColor,
+  roleLabel,
+  statusColor
+} from '@/lib/ui-helpers'
 
 type Props = {
   profile: Profile
@@ -871,29 +834,6 @@ export default function AdminDashboard({
       console.error('Delete alert error:', error)
       toast.error('Kunne ikke slette avvik. Prøv igjen.')
     }
-  }
-
-  const severityLabel = (s: string) => {
-    if (s === 'critical') return 'Kritisk'
-    if (s === 'medium') return 'Middels'
-    return 'Lav'
-  }
-
-  const severityColor = (s: string) => {
-    if (s === 'critical') return { bg: '#FEF2F2', color: '#DC2626' }
-    if (s === 'medium') return { bg: '#FFFBEB', color: '#F59E0B' }
-    return { bg: '#ECFDF5', color: '#10B981' }
-  }
-
-  const statusColor = (s: string) => {
-    if (s === 'published') return { bg: '#ECFDF5', color: '#10B981' }
-    return { bg: '#FEF3C7', color: '#D97706' }
-  }
-
-  const roleLabel = (r: string) => {
-    if (r === 'admin') return 'Sikkerhetsansvarlig'
-    if (r === 'teamleader') return 'Teamleder'
-    return 'Ansatt'
   }
 
   const filteredInstructions = instructions.filter(i => {
