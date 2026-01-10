@@ -53,9 +53,17 @@ export async function POST(request: NextRequest) {
     const orgId = formData.get('orgId') as string
     const folderId = formData.get('folderId') as string || null
     const teamIds = JSON.parse(formData.get('teamIds') as string || '[]')
+    const allTeams = formData.get('allTeams') === 'true'
 
     if (!file || !title || !orgId) {
       return NextResponse.json({ error: 'Mangler påkrevde felt' }, { status: 400 })
+    }
+
+    if (!allTeams && (!Array.isArray(teamIds) || teamIds.length === 0)) {
+      return NextResponse.json(
+        { error: 'Velg minst ett team eller bruk Alle team' },
+        { status: 400 }
+      )
     }
 
     // Validate file size

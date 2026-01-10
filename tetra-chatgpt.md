@@ -151,3 +151,9 @@ Gikk gjennom repoet og policy-oppsett (basert på nåværende filer og policy-liste
 
 ## Assistent
 Gjennomgang og tiltak: godkjente Claude sin AdminDashboard-refaktor (ny styles/utils/types), men `src/app/admin/types.ts` er foreløpig ubrukt. Implementerte forbedringer: `created_by` bruker session-user i upload API, `keywords` i 01_schema settes til jsonb, ny storage-policy for `instructions`-bucket (`07_storage_policies.sql`), og validering av teamvalg for avvik. Noterte at Supabase MCP ikke kan listes i denne sesjonen, så gjennomgang er basert på repo og tidligere policy-listing.
+
+## Bruker
+ai funker men innstruks kan enda lastes opp uten noen valg
+
+## Assistent
+La inn server-side validering i `src/app/api/upload/route.ts` som krever at enten `allTeams=true` eller minst ett team er valgt for filopplasting. Dette stopper uploads uten valg selv om klient-side validering glipper.
