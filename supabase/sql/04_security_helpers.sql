@@ -53,7 +53,7 @@ returns table (
   file_path text,
   folder_id uuid,
   created_at timestamptz,
-  keywords text[]
+  keywords jsonb
 )
 language plpgsql
 security definer
@@ -68,7 +68,7 @@ begin
   end if;
 
   -- Get user's profile
-  select * into v_profile from profiles where id = p_user_id;
+  select * into v_profile from profiles where profiles.id = p_user_id;
 
   if not found then
     return;
@@ -131,7 +131,7 @@ begin
   end if;
 
   -- Get user's profile
-  select * into v_profile from profiles where id = p_user_id;
+  select * into v_profile from profiles where profiles.id = p_user_id;
 
   if not found then
     return;

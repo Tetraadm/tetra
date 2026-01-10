@@ -121,3 +121,15 @@ admin kan oprette nå. men det vises enda ikke på employee siden.
 
 ## Assistent
 La inn `export const dynamic = 'force-dynamic'` i `src/app/employee/page.tsx` og `src/app/leader/page.tsx` for å tvinge dynamisk rendering og unngå cache som kan skjule ferske data. Videre feilsøking krever test av RPC-respons med `set local request.jwt.claims` eller app-logging.
+
+## Bruker
+kan du fikse alt her er employee uuid: 411edee8-bac7-4215-904c-c3c50fb89649 her er admin: d37f7969-8016-40f2-8e21-c53a06676848
+
+## Assistent
+For å feilsøke må RPC-ene kjøres med riktig auth-claims. Ga konkrete SQL-kommandoer med set local request.jwt.claims, og ba om output for get_user_instructions/get_user_alerts samt instruks/avvik-oversikt i org.
+
+## Bruker
+Error: Failed to run sql query: ERROR: 42702: column reference "id" is ambiguous ... get_user_instructions
+
+## Assistent
+Fikset ambiguity i `supabase/sql/04_security_helpers.sql` ved å kvalifisere `profiles.id` i begge funksjoner. Be brukeren droppe og re-opprette funksjonene ved å kjøre 04 igjen etter `drop function`.
