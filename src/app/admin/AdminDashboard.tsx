@@ -2077,6 +2077,25 @@ export default function AdminDashboard({
                 <input type="checkbox" checked={newAlert.allTeams} onChange={e => setNewAlert({ ...newAlert, allTeams: e.target.checked, teamIds: [] })} />
                 <span>Alle team</span>
               </label>
+              {!newAlert.allTeams && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+                  {teams.map(team => (
+                    <button
+                      key={team.id}
+                      type="button"
+                      onClick={() => {
+                        const ids = newAlert.teamIds.includes(team.id)
+                          ? newAlert.teamIds.filter(id => id !== team.id)
+                          : [...newAlert.teamIds, team.id]
+                        setNewAlert({ ...newAlert, teamIds: ids })
+                      }}
+                      style={styles.teamChip(newAlert.teamIds.includes(team.id))}
+                    >
+                      {team.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>

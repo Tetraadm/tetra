@@ -177,8 +177,256 @@ create policy "Users can view published instructions in their org"
     and status = 'published'
   );
 
--- Note: Additional policies for admin operations should be added as needed
--- This schema focuses on read access. Write policies should be added based on role requirements.
+-- Folders policies
+create policy "Users can view folders in their organization"
+  on folders for select
+  using (
+    org_id in (select org_id from profiles where id = auth.uid())
+  );
+
+-- Alerts policies
+create policy "Users can view active alerts in their org"
+  on alerts for select
+  using (
+    org_id in (select org_id from profiles where id = auth.uid())
+    and active = true
+  );
+
+-- Admin read/write policies
+create policy "Admins can view all instructions in their org"
+  on instructions for select
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = instructions.org_id
+    )
+  );
+
+create policy "Admins can manage teams"
+  on teams for all
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = teams.org_id
+    )
+  )
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = teams.org_id
+    )
+  );
+
+create policy "Admins can manage profiles in their org"
+  on profiles for update, delete
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = profiles.org_id
+    )
+  );
+
+create policy "Admins can manage folders"
+  on folders for all
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = folders.org_id
+    )
+  )
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = folders.org_id
+    )
+  );
+
+create policy "Admins can manage instructions"
+  on instructions for all
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = instructions.org_id
+    )
+  )
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = instructions.org_id
+    )
+  );
+
+create policy "Admins can manage instruction team links"
+  on instruction_teams for all
+  using (
+    exists (
+      select 1
+      from profiles p
+      join instructions i on i.id = instruction_teams.instruction_id
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = i.org_id
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from profiles p
+      join instructions i on i.id = instruction_teams.instruction_id
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = i.org_id
+    )
+  );
+
+create policy "Admins can manage alerts"
+  on alerts for all
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = alerts.org_id
+    )
+  )
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = alerts.org_id
+    )
+  );
+
+create policy "Admins can manage alert team links"
+  on alert_teams for all
+  using (
+    exists (
+      select 1
+      from profiles p
+      join alerts a on a.id = alert_teams.alert_id
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = a.org_id
+    )
+  )
+  with check (
+    exists (
+      select 1
+      from profiles p
+      join alerts a on a.id = alert_teams.alert_id
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = a.org_id
+    )
+  );
+
+create policy "Admins can manage invites"
+  on invites for all
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = invites.org_id
+    )
+  )
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = invites.org_id
+    )
+  );
+
+create policy "Admins can view audit logs in their org"
+  on audit_logs for select
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = audit_logs.org_id
+    )
+  );
+
+create policy "Admins can insert audit logs in their org"
+  on audit_logs for insert
+  with check (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = audit_logs.org_id
+    )
+    and (user_id is null or user_id = auth.uid())
+  );
+
+create policy "Users can insert ask tetra logs in their org"
+  on ask_tetra_logs for insert
+  with check (
+    org_id in (select org_id from profiles where id = auth.uid())
+    and (user_id is null or user_id = auth.uid())
+  );
+
+create policy "Admins can view ask tetra logs in their org"
+  on ask_tetra_logs for select
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = ask_tetra_logs.org_id
+    )
+  );
+
+-- Instruction reads policies
+create policy "Users can insert their instruction reads"
+  on instruction_reads for insert
+  with check (
+    user_id = auth.uid()
+    and org_id in (select org_id from profiles where id = auth.uid())
+  );
+
+create policy "Users can update their instruction reads"
+  on instruction_reads for update
+  using (
+    user_id = auth.uid()
+  );
+
+create policy "Users can view their instruction reads"
+  on instruction_reads for select
+  using (
+    user_id = auth.uid()
+  );
+
+create policy "Admins can view instruction reads in their org"
+  on instruction_reads for select
+  using (
+    exists (
+      select 1 from profiles p
+      where p.id = auth.uid()
+        and p.role = 'admin'
+        and p.org_id = instruction_reads.org_id
+    )
+  );
 
 -- ============================================================================
 -- INDEXES FOR PERFORMANCE

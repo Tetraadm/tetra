@@ -50,11 +50,32 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createClient()
 
-    const { data: allInstructions } = await supabase
-      .from('instructions')
-      .select('id, title, content, severity, folder_id, folders(name), file_path, keywords')
-      .eq('org_id', orgId)
-      .eq('status', 'published')
+    let allInstructions: InstructionWithKeywords[] = []
+
+    if (userId) {
+      const { data, error } = await supabase
+        .rpc('get_user_instructions', { p_user_id: userId })
+
+      if (error) {
+        console.error('ASK_FATAL: get_user_instructions failed', error)
+        return NextResponse.json({ error: 'Kunne ikke hente instrukser' }, { status: 500 })
+      }
+
+      allInstructions = (data || []) as InstructionWithKeywords[]
+    } else {
+      const { data, error } = await supabase
+        .from('instructions')
+        .select('id, title, content, severity, folder_id, folders(name), file_path, keywords')
+        .eq('org_id', orgId)
+        .eq('status', 'published')
+
+      if (error) {
+        console.error('ASK_FATAL: instructions fetch failed', error)
+        return NextResponse.json({ error: 'Kunne ikke hente instrukser' }, { status: 500 })
+      }
+
+      allInstructions = (data || []) as InstructionWithKeywords[]
+    }
 
     // Skill mellom instrukser med tekst og instrukser som kun er filer
     const instructionsWithContent = (allInstructions || []).filter(i => i.content && i.content.trim())
@@ -127,13 +148,7 @@ ${context}`
 
     const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
 
-    let sourceInstruction = null
-    for (const inst of instructionsWithContent) {
-      if (answer.toLowerCase().includes(inst.title.toLowerCase())) {
-        sourceInstruction = inst
-        break
-      }
-    }
+    const sourceInstruction = instructionsToUse[0] || null
 
     await supabase.from('ask_tetra_logs').insert({
       org_id: orgId,

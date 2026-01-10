@@ -53,8 +53,7 @@ returns table (
   file_path text,
   folder_id uuid,
   created_at timestamptz,
-  keywords jsonb
-
+  keywords text[]
 )
 language plpgsql
 security definer

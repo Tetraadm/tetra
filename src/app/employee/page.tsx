@@ -18,47 +18,23 @@ export default async function EmployeePage() {
     redirect('/login?error=Du må bli invitert for å bruke Tetra')
   }
 
-  // Fetch instructions for this user's team
-  let instructions = []
+  // Fetch instructions and alerts via security-definer RPCs (team + org-wide)
+  const { data: instructionsData, error: instructionsError } = await supabase
+    .rpc('get_user_instructions', { p_user_id: user.id })
 
-  if (profile.team_id) {
-    const { data } = await supabase
-      .from('instructions')
-      .select('id, title, content, severity, file_path, instruction_teams!inner(team_id)')
-      .eq('instruction_teams.team_id', profile.team_id)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-    instructions = data || []
-  } else {
-    const { data } = await supabase
-      .from('instructions')
-      .select('id, title, content, severity, file_path')
-      .eq('org_id', profile.org_id)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-    instructions = data || []
+  if (instructionsError) {
+    console.error('get_user_instructions failed', instructionsError)
   }
 
-  // Fetch active alerts for this user's team
-  let alerts = []
-  
-  if (profile.team_id) {
-    const { data } = await supabase
-      .from('alerts')
-      .select('id, title, description, severity, alert_teams!inner(team_id)')
-      .eq('alert_teams.team_id', profile.team_id)
-      .eq('active', true)
-      .order('severity')
-    alerts = data || []
-  } else {
-    const { data } = await supabase
-      .from('alerts')
-      .select('id, title, description, severity')
-      .eq('org_id', profile.org_id)
-      .eq('active', true)
-      .order('severity')
-    alerts = data || []
+  const { data: alertsData, error: alertsError } = await supabase
+    .rpc('get_user_alerts', { p_user_id: user.id })
+
+  if (alertsError) {
+    console.error('get_user_alerts failed', alertsError)
   }
+
+  const instructions = instructionsData || []
+  const alerts = alertsData || []
 
   return (
     <EmployeeApp

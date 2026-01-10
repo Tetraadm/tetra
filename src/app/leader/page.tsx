@@ -25,13 +25,13 @@ export default async function LeaderPage() {
     .eq('team_id', profile.team_id)
     .order('full_name')
 
-  // Fetch instructions for this team
-  const { data: instructions } = await supabase
-    .from('instructions')
-    .select('*, instruction_teams!inner(*)')
-    .eq('instruction_teams.team_id', profile.team_id)
-    .eq('status', 'published')
-    .order('created_at', { ascending: false })
+  // Fetch instructions via security-definer RPC (team + org-wide)
+  const { data: instructions, error: instructionsError } = await supabase
+    .rpc('get_user_instructions', { p_user_id: user.id })
+
+  if (instructionsError) {
+    console.error('get_user_instructions failed', instructionsError)
+  }
 
   return (
     <LeaderDashboard
