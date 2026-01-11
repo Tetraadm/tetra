@@ -355,12 +355,25 @@ create policy "Users can insert their instruction reads"
   with check (
     user_id = auth.uid()
     and org_id in (select org_id from public.profiles where id = auth.uid())
+    and exists (
+      select 1
+      from public.instructions i
+      where i.id = instruction_reads.instruction_id
+        and i.org_id = instruction_reads.org_id
+    )
   );
 
 create policy "Users can update their instruction reads"
   on public.instruction_reads for update
   using (
     user_id = auth.uid()
+    and org_id in (select org_id from public.profiles where id = auth.uid())
+    and exists (
+      select 1
+      from public.instructions i
+      where i.id = instruction_reads.instruction_id
+        and i.org_id = instruction_reads.org_id
+    )
   );
 
 create policy "Users can view their instruction reads"

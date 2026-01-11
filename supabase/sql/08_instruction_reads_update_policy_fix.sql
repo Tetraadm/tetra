@@ -8,8 +8,21 @@ DROP POLICY IF EXISTS "Users can update their instruction reads" ON public.instr
 CREATE POLICY "Users can update their instruction reads"
 ON public.instruction_reads
 FOR UPDATE
-USING (user_id = auth.uid())
+USING (
+  user_id = auth.uid()
+  AND org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid())
+  AND EXISTS (
+    SELECT 1 FROM public.instructions i
+    WHERE i.id = instruction_reads.instruction_id
+      AND i.org_id = instruction_reads.org_id
+  )
+)
 WITH CHECK (
   user_id = auth.uid()
   AND org_id IN (SELECT org_id FROM public.profiles WHERE id = auth.uid())
+  AND EXISTS (
+    SELECT 1 FROM public.instructions i
+    WHERE i.id = instruction_reads.instruction_id
+      AND i.org_id = instruction_reads.org_id
+  )
 );

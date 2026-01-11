@@ -19,7 +19,8 @@ const MIN_SCORE = Number.isFinite(RAW_MIN_SCORE) ? RAW_MIN_SCORE : 0.35
 
 const askSchema = z.object({
   question: z.string().min(1).max(1000),
-  orgId: z.string().uuid(),
+  // orgId/userId kept for backward compatibility; server derives truth.
+  orgId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
 })
 
@@ -119,36 +120,49 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { question, orgId, userId } = validation.data
+    const { question, orgId: clientOrgId, userId: clientUserId } = validation.data
 
     const supabase = await createClient()
 
+    // Enforce authenticated user and derive org/user from profile (ignores client-supplied ids)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('org_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile) {
+      console.error('ASK_FATAL: profile fetch failed', profileError)
+      return NextResponse.json({ error: 'Profil ikke funnet' }, { status: 403 })
+    }
+
+    // If client sent ids, enforce they match the session
+    if (clientOrgId && clientOrgId !== profile.org_id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+    if (clientUserId && clientUserId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const orgId = profile.org_id
+    const userId = user.id
+
     let allInstructions: InstructionWithKeywords[] = []
 
-    if (userId) {
-      const { data, error } = await supabase
-        .rpc('get_user_instructions', { p_user_id: userId })
+    const { data, error } = await supabase
+      .rpc('get_user_instructions', { p_user_id: userId })
 
-      if (error) {
-        console.error('ASK_FATAL: get_user_instructions failed', error)
-        return NextResponse.json({ error: 'Kunne ikke hente instrukser' }, { status: 500 })
-      }
-
-      allInstructions = (data || []) as InstructionWithKeywords[]
-    } else {
-      const { data, error } = await supabase
-        .from('instructions')
-        .select('id, title, content, severity, folder_id, folders(name), file_path, keywords, created_at')
-        .eq('org_id', orgId)
-        .eq('status', 'published')
-
-      if (error) {
-        console.error('ASK_FATAL: instructions fetch failed', error)
-        return NextResponse.json({ error: 'Kunne ikke hente instrukser' }, { status: 500 })
-      }
-
-      allInstructions = (data || []) as InstructionWithKeywords[]
+    if (error) {
+      console.error('ASK_FATAL: get_user_instructions failed', error)
+      return NextResponse.json({ error: 'Kunne ikke hente instrukser' }, { status: 500 })
     }
+
+    allInstructions = (data || []) as InstructionWithKeywords[]
 
     const normalizedInstructions = (allInstructions || []).map(inst => ({
       ...inst,
@@ -160,19 +174,21 @@ export async function POST(request: NextRequest) {
     const queryKeywords = extractKeywords(question, 5)
 
     if (instructionsWithContent.length === 0 || queryKeywords.length === 0) {
-      await supabase.from('ask_tetra_logs').insert({
+      const { error: logError } = await supabase.from('ask_tetra_logs').insert({
         org_id: orgId,
         user_id: userId,
         question,
         answer: FALLBACK_ANSWER,
         source_instruction_id: null
       })
+      if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
 
-      await supabase.from('ai_unanswered_questions').insert({
+      const { error: unansweredError } = await supabase.from('ai_unanswered_questions').insert({
         org_id: orgId,
         user_id: userId ?? null,
         question
       })
+      if (unansweredError) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', unansweredError)
 
       return NextResponse.json({
         answer: FALLBACK_ANSWER,
@@ -197,19 +213,21 @@ export async function POST(request: NextRequest) {
       .map(item => item.instruction)
 
     if (relevantInstructions.length === 0) {
-      await supabase.from('ask_tetra_logs').insert({
+      const { error: logError } = await supabase.from('ask_tetra_logs').insert({
         org_id: orgId,
         user_id: userId,
         question,
         answer: FALLBACK_ANSWER,
         source_instruction_id: null
       })
+      if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
 
-      await supabase.from('ai_unanswered_questions').insert({
+      const { error: unansweredError } = await supabase.from('ai_unanswered_questions').insert({
         org_id: orgId,
         user_id: userId ?? null,
         question
       })
+      if (unansweredError) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', unansweredError)
 
       return NextResponse.json({
         answer: FALLBACK_ANSWER,
@@ -251,20 +269,23 @@ ${context}`
 
     const sourceInstruction = relevantInstructions[0] || null
 
-    await supabase.from('ask_tetra_logs').insert({
+    const { error: logError } = await supabase.from('ask_tetra_logs').insert({
       org_id: orgId,
       user_id: userId,
       question,
       answer,
       source_instruction_id: sourceInstruction?.id || null
     })
+    if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
 
     return NextResponse.json({
       answer,
       source: sourceInstruction ? {
         instruction_id: sourceInstruction.id,
         title: sourceInstruction.title,
-        updated_at: 'created_at' in sourceInstruction ? sourceInstruction.created_at : null,
+        updated_at: 'updated_at' in sourceInstruction
+          ? (sourceInstruction as { updated_at?: string | null }).updated_at ?? null
+          : null,
         open_url_or_route: `/employee?instruction=${sourceInstruction.id}`
       } : null
     })
