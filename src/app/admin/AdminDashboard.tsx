@@ -54,6 +54,17 @@ import {
   type AuditLogRow,
   type ReadReportItem
 } from './utils'
+import {
+  OverviewTab,
+  UsersTab,
+  TeamsTab,
+  InstructionsTab,
+  AlertsTab,
+  AiLogTab,
+  InsightsTab,
+  AuditLogTab,
+  ReadConfirmationsTab
+} from './tabs'
 
 type Props = {
   profile: Profile
@@ -974,248 +985,55 @@ export default function AdminDashboard({
 
         <main style={styles.content}>
           {tab === 'oversikt' && (
-            <>
-              <h1 style={styles.pageTitle}>Oversikt</h1>
-              <p style={styles.pageSubtitle}>Velkommen, {profile.full_name}</p>
-
-              <div style={styles.statsGrid}>
-                <div style={styles.statCard}>
-                  <div style={styles.statIconBox('default')}>
-                    <Users size={20} />
-                  </div>
-                  <div style={styles.statValue}>{users.length}</div>
-                  <div style={styles.statLabel}>Brukere</div>
-                </div>
-                <div style={styles.statCard}>
-                  <div style={styles.statIconBox('default')}>
-                    <FileText size={20} />
-                  </div>
-                  <div style={styles.statValue}>{instructions.filter(i => i.status === 'published').length}</div>
-                  <div style={styles.statLabel}>Publiserte instrukser</div>
-                </div>
-                <div style={styles.statCard}>
-                  <div style={styles.statIconBox('default')}>
-                    <FileText size={20} />
-                  </div>
-                  <div style={styles.statValue}>{instructions.filter(i => i.status === 'draft').length}</div>
-                  <div style={styles.statLabel}>Utkast</div>
-                </div>
-                <div style={styles.statCard}>
-                  <div style={styles.statIconBox('danger')}>
-                    <AlertTriangle size={20} />
-                  </div>
-                  <div style={{ ...styles.statValue, color: alerts.filter(a => a.active).length > 0 ? '#DC2626' : '#0F172A' }}>
-                    {alerts.filter(a => a.active).length}
-                  </div>
-                  <div style={styles.statLabel}>Aktive avvik</div>
-                </div>
-              </div>
-
-              {alerts.filter(a => a.active).length > 0 && (
-                <div style={styles.alertCallout}>
-                  <AlertTriangle size={20} style={{ color: '#DC2626', flexShrink: 0, marginTop: 2 }} />
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: '#0F172A' }}>
-                      {alerts.filter(a => a.active).length} aktive avvik
-                    </h3>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {alerts.filter(a => a.active).slice(0, 3).map(alert => (
-                        <div key={alert.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
-                            {severityLabel(alert.severity)}
-                          </span>
-                          <span style={{ fontSize: 14, color: '#334155' }}>{alert.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <button
-                    style={{ ...styles.btnSmall, flexShrink: 0 }}
-                    onClick={() => setTab('avvik')}
-                  >
-                    Se alle
-                  </button>
-                </div>
-              )}
-            </>
+            <OverviewTab
+              profile={profile}
+              users={users}
+              instructions={instructions}
+              alerts={alerts}
+              styles={styles}
+              setTab={setTab}
+            />
           )}
 
           {tab === 'brukere' && (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <div>
-                  <h1 style={styles.pageTitle}>Brukere</h1>
-                  <p style={styles.pageSubtitle}>Administrer ansatte og teamledere</p>
-                </div>
-                <button style={styles.btn} onClick={() => setShowInviteUser(true)}>
-                  <Plus size={16} />
-                  Lag invitasjonslenke
-                </button>
-              </div>
-
-              <div style={styles.card}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Navn</th>
-                      <th style={styles.th}>Rolle</th>
-                      <th style={styles.th}>Team</th>
-                      <th style={styles.th}>Handlinger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map(user => (
-                      <tr key={user.id}>
-                        <td style={styles.td}>{user.full_name || 'Uten navn'}</td>
-                        <td style={styles.td}>{roleLabel(user.role)}</td>
-                        <td style={styles.td}>{teams.find(t => t.id === user.team_id)?.name || '—'}</td>
-                        <td style={styles.td}>
-                          <div style={styles.actionBtns}>
-                            <button style={styles.btnSmall} onClick={() => openEditUser(user)}>Rediger</button>
-                            {user.id !== profile.id && (
-                              <button style={styles.btnDanger} onClick={() => deleteUser(user.id)}>Fjern</button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
+            <UsersTab
+              profile={profile}
+              users={users}
+              teams={teams}
+              styles={styles}
+              openEditUser={openEditUser}
+              deleteUser={deleteUser}
+              setShowInviteUser={setShowInviteUser}
+            />
           )}
 
           {tab === 'team' && (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <div>
-                  <h1 style={styles.pageTitle}>Team</h1>
-                  <p style={styles.pageSubtitle}>Opprett og administrer team</p>
-                </div>
-                <button style={styles.btn} onClick={() => setShowCreateTeam(true)}>
-                  <Plus size={16} />
-                  Opprett team
-                </button>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-                {teams.map(team => (
-                  <div key={team.id} style={styles.card}>
-                    <div style={styles.cardBody}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <div>
-                          <h3 style={{ fontSize: 16, fontWeight: 600 }}>{team.name}</h3>
-                          <p style={{ fontSize: 13, color: '#64748B' }}>
-                            {users.filter(u => u.team_id === team.id).length} medlemmer
-                          </p>
-                        </div>
-                        <button style={styles.btnDanger} onClick={() => deleteTeam(team.id)}>Slett</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+            <TeamsTab
+              teams={teams}
+              users={users}
+              styles={styles}
+              deleteTeam={deleteTeam}
+              setShowCreateTeam={setShowCreateTeam}
+            />
           )}
 
           {tab === 'instrukser' && (
-            <>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                <div>
-                  <h1 style={styles.pageTitle}>Instrukser</h1>
-                  <p style={styles.pageSubtitle}>Kun publiserte instrukser er synlige for ansatte og AI</p>
-                </div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(true)}>
-                    <FolderOpen size={16} />
-                    Ny mappe
-                  </button>
-                  <button style={styles.btn} onClick={() => setShowCreateInstruction(true)}>
-                    <Plus size={16} />
-                    Opprett instruks
-                  </button>
-                </div>
-              </div>
-
-              <div style={styles.filterBar}>
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Filter:</span>
-                
-                <select 
-                  style={{ ...styles.select, width: 'auto', marginBottom: 0, marginRight: 16 }}
-                  value={statusFilter}
-                  onChange={e => setStatusFilter(e.target.value)}
-                >
-                  <option value="all">Alle statuser</option>
-                  <option value="published">Publisert</option>
-                  <option value="draft">Utkast</option>
-                </select>
-
-                <button style={styles.folderChip(selectedFolder === 'all')} onClick={() => setSelectedFolder('all')}>
-                  Alle mapper
-                </button>
-                <button style={styles.folderChip(selectedFolder === 'none')} onClick={() => setSelectedFolder('none')}>
-                  Uten mappe
-                </button>
-                {folders.map(folder => (
-                  <div key={folder.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <button style={styles.folderChip(selectedFolder === folder.id)} onClick={() => setSelectedFolder(folder.id)}>
-                      <FolderOpen size={14} style={{ marginRight: 4 }} />{folder.name}
-                    </button>
-                    <button style={{ ...styles.btnDanger, padding: '4px 8px', fontSize: 10 }} onClick={() => deleteFolder(folder.id)}>✕</button>
-                  </div>
-                ))}
-              </div>
-
-              <div style={styles.card}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Tittel</th>
-                      <th style={styles.th}>Mappe</th>
-                      <th style={styles.th}>Status</th>
-                      <th style={styles.th}>Alvorlighet</th>
-                      <th style={styles.th}>Handlinger</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredInstructions.map(inst => (
-                      <tr key={inst.id}>
-                        <td style={styles.td}>
-                          {inst.title}
-                          {inst.file_path && <Paperclip size={14} style={{ marginLeft: 8, color: '#64748B', verticalAlign: 'middle' }} />}
-                        </td>
-                        <td style={styles.td}>{inst.folders?.name || '—'}</td>
-                        <td style={styles.td}>
-                          <span style={styles.badge(statusColor(inst.status).bg, statusColor(inst.status).color)}>
-                            {inst.status === 'published' ? 'Publisert' : 'Utkast'}
-                          </span>
-                        </td>
-                        <td style={styles.td}>
-                          <span style={styles.badge(severityColor(inst.severity).bg, severityColor(inst.severity).color)}>
-                            {severityLabel(inst.severity)}
-                          </span>
-                        </td>
-                        <td style={styles.td}>
-                          <div style={styles.actionBtns}>
-                            <button 
-                              style={inst.status === 'published' ? styles.btnSmall : styles.btnSuccess} 
-                              onClick={() => toggleInstructionStatus(inst)}
-                            >
-                              {inst.status === 'published' ? 'Avpubliser' : 'Publiser'}
-                            </button>
-                            <button style={styles.btnSmall} onClick={() => openEditInstruction(inst)}>Rediger</button>
-                            <button style={styles.btnDanger} onClick={() => deleteInstruction(inst.id)}>Slett</button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {filteredInstructions.length === 0 && (
-                      <tr><td colSpan={5} style={{ ...styles.td, color: '#64748B' }}>Ingen instrukser funnet</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
+            <InstructionsTab
+              instructions={instructions}
+              folders={folders}
+              filteredInstructions={filteredInstructions}
+              selectedFolder={selectedFolder}
+              statusFilter={statusFilter}
+              styles={styles}
+              setSelectedFolder={setSelectedFolder}
+              setStatusFilter={setStatusFilter}
+              toggleInstructionStatus={toggleInstructionStatus}
+              openEditInstruction={openEditInstruction}
+              deleteInstruction={deleteInstruction}
+              deleteFolder={deleteFolder}
+              setShowCreateInstruction={setShowCreateInstruction}
+              setShowCreateFolder={setShowCreateFolder}
+            />
           )}
 
           {tab === 'avvik' && (
