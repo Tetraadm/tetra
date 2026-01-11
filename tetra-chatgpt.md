@@ -5,7 +5,7 @@
 - RLS: instruction_reads insert/update krever at instruksjonen tilhører samme org som brukeren; sjekker instruction_id->instructions.org_id. Migrasjon kjørt i Supabase.
 - RPC accept_invite gjenopprettet: valid token <7d, krever session, upserter profile med rolle/org/team, markerer invite brukt. Migrasjon kjørt i Supabase.
 - /api/upload: PDF-tekst trekkes ut automatisk (pdf-parse). effectiveContent fylles fra PDF hvis content er tom. npm install kjørt, package-lock oppdatert.
-- AdminDashboard tab-visninger trukket ut til egne komponenter under src/app/admin/tabs; parent beholder state/handlere. Neste steg: flytt logikk til hooks og gjør tilsvarende for EmployeeApp.
+- AdminDashboard-logikk flyttet ut i hooks (brukere/team/instrukser/avvik/auditlogg/leserapport); tabs under src/app/admin/tabs brukes videre fra parent.
 
 ## 2026-01-12
 - Streng AI i /api/ask: svar kun fra instrukser for riktig org, fallback-tekst: "Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig."
