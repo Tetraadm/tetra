@@ -144,11 +144,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kunne ikke laste opp filen' }, { status: 500 })
     }
 
-    // Ekstraher tekst fra .txt filer
-    // PDF-parsing er deaktivert pga serverless kompatibilitet
+    // Ekstraher tekst fra .txt og .pdf (fallback hvis PDF-lesing feiler)
     let extractedText = ''
     if (file.type === 'text/plain') {
       extractedText = await file.text()
+    } else if (file.type === 'application/pdf') {
+      try {
+        const { default: pdfParse } = await import('pdf-parse')
+        const pdfBuffer = Buffer.from(fileBytes)
+        const parsed = await pdfParse(pdfBuffer)
+        extractedText = parsed.text || ''
+      } catch (err) {
+        console.error('PDF_PARSE_ERROR', err)
+      }
     }
 
     // NEW: Extract keywords from title and content

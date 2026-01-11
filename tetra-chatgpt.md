@@ -1,28 +1,28 @@
 # Tetra logg (kort)
 
+## 2026-01-13
+- /api/ask krever innlogget bruker; org/user hentes fra profile (ignorerer klient-supplert orgId/userId). Bruker alltid RPC get_user_instructions; returnerer updated_at hvis tilgjengelig. Logger RLS-feil på inserts.
+- RLS: instruction_reads insert/update krever at instruksjonen tilhører samme org som brukeren; sjekker instruction_id->instructions.org_id. Migrasjon kjørt i Supabase.
+- RPC accept_invite gjenopprettet: valid token <7d, krever session, upserter profile med rolle/org/team, markerer invite brukt. Migrasjon kjørt i Supabase.
+- /api/upload: PDF-tekst trekkes ut automatisk (pdf-parse). effectiveContent fylles fra PDF hvis content er tom. Husk `npm install` for pdf-parse (package-lock ikke oppdatert ennå).
+- TODO: Del opp AdminDashboard.tsx og EmployeeApp.tsx i mindre seksjoner/hooks; beholdt som monolitter for nå. Oppdater package-lock etter npm install.
+
+## 2026-01-12
+- Streng AI i /api/ask: svar kun fra instrukser for riktig org, fallback-tekst: "Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig."
+- Relevansfilter: keyword overlap + score threshold; source-metadata i responsen (instruction_id, title, updated_at, open_url_or_route).
+- Ny tabell: public.ai_unanswered_questions + RLS; instructions.updated_at med trigger; RPC get_user_instructions returnerer updated_at. Migrasjonsrekkefølge ryddet.
+
 ## 2026-01-11
-- Ryddet norsk UI-tekst (å/ø/æ) i login, admin og employee (inkl. søk/åpne/bruksvilkår).
-- Fikset korrupt tekst i norske kommentarer for auth-callback og post-auth.
-- Fjernet ubrukte UI-komponenter i src/components/ui/ (ingen imports).
-- Beholdt og oppdatert claude-tetra.md med korrekt norsk og oppdatert kontekst.
-- Verifisert grønn build med npm run build.
+- Ryddet norsk UI-tekst i login/admin/employee; fikset korrupt tekst i auth-callback/post-auth.
+- Fjernet ubrukte UI-komponenter i src/components/ui/.
+- Grøn build verifisert med npm run build.
 
 ## 2026-01-10
-- Synket supabase/sql/01_schema.sql med live DB (UUID defaults, constraints, instruction_reads shape, jsonb defaults, ask_tetra_logs.answer nullable).
-- Ryddet RLS-policyer (fjernet duplikater og etablerte kanonisk sett). Kjørt i Supabase som migrasjon policy_cleanup.
-- Strammet storage-policyer for instructions bucket til org-basert lesing. Kjørt i Supabase som migrasjon storage_policy_cleanup.
-- Oppdatert supabase/sql/05_policy_updates.sql og supabase/sql/07_storage_policies.sql til å reflektere live-DB.
-- Fikset profiles RLS-recursion ved å bruke get_profile_context(auth.uid()) i profiles-policyene. Kjørt i Supabase som migrasjon profiles_policy_no_recursion.
-- Lagt til profiles.email, backfill fra auth.users, og trigger set_profile_email. Kjørt i Supabase som migrasjon profiles_email_column.
-- Forbedret /api/ask: trygg folder/severity-tilgang, og re-enkodet fil til gyldig UTF-8 for build.
-- Byttet src/middleware.ts til src/proxy.ts for å fjerne Next.js deprecation warning.
-- Upload: send content fra admin ved filopplasting og lagre som instructions.content; keywords basert på title+content.
-- AI fallback-tekst endret til: "Finner ingen instrukser med dette innholdet..." (ASCII-variant).
-- Auditlogg: logg create_instruction + publish/unpublish ved status-toggle; la til filter/oversettelse.
-- Backfill: opprettet create_instruction-hendelser i audit_logs for eksisterende instrukser.
+- Synket supabase/sql/01_schema.sql med live DB; ryddet kanoniske RLS-policyer; storage-policy for instructions-bucket til org-lesing.
+- Profiles: get_profile_context for å unngå RLS-recursion; la til profiles.email + trigger set_profile_email.
+- /api/ask: trygg folder/severity-tilgang; proxy.ts erstattet middleware deprecation.
+- Upload: lagrer content fra admin; keywords fra title+content; auditlogg på create/publish/unpublish.
 
-### Supabase status (MCP)
-- Public tables: organizations, teams, profiles, folders, instructions, instruction_teams, invites, alerts, alert_teams, ask_tetra_logs, audit_logs, instruction_reads.
-- RLS enabled on all public tables.
-- Storage bucket: instructions (public=false).
-- RLS policies cleaned to a single canonical set; storage policy limited to org-based reads.
+### Supabase status
+- RLS aktiv på alle public-tabeller; storage bucket instructions privat med org-basert lese-policy.
+- Kjør npm install for å hente pdf-parse og oppdatere package-lock før neste deploy.
