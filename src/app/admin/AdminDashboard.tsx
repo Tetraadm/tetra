@@ -9,6 +9,27 @@ import { extractKeywords } from '@/lib/keyword-extraction'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
 import EmptyState from '@/components/EmptyState'
+import {
+  Home,
+  Users,
+  UsersRound,
+  FileText,
+  AlertTriangle,
+  Bot,
+  BarChart3,
+  ClipboardList,
+  CheckSquare,
+  Menu,
+  X,
+  Info,
+  LogOut,
+  Plus,
+  FolderOpen,
+  Download,
+  ChevronDown,
+  ChevronRight,
+  Paperclip,
+} from 'lucide-react'
 import type {
   Profile,
   Organization,
@@ -876,8 +897,9 @@ export default function AdminDashboard({
             <button
               style={styles.mobileMenuBtn}
               onClick={() => setShowMobileMenu(!showMobileMenu)}
+              aria-label={showMobileMenu ? 'Lukk meny' : 'Åpne meny'}
             >
-              {showMobileMenu ? '✕' : '☰'}
+              {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
           )}
           <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
@@ -890,12 +912,13 @@ export default function AdminDashboard({
               onClick={() => setShowDisclaimer(true)}
               title="Om AI-assistenten"
             >
-              ⓘ AI-info
+              <Info size={14} style={{ marginRight: 4 }} />
+              AI-info
             </button>
           )}
           {!isMobile && <span style={{ fontSize: 14, color: '#64748B' }}>{profile.full_name}</span>}
           <button style={styles.logoutBtn} onClick={handleLogout}>
-            {isMobile ? 'Ut' : 'Logg ut'}
+            {isMobile ? <LogOut size={18} /> : <><LogOut size={16} style={{ marginRight: 6 }} />Logg ut</>}
           </button>
         </div>
       </header>
@@ -903,31 +926,40 @@ export default function AdminDashboard({
       <div style={styles.main}>
         <aside style={styles.sidebar(showMobileMenu)}>
           <button style={styles.navItem(tab === 'oversikt')} onClick={() => { setTab('oversikt'); setShowMobileMenu(false); }}>
-            🏠 Oversikt
+            <Home size={18} style={styles.navIcon(tab === 'oversikt')} />
+            Oversikt
           </button>
           <button style={styles.navItem(tab === 'brukere')} onClick={() => { setTab('brukere'); setShowMobileMenu(false); }}>
-            👥 Brukere
+            <Users size={18} style={styles.navIcon(tab === 'brukere')} />
+            Brukere
           </button>
           <button style={styles.navItem(tab === 'team')} onClick={() => { setTab('team'); setShowMobileMenu(false); }}>
-            👨‍👩‍👧‍👦 Team
+            <UsersRound size={18} style={styles.navIcon(tab === 'team')} />
+            Team
           </button>
           <button style={styles.navItem(tab === 'instrukser')} onClick={() => { setTab('instrukser'); setShowMobileMenu(false); }}>
-            📋 Instrukser
+            <FileText size={18} style={styles.navIcon(tab === 'instrukser')} />
+            Instrukser
           </button>
           <button style={styles.navItem(tab === 'avvik')} onClick={() => { setTab('avvik'); setShowMobileMenu(false); }}>
-            ⚠️ Avvik & Varsler
+            <AlertTriangle size={18} style={styles.navIcon(tab === 'avvik')} />
+            Avvik & Varsler
           </button>
           <button style={styles.navItem(tab === 'ailogg')} onClick={() => { setTab('ailogg'); setShowMobileMenu(false); }}>
-            🤖 AI-logg
+            <Bot size={18} style={styles.navIcon(tab === 'ailogg')} />
+            AI-logg
           </button>
           <button style={styles.navItem(tab === 'innsikt')} onClick={() => { setTab('innsikt'); setShowMobileMenu(false); }}>
-            📊 Innsikt
+            <BarChart3 size={18} style={styles.navIcon(tab === 'innsikt')} />
+            Innsikt
           </button>
           <button style={styles.navItem(tab === 'auditlog')} onClick={() => { setTab('auditlog'); setShowMobileMenu(false); }}>
-            📝 Aktivitetslogg
+            <ClipboardList size={18} style={styles.navIcon(tab === 'auditlog')} />
+            Aktivitetslogg
           </button>
           <button style={styles.navItem(tab === 'lesebekreftelser')} onClick={() => { setTab('lesebekreftelser'); setShowMobileMenu(false); }}>
-            ✓ Lesebekreftelser
+            <CheckSquare size={18} style={styles.navIcon(tab === 'lesebekreftelser')} />
+            Lesebekreftelser
           </button>
         </aside>
 
@@ -939,19 +971,31 @@ export default function AdminDashboard({
 
               <div style={styles.statsGrid}>
                 <div style={styles.statCard}>
+                  <div style={styles.statIconBox('default')}>
+                    <Users size={20} />
+                  </div>
                   <div style={styles.statValue}>{users.length}</div>
                   <div style={styles.statLabel}>Brukere</div>
                 </div>
                 <div style={styles.statCard}>
+                  <div style={styles.statIconBox('default')}>
+                    <FileText size={20} />
+                  </div>
                   <div style={styles.statValue}>{instructions.filter(i => i.status === 'published').length}</div>
                   <div style={styles.statLabel}>Publiserte instrukser</div>
                 </div>
                 <div style={styles.statCard}>
+                  <div style={styles.statIconBox('default')}>
+                    <FileText size={20} />
+                  </div>
                   <div style={styles.statValue}>{instructions.filter(i => i.status === 'draft').length}</div>
                   <div style={styles.statLabel}>Utkast</div>
                 </div>
                 <div style={styles.statCard}>
-                  <div style={{ ...styles.statValue, color: '#DC2626' }}>
+                  <div style={styles.statIconBox('danger')}>
+                    <AlertTriangle size={20} />
+                  </div>
+                  <div style={{ ...styles.statValue, color: alerts.filter(a => a.active).length > 0 ? '#DC2626' : '#0F172A' }}>
                     {alerts.filter(a => a.active).length}
                   </div>
                   <div style={styles.statLabel}>Aktive avvik</div>
@@ -959,16 +1003,29 @@ export default function AdminDashboard({
               </div>
 
               {alerts.filter(a => a.active).length > 0 && (
-                <div style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 12 }}>⚠️ Aktive avvik</h3>
-                  {alerts.filter(a => a.active).slice(0, 3).map(alert => (
-                    <div key={alert.id} style={styles.alertCard(alert.severity, true)}>
-                      <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
-                        {severityLabel(alert.severity)}
-                      </span>
-                      <h4 style={{ fontSize: 15, fontWeight: 600, marginTop: 8 }}>{alert.title}</h4>
+                <div style={styles.alertCallout}>
+                  <AlertTriangle size={20} style={{ color: '#DC2626', flexShrink: 0, marginTop: 2 }} />
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: '#0F172A' }}>
+                      {alerts.filter(a => a.active).length} aktive avvik
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {alerts.filter(a => a.active).slice(0, 3).map(alert => (
+                        <div key={alert.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
+                            {severityLabel(alert.severity)}
+                          </span>
+                          <span style={{ fontSize: 14, color: '#334155' }}>{alert.title}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  <button
+                    style={{ ...styles.btnSmall, flexShrink: 0 }}
+                    onClick={() => setTab('avvik')}
+                  >
+                    Se alle
+                  </button>
                 </div>
               )}
             </>
@@ -982,7 +1039,8 @@ export default function AdminDashboard({
                   <p style={styles.pageSubtitle}>Administrer ansatte og teamledere</p>
                 </div>
                 <button style={styles.btn} onClick={() => setShowInviteUser(true)}>
-                  + Lag invitasjonslenke
+                  <Plus size={16} />
+                  Lag invitasjonslenke
                 </button>
               </div>
 
@@ -1026,7 +1084,8 @@ export default function AdminDashboard({
                   <p style={styles.pageSubtitle}>Opprett og administrer team</p>
                 </div>
                 <button style={styles.btn} onClick={() => setShowCreateTeam(true)}>
-                  + Opprett team
+                  <Plus size={16} />
+                  Opprett team
                 </button>
               </div>
 
@@ -1058,8 +1117,14 @@ export default function AdminDashboard({
                   <p style={styles.pageSubtitle}>Kun publiserte instrukser er synlige for ansatte og AI</p>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(true)}>+ Ny mappe</button>
-                  <button style={styles.btn} onClick={() => setShowCreateInstruction(true)}>+ Opprett instruks</button>
+                  <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(true)}>
+                    <FolderOpen size={16} />
+                    Ny mappe
+                  </button>
+                  <button style={styles.btn} onClick={() => setShowCreateInstruction(true)}>
+                    <Plus size={16} />
+                    Opprett instruks
+                  </button>
                 </div>
               </div>
 
@@ -1085,7 +1150,7 @@ export default function AdminDashboard({
                 {folders.map(folder => (
                   <div key={folder.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                     <button style={styles.folderChip(selectedFolder === folder.id)} onClick={() => setSelectedFolder(folder.id)}>
-                      📁 {folder.name}
+                      <FolderOpen size={14} style={{ marginRight: 4 }} />{folder.name}
                     </button>
                     <button style={{ ...styles.btnDanger, padding: '4px 8px', fontSize: 10 }} onClick={() => deleteFolder(folder.id)}>✕</button>
                   </div>
@@ -1108,7 +1173,7 @@ export default function AdminDashboard({
                       <tr key={inst.id}>
                         <td style={styles.td}>
                           {inst.title}
-                          {inst.file_path && <span style={{ marginLeft: 8, color: '#64748B' }}>📎</span>}
+                          {inst.file_path && <Paperclip size={14} style={{ marginLeft: 8, color: '#64748B', verticalAlign: 'middle' }} />}
                         </td>
                         <td style={styles.td}>{inst.folders?.name || '—'}</td>
                         <td style={styles.td}>
@@ -1151,7 +1216,10 @@ export default function AdminDashboard({
                   <h1 style={styles.pageTitle}>Avvik & Varsler</h1>
                   <p style={styles.pageSubtitle}>Varsler vises på ansattes hjem-side</p>
                 </div>
-                <button style={styles.btn} onClick={() => setShowCreateAlert(true)}>+ Nytt avvik</button>
+                <button style={styles.btn} onClick={() => setShowCreateAlert(true)}>
+                  <Plus size={16} />
+                  Nytt avvik
+                </button>
               </div>
 
               {alerts.length === 0 ? (
@@ -1262,7 +1330,8 @@ export default function AdminDashboard({
                   <p style={styles.pageSubtitle}>Sporbar logg over kritiske admin-handlinger</p>
                 </div>
                 <button style={styles.btn} onClick={() => exportAuditCSV(auditLogs, formatActionTypeFn)}>
-                  📥 Eksporter CSV
+                  <Download size={16} />
+                  Eksporter CSV
                 </button>
               </div>
 
@@ -1407,7 +1476,8 @@ export default function AdminDashboard({
                   <p style={styles.pageSubtitle}>Oversikt over hvem som har lest og bekreftet instrukser</p>
                 </div>
                 <button style={styles.btn} onClick={() => exportReadCSV(readReport)}>
-                  📥 Eksporter CSV
+                  <Download size={16} />
+                  Eksporter CSV
                 </button>
               </div>
 
@@ -1439,8 +1509,8 @@ export default function AdminDashboard({
                           }}
                           onClick={() => toggleInstructionExpansion(instruction.instruction_id)}
                         >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <span>{isExpanded ? '▼' : '▶'}</span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
                             <span style={{ fontWeight: 600 }}>{instruction.instruction_title}</span>
                           </div>
                           <div style={{ display: 'flex', gap: 16, fontSize: 13 }}>
