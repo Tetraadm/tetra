@@ -15,7 +15,8 @@ export default function AuthWatcher() {
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event, _session) => {
+        void _session
         if (event === 'SIGNED_OUT') {
           toast.error('Din sesjon er utløpt. Vennligst logg inn på nytt.')
           router.push('/login')

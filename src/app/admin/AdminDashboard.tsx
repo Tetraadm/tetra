@@ -49,7 +49,9 @@ import { createAdminStyles } from './styles'
 import {
   formatActionType as formatActionTypeFn,
   exportAuditLogsCSV as exportAuditCSV,
-  exportReadReportCSV as exportReadCSV
+  exportReadReportCSV as exportReadCSV,
+  type AuditLogRow,
+  type ReadReportItem
 } from './utils'
 
 type Props = {
@@ -141,7 +143,7 @@ export default function AdminDashboard({
   const [statusFilter, setStatusFilter] = useState<string>('all')
 
   // Audit log states
-  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [auditLogs, setAuditLogs] = useState<AuditLogRow[]>([])
   const [auditLogsLoading, setAuditLogsLoading] = useState(false)
   const [auditFilter, setAuditFilter] = useState({
     actionType: 'all',
@@ -150,7 +152,7 @@ export default function AdminDashboard({
   })
 
   // Read confirmations states
-  const [readReport, setReadReport] = useState<any[]>([])
+  const [readReport, setReadReport] = useState<ReadReportItem[]>([])
   const [readReportLoading, setReadReportLoading] = useState(false)
   const [expandedInstructions, setExpandedInstructions] = useState<Set<string>>(new Set())
 
@@ -1543,7 +1545,7 @@ export default function AdminDashboard({
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {instruction.user_statuses?.map((user: any) => (
+                                  {instruction.user_statuses.map((user) => (
                                     <tr key={user.user_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
                                       <td style={{ padding: 12, fontSize: 13, fontWeight: 500 }}>{user.user_name}</td>
                                       <td style={{ padding: 12, fontSize: 13, color: '#64748B' }}>{user.user_email}</td>

@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const supabase = await createClient()
 
@@ -61,8 +61,8 @@ export async function GET(request: NextRequest) {
         const userRead = instructionReads.find(r => r.user_id === user.id)
         return {
           user_id: user.id,
-          user_name: user.full_name,
-          user_email: user.email,
+          user_name: user.full_name || '',
+          user_email: user.email || '',
           read: !!userRead,
           confirmed: userRead?.confirmed || false,
           read_at: userRead?.read_at || null,
@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
         confirmed_count: confirmedCount,
         read_percentage: totalUsers > 0 ? (readCount / totalUsers * 100).toFixed(1) : 0,
         confirmed_percentage: totalUsers > 0 ? (confirmedCount / totalUsers * 100).toFixed(1) : 0,
-        user_statuses: userReadStatus
+        user_statuses: userReadStatus || []
       }
     })
 

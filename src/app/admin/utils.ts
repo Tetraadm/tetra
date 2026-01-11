@@ -20,11 +20,45 @@ export function formatActionType(actionType: string): string {
   return translations[actionType] || actionType
 }
 
+export type AuditLogRow = {
+  id: string
+  created_at: string
+  action_type: string
+  entity_type: string
+  details?: Record<string, unknown> | null
+  profiles?: {
+    full_name?: string | null
+    email?: string | null
+  } | null
+}
+
+export type ReadReportUserStatus = {
+  user_id: string
+  user_name: string
+  user_email: string
+  read: boolean
+  confirmed: boolean
+  read_at: string | null
+  confirmed_at: string | null
+}
+
+export type ReadReportItem = {
+  instruction_id: string
+  instruction_title: string
+  created_at: string
+  total_users: number
+  read_count: number
+  confirmed_count: number
+  read_percentage: string | number
+  confirmed_percentage: string | number
+  user_statuses: ReadReportUserStatus[]
+}
+
 /**
  * Export audit logs to CSV file
  */
 export function exportAuditLogsCSV(
-  auditLogs: any[],
+  auditLogs: AuditLogRow[],
   formatActionTypeFn: (actionType: string) => string
 ): void {
   const headers = ['Tidspunkt', 'Bruker', 'Handling', 'Entitet', 'Detaljer']
@@ -51,11 +85,11 @@ export function exportAuditLogsCSV(
 /**
  * Export read confirmations report to CSV file
  */
-export function exportReadReportCSV(readReport: any[]): void {
+export function exportReadReportCSV(readReport: ReadReportItem[]): void {
   const rows: string[][] = []
 
   readReport.forEach(item => {
-    item.user_statuses.forEach((userStatus: any) => {
+    item.user_statuses.forEach((userStatus) => {
       rows.push([
         item.instruction_title,
         userStatus.user_name,

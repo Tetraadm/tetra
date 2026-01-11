@@ -1,6 +1,3 @@
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
-
 // Simple in-memory rate limiting for development
 // For production, use Upstash Redis with env vars:
 // UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN

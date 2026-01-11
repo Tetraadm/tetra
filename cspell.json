@@ -1,0 +1,50 @@
+{
+  "$schema": "https://raw.githubusercontent.com/streetsidesoftware/cspell/main/cspell.schema.json",
+  "version": "0.2",
+  "language": "en,nb-NO",
+  "dictionaries": ["nb-no"],
+  "import": ["@cspell/dict-nb-no/cspell-ext.json"],
+  "ignorePaths": [
+    "node_modules",
+    ".next",
+    "dist",
+    "build",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock",
+    "*.lock"
+  ],
+  "flagWords": [
+    "gjor",
+    "sporsmal",
+    "nermeste",
+    "naermeste"
+  ],
+  "words": [
+    "supabase",
+    "nextjs",
+    "lucide",
+    "tailwindcss",
+    "trpc",
+    "tanstack",
+    "tetra",
+    "orgid",
+    "teamid",
+    "userid",
+    "ailogg",
+    "auditlog",
+    "avviksstatus",
+    "avpublisert",
+    "avpubliser",
+    "deaktiver",
+    "handlingstype",
+    "teamleader",
+    "opplastinger",
+    "innloggingslenke",
+    "stopwords",
+    "magiclink",
+    "pkce",
+    "noen",
+    "zæøå"
+  ]
+}

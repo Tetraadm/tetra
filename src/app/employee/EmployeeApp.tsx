@@ -19,7 +19,6 @@ import {
   Zap,
   Clock,
   CheckCircle,
-  LogOut,
   Flame,
   HardHat,
   PenLine,
@@ -49,7 +48,7 @@ type Props = {
   alerts: Alert[]
 }
 
-export default function EmployeeApp({ profile, organization, team, instructions, alerts }: Props) {
+export default function EmployeeApp({ profile, organization, team: _team, instructions, alerts }: Props) {
   const [tab, setTab] = useState<'home' | 'instructions' | 'ask'>('home')
   const [searchQuery, setSearchQuery] = useState('')
   const [chatInput, setChatInput] = useState('')
@@ -62,6 +61,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
   const chatRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
   const supabase = createClient()
+  void _team
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -647,7 +647,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
           <div style={s.quickActionIcon('purple')}>
             <MessageCircle size={24} />
           </div>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>Spor Tetra</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#0F172A' }}>Spør Tetra</span>
         </div>
         {!isMobile && criticalInstructions.length > 0 && (
           <div
@@ -781,7 +781,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
     <div style={s.chatCard}>
       <div style={s.chatHeader}>
         <MessageCircle size={20} style={{ color: '#2563EB' }} />
-        <span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Spor Tetra</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Spør Tetra</span>
       </div>
       <div style={s.chatMessages} ref={chatRef}>
         {messages.length === 0 ? (
@@ -790,19 +790,19 @@ export default function EmployeeApp({ profile, organization, team, instructions,
               <MessageCircle size={28} />
             </div>
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 8, color: '#0F172A' }}>
-              Still et sporsmal
+              Still et spørsmål
             </h3>
             <p style={{ fontSize: 13, color: '#64748B', marginBottom: 20 }}>
-              Spor om rutiner, sikkerhet eller prosedyrer.
+              Spør om rutiner, sikkerhet eller prosedyrer.
             </p>
             <button
               style={s.chatSuggestion}
-              onClick={() => handleSuggestion('Hva gjor jeg ved brann?')}
+              onClick={() => handleSuggestion('Hva gjør jeg ved brann?')}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#CBD5E1'; e.currentTarget.style.background = '#F8FAFC' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.background = '#FFFFFF' }}
             >
               <Flame size={16} style={{ color: '#F97316' }} />
-              Hva gjor jeg ved brann?
+              Hva gjør jeg ved brann?
             </button>
             <button
               style={s.chatSuggestion}
@@ -853,7 +853,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
                     <div style={s.notFoundBubble}>
                       <strong>Fant ikke relevant instruks.</strong>
                       <div style={{ fontSize: 13, marginTop: 4 }}>
-                        Kontakt din nermeste leder hvis dette haster.
+                        Kontakt din nærmeste leder hvis dette haster.
                       </div>
                     </div>
                   </div>
@@ -875,7 +875,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
       <div style={s.chatInputContainer}>
         <input
           style={s.chatInput}
-          placeholder="Skriv et sporsmal..."
+          placeholder="Skriv et spørsmål..."
           value={chatInput}
           onChange={e => setChatInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && handleAsk()}
@@ -948,7 +948,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
               <div style={s.sideColumn}>
                 <div style={s.sectionTitle}>
                   <MessageCircle size={18} style={{ color: '#2563EB' }} />
-                  Spor Tetra
+                  Spør Tetra
                 </div>
                 {renderChatContent()}
               </div>
@@ -967,7 +967,7 @@ export default function EmployeeApp({ profile, organization, team, instructions,
           </button>
           <button style={s.navItem(tab === 'ask')} onClick={() => setTab('ask')}>
             <MessageCircle size={22} />
-            <span>Spor Tetra</span>
+            <span>Spør Tetra</span>
           </button>
         </nav>
 

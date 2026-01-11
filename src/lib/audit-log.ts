@@ -19,7 +19,7 @@ type AuditLogParams = {
   actionType: AuditActionType
   entityType: AuditEntityType
   entityId?: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 }
 
 /**

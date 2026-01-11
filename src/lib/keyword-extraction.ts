@@ -92,7 +92,7 @@ export type InstructionWithKeywords = {
   title: string
   content: string | null
   keywords: string[]
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export function filterAndRankInstructions(

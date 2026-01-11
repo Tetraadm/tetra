@@ -25,7 +25,7 @@ export default async function InvitePage({ params }: Props) {
   // Get invite via RPC (bypasses RLS)
   const { data: inviteData, error } = await supabase
     .rpc('get_invite_by_token', { p_token: token })
-    .single() as { data: InviteRpcResult | null, error: any }
+    .single() as { data: InviteRpcResult | null, error: unknown }
 
   if (error || !inviteData) {
     redirect('/login?error=Invitasjonen er ugyldig eller utløpt')

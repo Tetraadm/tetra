@@ -9,6 +9,11 @@ import { extractKeywords } from '@/lib/keyword-extraction'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
+type SupabaseErrorDetails = {
+  code?: string
+  details?: string
+  hint?: string
+}
 
 // Service role client for storage operations (bypasses RLS)
 function createServiceClient() {
@@ -99,7 +104,13 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (profileError || !profile) {
+      console.error('PROFILE_FETCH_ERROR', profileError)
       return NextResponse.json({ error: 'Profil ikke funnet' }, { status: 403 })
+    }
+
+    // Only admins can upload instructions
+    if (profile.role !== 'admin') {
+      return NextResponse.json({ error: 'Kun administratorer kan laste opp instrukser' }, { status: 403 })
     }
 
     // Verify orgId matches user's org (prevent uploading to other orgs)
@@ -124,12 +135,13 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
-      console.error('STORAGE_UPLOAD_ERROR', uploadError)
-      return NextResponse.json({
-        error: uploadError.message,
-        code: (uploadError as any).code,
-        details: (uploadError as any).details
-      }, { status: 500 })
+      const errorDetails = uploadError as SupabaseErrorDetails
+      console.error('STORAGE_UPLOAD_ERROR', {
+        message: uploadError.message,
+        code: errorDetails.code,
+        details: errorDetails.details
+      })
+      return NextResponse.json({ error: 'Kunne ikke laste opp filen' }, { status: 500 })
     }
 
     // Ekstraher tekst fra .txt filer
@@ -162,13 +174,14 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (insertError) {
-      console.error('INSTRUCTION_INSERT_ERROR', insertError)
-      return NextResponse.json({
-        error: insertError.message,
-        code: (insertError as any).code,
-        details: (insertError as any).details,
-        hint: (insertError as any).hint
-      }, { status: 500 })
+      const errorDetails = insertError as SupabaseErrorDetails
+      console.error('INSTRUCTION_INSERT_ERROR', {
+        message: insertError.message,
+        code: errorDetails.code,
+        details: errorDetails.details,
+        hint: errorDetails.hint
+      })
+      return NextResponse.json({ error: 'Kunne ikke opprette instruks' }, { status: 500 })
     }
 
     // Koble til team

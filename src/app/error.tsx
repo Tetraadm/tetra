@@ -1,12 +1,13 @@
 'use client'
 
 export default function Error({
-  error,
+  error: _error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  void _error
   return (
     <div style={{
       minHeight: '100vh',

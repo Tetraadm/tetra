@@ -1,5 +1,8 @@
 ﻿import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
+import type { EmailOtpType } from "@supabase/supabase-js";
+
+type CookieOptions = Omit<Parameters<NextResponse["cookies"]["set"]>[0], "name" | "value">;
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,10 +24,10 @@ export async function GET(request: NextRequest) {
           get(name: string) {
             return request.cookies.get(name)?.value;
           },
-          set(name: string, value: string, options: any) {
+          set(name: string, value: string, options: CookieOptions) {
             response.cookies.set({ name, value, ...options });
           },
-          remove(name: string, options: any) {
+          remove(name: string, options: CookieOptions) {
             response.cookies.set({ name, value: "", ...options });
           },
         },
@@ -43,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
     // 2) token_hash-flow
     else if (token_hash && type) {
-      const { error } = await supabase.auth.verifyOtp({ token_hash, type: type as any });
+      const { error } = await supabase.auth.verifyOtp({ token_hash, type: type as EmailOtpType });
       if (error) {
         console.error('AUTH_FATAL: OTP verification failed', error.message);
         return NextResponse.redirect(

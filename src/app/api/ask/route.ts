@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
 import { z } from 'zod'
-import { extractKeywords, filterAndRankInstructions, type InstructionWithKeywords } from '@/lib/keyword-extraction'
+import { filterAndRankInstructions, type InstructionWithKeywords } from '@/lib/keyword-extraction'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
     const instructionsOnlyFiles = normalizedInstructions.filter(i => !i.content || !i.content.trim())
 
     if (instructionsWithContent.length === 0) {
-      let answer = 'Finner ingen instrukser med dette innholdet. Kontakt din naermeste leder eller sikkerhetsansvarlig.'
+      let answer = 'Finner ingen instrukser med dette innholdet. Kontakt din nærmeste leder eller sikkerhetsansvarlig.'
 
       if (instructionsOnlyFiles.length > 0) {
         answer += ` Det finnes ${instructionsOnlyFiles.length} instruks(er) som kun er tilgjengelig som PDF/fil. Gå til "Instrukser"-fanen for å se dem.`
@@ -231,4 +231,3 @@ ${context}`
     }, { status: 500 })
   }
 }
-

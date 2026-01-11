@@ -1,7 +1,6 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import toast from 'react-hot-toast'
 import type { Organization, Team } from '@/lib/types'
@@ -27,7 +26,6 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState<'form' | 'check-email'>('form')
-  const router = useRouter()
   const supabase = createClient()
 
   const handleAccept = async (e: React.FormEvent) => {
