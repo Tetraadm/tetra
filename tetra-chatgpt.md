@@ -7,6 +7,7 @@
 - /api/upload: PDF-tekst trekkes ut automatisk (pdf-parse). effectiveContent fylles fra PDF hvis content er tom. npm install kjørt, package-lock oppdatert.
 - AdminDashboard-logikk flyttet ut i hooks (brukere/team/instrukser/avvik/auditlogg/leserapport); tabs under src/app/admin/tabs brukes videre fra parent.
 - EmployeeApp: chat/instruks/modaldetaljer flyttet til hooks under src/app/employee/hooks; layout/tabber beholdt.
+- Viktig: Hook-refaktor for admin/employee er i main; modaler/tabber beholdt i parent. claude-tetra.md er fortsatt lokalt endret (ikke committed).
 
 ## 2026-01-12
 - Streng AI i /api/ask: svar kun fra instrukser for riktig org, fallback-tekst: "Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig."
