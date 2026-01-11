@@ -1,4 +1,4 @@
-import type { Dispatch, ReactNode, SetStateAction } from 'react'
+﻿import { useEffect, useId, useRef, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import type { Folder, Instruction, Profile, Team } from '@/lib/types'
 import type { createAdminStyles } from '../styles'
 import type { NewInstructionState } from '../hooks/useAdminInstructions'
@@ -10,19 +10,90 @@ const loadingButtonStyles = (isLoading: boolean) => (
   isLoading ? { background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6 } : {}
 )
 
+const focusableSelector = [
+  'a[href]',
+  'button:not([disabled])',
+  'textarea:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(',')
+
+const getFocusableElements = (container: HTMLElement | null) => (
+  container ? Array.from(container.querySelectorAll<HTMLElement>(focusableSelector)) : []
+)
+
 type ModalShellProps = {
   open: boolean
   onClose: () => void
   styles: Styles
+  titleId: string
   children: ReactNode
 }
 
-function ModalShell({ open, onClose, styles, children }: ModalShellProps) {
+function ModalShell({ open, onClose, styles, titleId, children }: ModalShellProps) {
+  const contentRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    const content = contentRef.current
+    if (!content) return
+
+    const focusFirst = () => {
+      const focusables = getFocusableElements(content)
+      const first = focusables[0] ?? content
+      first.focus()
+    }
+
+    focusFirst()
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+        return
+      }
+
+      if (event.key !== 'Tab') return
+
+      const focusables = getFocusableElements(content)
+      if (focusables.length === 0) {
+        event.preventDefault()
+        content.focus()
+        return
+      }
+
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      const active = document.activeElement
+
+      if (event.shiftKey && active === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, onClose])
+
   if (!open) return null
 
   return (
     <div style={styles.modal} onClick={onClose}>
-      <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={contentRef}
+        style={styles.modalContent}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         {children}
       </div>
     </div>
@@ -48,9 +119,11 @@ export function CreateTeamModal({
   onClose,
   loading
 }: CreateTeamModalProps) {
+  const titleId = useId()
+
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett team</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett team</h2>
       <label style={styles.label}>Teamnavn</label>
       <input
         style={styles.input}
@@ -91,9 +164,11 @@ export function CreateFolderModal({
   onClose,
   loading
 }: CreateFolderModalProps) {
+  const titleId = useId()
+
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett mappe</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett mappe</h2>
       <label style={styles.label}>Mappenavn</label>
       <input
         style={styles.input}
@@ -142,9 +217,11 @@ export function CreateInstructionModal({
   createInstruction,
   onClose
 }: CreateInstructionModalProps) {
+  const titleId = useId()
+
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett instruks</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett instruks</h2>
 
       <label style={styles.label}>Tittel</label>
       <input
@@ -179,7 +256,7 @@ export function CreateInstructionModal({
       <label style={styles.label}>
         Innhold (brukes av AI)
         <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', marginLeft: 8 }}>
-          • Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
+          Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
         </span>
       </label>
       <textarea
@@ -208,7 +285,7 @@ export function CreateInstructionModal({
         onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
         style={{ marginBottom: 16 }}
       />
-      {selectedFile && <p style={{ fontSize: 13, color: '#10B981', marginBottom: 16 }}>✓ {selectedFile.name}</p>}
+      {selectedFile && <p style={{ fontSize: 13, color: '#10B981', marginBottom: 16 }}>Valgt fil: {selectedFile.name}</p>}
 
       <label style={styles.label}>Team</label>
       <div style={{ marginBottom: 16 }}>
@@ -294,11 +371,13 @@ export function EditInstructionModal({
   saveEditInstruction,
   onClose
 }: EditInstructionModalProps) {
+  const titleId = useId()
+
   if (!open || !editingInstruction) return null
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger instruks</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger instruks</h2>
 
       <label style={styles.label}>Tittel</label>
       <input
@@ -390,9 +469,11 @@ export function InviteUserModal({
   inviteUser,
   onClose
 }: InviteUserModalProps) {
+  const titleId = useId()
+
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Lag invitasjonslenke</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Lag invitasjonslenke</h2>
 
       <label style={styles.label}>E-post (kun for referanse)</label>
       <input
@@ -470,11 +551,13 @@ export function EditUserModal({
   saveEditUser,
   onClose
 }: EditUserModalProps) {
+  const titleId = useId()
+
   if (!open || !editingUser) return null
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger bruker</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger bruker</h2>
       <p style={{ color: '#64748B', marginBottom: 16 }}>{editingUser.full_name}</p>
 
       <label style={styles.label}>Rolle</label>
@@ -535,9 +618,11 @@ export function CreateAlertModal({
   createAlert,
   onClose
 }: CreateAlertModalProps) {
+  const titleId = useId()
+
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett avvik</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett avvik</h2>
 
       <label style={styles.label}>Tittel</label>
       <input
@@ -617,11 +702,13 @@ type DisclaimerModalProps = {
 }
 
 export function DisclaimerModal({ open, styles, onClose }: DisclaimerModalProps) {
+  const titleId = useId()
+
   if (!open) return null
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles}>
-      <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>ℹ️ Om AI-assistenten</h2>
+    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
+      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Om AI-assistenten</h2>
 
       <div style={styles.disclaimer}>
         <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Ansvarsfraskrivelse</h3>
@@ -645,3 +732,4 @@ export function DisclaimerModal({ open, styles, onClose }: DisclaimerModalProps)
     </ModalShell>
   )
 }
+

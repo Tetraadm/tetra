@@ -1,5 +1,5 @@
 -- Add updated_at to get_user_instructions RPC function
--- This allows Spør Tetra to show when instructions were last updated
+-- This allows SpДr Tetra to show when instructions were last updated
 
 create or replace function public.get_user_instructions(p_user_id uuid)
 returns table (

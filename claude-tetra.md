@@ -1,4 +1,4 @@
-# Tetra - AI Context Document
+﻿# Tetra - AI Context Document
 
 > Denne filen inneholder kritisk kontekst for AI-assistenter som jobber med Tetra-prosjektet.
 
@@ -96,10 +96,15 @@ supabase/
    ├─ 06_alerts_policy_fix.sql
    ├─ 07_storage_policies.sql
    ├─ 08_instruction_reads_update_policy_fix.sql
-   ├─ 09_rpc_add_updated_at.sql
-   ├─ 10_ai_unanswered_questions.sql
-   ├─ 11_instructions_updated_at.sql
-   └─ 12_accept_invite.sql
+   ├─ 09_ai_unanswered_questions.sql
+   ├─ 10_instructions_add_updated_at.sql
+   ├─ 11_rpc_add_updated_at.sql
+   ├─ 12_accept_invite.sql
+   ├─ 13_db_advisor_fixes.sql
+   ├─ 14_rls_optimization.sql
+   ├─ 15_policy_consolidation.sql
+   ├─ 16_drop_unused_indexes.sql
+   └─ 17_add_fk_indexes.sql
 ```
 
 ## Spør Tetra (AI-assistent)
@@ -265,12 +270,8 @@ Prosjektet kjører på Windows. Ved bash-kommandoer:
 - Bruk `npm`/`npx` direkte (ikke `cd /d`)
 - Unngå Windows-spesifikk syntaks
 
-### Modal-tilgjengelighet (TODO)
-Admin-modaler (`src/app/admin/components/modals.tsx`) mangler:
-- Escape-tast for å lukke
-- Fokus-trap (fokus holdes inne i modal)
-- Auto-fokus på første input
-- ARIA-attributter (`role="dialog"`, `aria-modal="true"`)
+### Modal-tilgjengelighet
+Fikset i admin-modaler (Escape, fokus-trap, auto-fokus, ARIA).
 
 ## Tips for AI-assistenter
 
@@ -282,5 +283,5 @@ Admin-modaler (`src/app/admin/components/modals.tsx`) mangler:
 6. **isMobile pattern** - Responsivitet håndteres med useState
 7. **Secrets kun i API routes** - Aldri i client code
 8. **Generiske feilmeldinger** - Logg detaljer server-side, returner kort norsk tekst
-9. **SQL-filer nummereres** - Neste fil er `13_xxx.sql`
+9. **SQL-filer nummereres** - Neste fil er `18_xxx.sql`
 10. **STRICT Spør Tetra** - Aldri la AI svare utenfor instruksene

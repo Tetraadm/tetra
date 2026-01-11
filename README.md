@@ -4,7 +4,7 @@ Tetra er en digital sikkerhetsplattform for bedrifter som gjør HMS-arbeid enkel
 
 ## Teknologi
 
-- **Frontend**: Next.js 15 med TypeScript
+- **Frontend**: Next.js 16 med React 19 og TypeScript
 - **Backend**: Supabase (PostgreSQL, Auth, Storage)
 - **AI**: Anthropic Claude 3.5 Haiku
 - **Hosting**: Vercel

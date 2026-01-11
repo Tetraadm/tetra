@@ -1,5 +1,19 @@
 # Tetra logg (kort)
 
+## 2026-01-15
+- Supabase: 14_rls_optimization applied; new migrations 15_policy_consolidation, 16_drop_unused_indexes, 17_add_fk_indexes applied.
+- RLS policies consolidated; admin manage policies split into insert/update/delete to remove multiple permissive policy warnings.
+- Dropped non-FK indexes (instructions keywords/severity/file_path); kept FK indexes to avoid unindexed FK warnings.
+- Advisors: security still shows leaked password protection disabled; performance now only unused index warnings for FK indexes (expected on low traffic).
+- SQL files 15-17 added under supabase/sql; codex-handoff updated with DB state and advisors.
+- Pending: consider enabling leaked password protection; consider restricting my_org_id grant to authenticated.
+
+## 2026-01-14
+- Docs opprydding: README.md versjon (Next.js 15 → 16), ai-qa-test.md typo (epplekake → eplekake).
+- claude-tetra.md: oppdatert SQL-filliste (09-14), neste fil er nå 15.
+- Fjernet tom src/components/ui mappe.
+- Build verifisert grønn.
+
 ## 2026-01-13
 - /api/ask krever innlogget bruker; org/user hentes fra profile (ignorerer klient-supplert orgId/userId). Bruker alltid RPC get_user_instructions; returnerer updated_at hvis tilgjengelig. Logger RLS-feil på inserts.
 - RLS: instruction_reads insert/update krever at instruksjonen tilhører samme org som brukeren; sjekker instruction_id->instructions.org_id. Migrasjon kjørt i Supabase.
@@ -9,6 +23,11 @@
 - AdminDashboard.tsx redusert fra ~1500 til ~530 linjer; 9 tab-komponenter: OverviewTab, UsersTab, TeamsTab, InstructionsTab, AlertsTab, AiLogTab, InsightsTab, AuditLogTab, ReadConfirmationsTab. Parent beholder all state/modaler/handlere og sender props.
 - EmployeeApp: chat/instruks/modaldetaljer flyttet til hooks under src/app/employee/hooks; layout/tabber beholdt.
 - Viktig: Hook-refaktor for admin/employee er i main; modaler/tabber beholdt i parent. claude-tetra.md er fortsatt lokalt endret (ikke committed).
+- Admin-modaler: ModalShell fikk dialog-rolle/ARIA, Escape-lukking, fokus-trap og auto-fokus; ryddet tekst i admin-modaler.
+- Supabase/sql: ryddet migrasjonsnummer (11_rpc_add_updated_at, 13_db_advisor_fixes) for å unngå duplikat 10_.
+- Supabase: migrasjon 13_db_advisor_fixes kjørt (search_path for set_updated_at + manglende FK-indekser).
+- claude-tetra.md: modal-tilgjengelighet markert som fikset.
+- RLS: ny migrasjon `supabase/sql/14_rls_optimization.sql` med my_org_id + auth.uid initplan-optimalisering og forenklede admin-policyer (ikke kjørt; Supabase-auth mangler i MCP).
 
 ## 2026-01-12
 - Streng AI i /api/ask: svar kun fra instrukser for riktig org, fallback-tekst: "Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig."
