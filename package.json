@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "spellcheck": "cspell \"src/**/*.{ts,tsx,js,jsx,json,md}\" --show-suggestions --show-context"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",

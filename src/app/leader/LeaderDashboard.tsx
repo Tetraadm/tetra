@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useState, useEffect } from 'react'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
@@ -186,7 +187,13 @@ export default function LeaderDashboard({
       {/* Header */}
       <header style={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
+          <Image
+            src="/tetra-logo.png"
+            alt="Tetra"
+            width={120}
+            height={32}
+            style={{ height: 32, width: 'auto' }}
+          />
           <span style={styles.orgName}>{organization.name} – {team?.name || 'Ingen team'}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

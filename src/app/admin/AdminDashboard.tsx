@@ -2,7 +2,8 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import { useState, useEffect, useCallback } from 'react'
 import toast from 'react-hot-toast'
 import { logAuditEventClient } from '@/lib/audit-log'
 import { extractKeywords } from '@/lib/keyword-extraction'
@@ -167,7 +168,7 @@ export default function AdminDashboard({
   }
 
   // Helper functions for audit logs and read confirmations
-  const loadAuditLogs = async () => {
+  const loadAuditLogs = useCallback(async () => {
     setAuditLogsLoading(true)
     try {
       const params = new URLSearchParams()
@@ -196,13 +197,13 @@ export default function AdminDashboard({
     } finally {
       setAuditLogsLoading(false)
     }
-  }
+  }, [auditFilter.actionType, auditFilter.startDate, auditFilter.endDate])
 
   useEffect(() => {
     if (tab === 'auditlog') {
       loadAuditLogs()
     }
-  }, [tab])
+  }, [tab, loadAuditLogs])
 
   const loadReadReport = async () => {
     setReadReportLoading(true)
@@ -904,7 +905,13 @@ export default function AdminDashboard({
               {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
             </button>
           )}
-          <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
+          <Image
+            src="/tetra-logo.png"
+            alt="Tetra"
+            width={120}
+            height={32}
+            style={{ height: 32, width: 'auto' }}
+          />
           {!isMobile && <span style={styles.orgName}>{organization.name}</span>}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

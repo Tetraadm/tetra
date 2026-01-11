@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { Mail, CheckCircle } from 'lucide-react'
 
@@ -273,9 +274,11 @@ export default function LoginPage() {
       </div>
       <div style={cardStyles}>
         <div style={logoContainerStyles}>
-          <img
+          <Image
             src="/tetra-logo.png"
             alt="Tetra Logo"
+            width={200}
+            height={56}
             style={{
               height: 56,
               width: 'auto',

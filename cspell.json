@@ -9,6 +9,7 @@
     ".next",
     "dist",
     "build",
+    "coverage",
     "package-lock.json",
     "pnpm-lock.yaml",
     "yarn.lock",
@@ -45,6 +46,11 @@
     "magiclink",
     "pkce",
     "noen",
-    "zæøå"
+    "zæøå",
+    "z햅혈퓸",
+    "Tetra",
+    "Supabase",
+    "Vercel",
+    "HMS"
   ]
 }

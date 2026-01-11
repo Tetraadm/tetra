@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { useState, useRef, useEffect } from 'react'
 import { trackInstructionRead } from '@/lib/read-tracking'
 import toast from 'react-hot-toast'
@@ -908,7 +909,13 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
         <header style={s.header}>
           <div style={s.headerInner}>
             <div style={s.logo}>
-              <img src="/tetra-logo.png" alt="Tetra" style={{ height: 32, width: 'auto' }} />
+              <Image
+                src="/tetra-logo.png"
+                alt="Tetra"
+                width={120}
+                height={32}
+                style={{ height: 32, width: 'auto' }}
+              />
               {!isMobile && <span style={s.orgBadge}>{organization.name}</span>}
             </div>
             <div style={s.userSection}>
