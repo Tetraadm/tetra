@@ -58,6 +58,10 @@ export type AiLog = {
 export type ChatMessage = {
   type: 'user' | 'bot' | 'notfound'
   text: string
-  citation?: string
-  sourceId?: string
+  source?: {
+    instruction_id: string
+    title: string
+    updated_at: string | null
+    open_url_or_route: string
+  }
 }

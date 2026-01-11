@@ -169,8 +169,7 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
         setMessages(prev => [...prev, {
           type: 'bot',
           text: data.answer,
-          citation: data.source?.title || undefined,
-          sourceId: data.source?.id || undefined
+          source: data.source || undefined
         }])
       } else {
         setMessages(prev => [...prev, { type: 'notfound', text: '' }])
@@ -837,13 +836,20 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
                   <div style={s.message(false)}>
                     <div style={s.messageBubble(false)}>
                       {msg.text}
-                      {msg.citation && (
+                      {msg.source && (
                         <div
-                          style={{ ...s.citation, cursor: msg.sourceId ? 'pointer' : 'default' }}
-                          onClick={() => msg.sourceId && handleOpenSource(msg.sourceId)}
+                          style={s.citation}
                         >
-                          <FileText size={14} style={{ marginRight: 4, verticalAlign: 'middle' }} />
-                          {msg.sourceId ? 'Klikk for \u00e5 \u00e5pne: ' : 'Kilde: '}{msg.citation}
+                          <div style={{ marginBottom: 4 }}>
+                            Kilde: {msg.source.title} (oppdatert {msg.source.updated_at ? new Date(msg.source.updated_at).toISOString().split('T')[0] : 'ukjent'})
+                          </div>
+                          <div
+                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                            onClick={() => handleOpenSource(msg.source!.instruction_id)}
+                          >
+                            <FileText size={14} />
+                            Klikk for \u00e5 \u00e5pne: {msg.source.title}
+                          </div>
                         </div>
                       )}
                     </div>

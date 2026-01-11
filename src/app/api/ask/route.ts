@@ -3,11 +3,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
 import { z } from 'zod'
-import { filterAndRankInstructions, type InstructionWithKeywords } from '@/lib/keyword-extraction'
+import {
+  calculateRelevanceScore,
+  extractKeywords,
+  type InstructionWithKeywords
+} from '@/lib/keyword-extraction'
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!
 })
+
+const FALLBACK_ANSWER = 'Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig.'
+const RAW_MIN_SCORE = Number(process.env.AI_MIN_RELEVANCE_SCORE ?? '0.35')
+const MIN_SCORE = Number.isFinite(RAW_MIN_SCORE) ? RAW_MIN_SCORE : 0.35
 
 const askSchema = z.object({
   question: z.string().min(1).max(1000),
@@ -60,6 +68,26 @@ function getSeverityFromInstruction(
   return typeof inst.severity === 'string' ? inst.severity : ''
 }
 
+function countKeywordOverlap(
+  queryKeywords: string[],
+  instruction: InstructionWithKeywords
+): number {
+  const title = instruction.title?.toLowerCase() ?? ''
+  const content = instruction.content?.toLowerCase() ?? ''
+  const instructionKeywords = Array.isArray(instruction.keywords)
+    ? instruction.keywords.filter((keyword): keyword is string => typeof keyword === 'string')
+    : []
+  const keywordSet = new Set(instructionKeywords)
+  const combined = `${title} ${content}`
+
+  return queryKeywords.reduce((count, keyword) => {
+    if (keywordSet.has(keyword) || combined.includes(keyword)) {
+      return count + 1
+    }
+    return count
+  }, 0)
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
@@ -110,7 +138,7 @@ export async function POST(request: NextRequest) {
     } else {
       const { data, error } = await supabase
         .from('instructions')
-        .select('id, title, content, severity, folder_id, folders(name), file_path, keywords')
+        .select('id, title, content, severity, folder_id, folders(name), file_path, keywords, created_at')
         .eq('org_id', orgId)
         .eq('status', 'published')
 
@@ -129,43 +157,67 @@ export async function POST(request: NextRequest) {
 
     // Skill mellom instrukser med tekst og instrukser som kun er filer
     const instructionsWithContent = normalizedInstructions.filter(i => i.content && i.content.trim())
-    const instructionsOnlyFiles = normalizedInstructions.filter(i => !i.content || !i.content.trim())
+    const queryKeywords = extractKeywords(question, 5)
 
-    if (instructionsWithContent.length === 0) {
-      let answer = 'Finner ingen instrukser med dette innholdet. Kontakt din nærmeste leder eller sikkerhetsansvarlig.'
-
-      if (instructionsOnlyFiles.length > 0) {
-        answer += ` Det finnes ${instructionsOnlyFiles.length} instruks(er) som kun er tilgjengelig som PDF/fil. Gå til "Instrukser"-fanen for å se dem.`
-      }
-
+    if (instructionsWithContent.length === 0 || queryKeywords.length === 0) {
       await supabase.from('ask_tetra_logs').insert({
         org_id: orgId,
         user_id: userId,
         question,
-        answer,
+        answer: FALLBACK_ANSWER,
         source_instruction_id: null
       })
 
+      await supabase.from('ai_unanswered_questions').insert({
+        org_id: orgId,
+        user_id: userId ?? null,
+        question
+      })
+
       return NextResponse.json({
-        answer,
+        answer: FALLBACK_ANSWER,
         source: null
       })
     }
 
-    // NEW: Filter and rank instructions based on query keywords
-    const relevantInstructions = filterAndRankInstructions(
-      question,
-      instructionsWithContent as InstructionWithKeywords[],
-      10 // Limit to top 10 most relevant instructions
-    )
+    const scoredInstructions = instructionsWithContent.map(instruction => {
+      const score = calculateRelevanceScore(
+        queryKeywords,
+        instruction.keywords || [],
+        instruction.title
+      )
+      const overlapCount = countKeywordOverlap(queryKeywords, instruction)
+      return { instruction, score, overlapCount }
+    })
 
-    // If no relevant instructions found, fall back to all instructions (up to 10)
-    const instructionsToUse = relevantInstructions.length > 0
-      ? relevantInstructions
-      : instructionsWithContent.slice(0, 10)
+    const relevantInstructions = scoredInstructions
+      .filter(item => item.score >= MIN_SCORE && item.overlapCount > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 10)
+      .map(item => item.instruction)
 
+    if (relevantInstructions.length === 0) {
+      await supabase.from('ask_tetra_logs').insert({
+        org_id: orgId,
+        user_id: userId,
+        question,
+        answer: FALLBACK_ANSWER,
+        source_instruction_id: null
+      })
+
+      await supabase.from('ai_unanswered_questions').insert({
+        org_id: orgId,
+        user_id: userId ?? null,
+        question
+      })
+
+      return NextResponse.json({
+        answer: FALLBACK_ANSWER,
+        source: null
+      })
+    }
     // Build context from filtered instructions
-    const context = instructionsToUse.map(inst => {
+    const context = relevantInstructions.map(inst => {
       const folderName = getFolderNameFromInstruction(inst)
       const severity = getSeverityFromInstruction(inst)
       return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + severity + '\nINNHOLD:\n' + inst.content + '\n---'
@@ -178,7 +230,7 @@ KRITISKE REGLER:
 2. Du har IKKE lov til å bruke ekstern kunnskap, egne vurderinger eller anbefalinger.
 3. Du skal ALDRI legge til kommentarer som "Merk:", "Dette høres ut...", "Jeg anbefaler..." eller lignende.
 4. Du skal ALDRI dikte opp prosedyrer eller gi egne råd.
-5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NØYAKTIG: "Jeg finner ingen instruks for dette i systemet. Kontakt ansvarlig leder for veiledning."
+5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NØYAKTIG: "Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig."
 6. Referer alltid til hvilket dokument svaret kommer fra ved å si "Basert på dokumentet [tittel]:" først.
 7. Svar kort, faktabasert og kun med det som faktisk står i dokumentet.
 8. Selv om innholdet virker rart eller uprofesjonelt, skal du BARE gjengi det uten å kommentere.
@@ -197,7 +249,7 @@ ${context}`
 
     const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
 
-    const sourceInstruction = instructionsToUse[0] || null
+    const sourceInstruction = relevantInstructions[0] || null
 
     await supabase.from('ask_tetra_logs').insert({
       org_id: orgId,
@@ -207,17 +259,13 @@ ${context}`
       source_instruction_id: sourceInstruction?.id || null
     })
 
-    const sourceFolderName = sourceInstruction
-      ? getFolderNameFromInstruction(sourceInstruction)
-      : ''
-
     return NextResponse.json({
       answer,
       source: sourceInstruction ? {
-        id: sourceInstruction.id,
+        instruction_id: sourceInstruction.id,
         title: sourceInstruction.title,
-        folder: sourceFolderName || null,
-        severity: getSeverityFromInstruction(sourceInstruction) || null
+        updated_at: 'created_at' in sourceInstruction ? sourceInstruction.created_at : null,
+        open_url_or_route: `/employee?instruction=${sourceInstruction.id}`
       } : null
     })
 
@@ -231,3 +279,6 @@ ${context}`
     }, { status: 500 })
   }
 }
+
+
+
