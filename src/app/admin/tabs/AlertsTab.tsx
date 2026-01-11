@@ -17,7 +17,7 @@ export default function AlertsTab({ alerts, styles, toggleAlert, deleteAlert, se
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <div>
           <h1 style={styles.pageTitle}>Avvik & Varsler</h1>
-          <p style={styles.pageSubtitle}>Varsler vises på ansattes hjem-side</p>
+          <p style={styles.pageSubtitle}>Varsler vises på ansattes hjemmeside</p>
         </div>
         <button style={styles.btn} onClick={() => setShowCreateAlert(true)}>
           <Plus size={16} />

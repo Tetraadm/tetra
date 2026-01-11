@@ -13,12 +13,20 @@ export default function AiLogTab({ aiLogs, styles }: Props) {
       <p style={styles.pageSubtitle}>Oversikt over spørsmål til Spør Tetra</p>
 
       <div style={styles.disclaimer}>
-        <strong>⚠️ Viktig:</strong> AI-assistenten svarer kun basert på publiserte instrukser.
-        Alle spørsmål og svar logges for kvalitetssikring og compliance.
+        <p style={{ margin: 0 }}>
+          <strong>⚠️ Viktig:</strong> AI-assistenten svarer kun basert på publiserte instrukser.
+        </p>
+        <p style={{ margin: 0 }}>
+          Alle spørsmål og svar logges for kvalitetssikring og compliance.
+        </p>
       </div>
 
       {aiLogs.length === 0 ? (
-        <div style={styles.card}><div style={styles.cardBody}><p style={{ color: '#64748B' }}>Ingen AI-spørsmål ennå</p></div></div>
+        <div style={styles.card}>
+          <div style={styles.cardBody}>
+            <p style={{ color: '#64748B' }}>Ingen AI-spørsmål ennå</p>
+          </div>
+        </div>
       ) : (
         aiLogs.map(log => (
           <div key={log.id} style={styles.logCard}>

@@ -18,7 +18,9 @@
 - Ryddet norsk UI-tekst i login/admin/employee; fikset korrupt tekst i auth-callback/post-auth.
 - Fjernet ubrukte UI-komponenter i src/components/ui/.
 - Grønn build verifisert med npm run build.
-
+- Admin: modaler flyttet til src/app/admin/components/modals.tsx; AdminDashboard bruker nye komponenter; EditUserModal tar nå teams, og hooks-typene NewInstructionState/NewAlertState er eksportert.
+- Ryddet encoding-artefakter i admin-tabber og modaler (spørsmål/nødutgang/støtteverktøy m.m.), pluss små tekstjusteringer i Alerts/Instructions.
+- AdminDashboard fikk manglende </div>-lukking etter modal-uttak; npm run build kjørte grønt.
 ## 2026-01-10
 - Synket supabase/sql/01_schema.sql med live DB; ryddet kanoniske RLS-policyer; storage-policy for instructions-bucket til org-lesing.
 - Profiles: get_profile_context for å unngå RLS-recursion; la til profiles.email + trigger set_profile_email.

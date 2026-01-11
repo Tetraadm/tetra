@@ -43,6 +43,16 @@ import {
   ReadConfirmationsTab
 } from './tabs'
 import {
+  CreateAlertModal,
+  CreateFolderModal,
+  CreateInstructionModal,
+  CreateTeamModal,
+  DisclaimerModal,
+  EditInstructionModal,
+  EditUserModal,
+  InviteUserModal
+} from './components/modals'
+import {
   useAdminAlerts,
   useAdminInstructions,
   useAdminTeams,
@@ -414,291 +424,107 @@ export default function AdminDashboard({
           )}
         </main>
       </div>
-
-      {/* Create Team Modal */}
-      {showCreateTeam && (
-        <div style={styles.modal} onClick={() => setShowCreateTeam(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett team</h2>
-            <label style={styles.label}>Teamnavn</label>
-            <input style={styles.input} value={newTeamName} onChange={e => setNewTeamName(e.target.value)} placeholder="F.eks. Lager, Butikk" />
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowCreateTeam(false)}>Avbryt</button>
-              <button style={{...styles.btn, ...(teamLoading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createTeam} disabled={teamLoading}>{teamLoading ? 'Oppretter...' : 'Opprett'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Folder Modal */}
-      {showCreateFolder && (
-        <div style={styles.modal} onClick={() => setShowCreateFolder(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett mappe</h2>
-            <label style={styles.label}>Mappenavn</label>
-            <input style={styles.input} value={newFolderName} onChange={e => setNewFolderName(e.target.value)} placeholder="F.eks. Brann, HMS" />
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(false)}>Avbryt</button>
-              <button style={{...styles.btn, ...(folderLoading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createFolder} disabled={folderLoading}>{folderLoading ? 'Oppretter...' : 'Opprett'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Instruction Modal */}
-      {showCreateInstruction && (
-        <div style={styles.modal} onClick={() => setShowCreateInstruction(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett instruks</h2>
-            
-            <label style={styles.label}>Tittel</label>
-            <input style={styles.input} value={newInstruction.title} onChange={e => setNewInstruction({ ...newInstruction, title: e.target.value })} placeholder="F.eks. Brannrutiner" />
-
-            <label style={styles.label}>Mappe</label>
-            <select style={styles.select} value={newInstruction.folderId} onChange={e => setNewInstruction({ ...newInstruction, folderId: e.target.value })}>
-              <option value="">Ingen mappe</option>
-              {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
-
-            <label style={styles.label}>Status</label>
-            <select style={styles.select} value={newInstruction.status} onChange={e => setNewInstruction({ ...newInstruction, status: e.target.value })}>
-              <option value="draft">Utkast (ikke synlig for ansatte)</option>
-              <option value="published">Publisert (synlig for ansatte og AI)</option>
-            </select>
-            
-            <label style={styles.label}>Innhold (brukes av AI)
-              <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', marginLeft: 8 }}>
-                • Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
-              </span>
-            </label>
-            <textarea
-              style={styles.textarea}
-              value={newInstruction.content}
-              onChange={e => setNewInstruction({ ...newInstruction, content: e.target.value })}
-              placeholder="Skriv eller lim inn tekst fra PDF her for at AI skal kunne svare på spørsmål om denne instruksen..."
-              rows={8}
-            />
-            
-            <label style={styles.label}>Alvorlighet</label>
-            <select style={styles.select} value={newInstruction.severity} onChange={e => setNewInstruction({ ...newInstruction, severity: e.target.value })}>
-              <option value="critical">Kritisk</option>
-              <option value="medium">Middels</option>
-              <option value="low">Lav</option>
-            </select>
-
-            <label style={styles.label}>Vedlegg (PDF)</label>
-            <input type="file" accept=".pdf" onChange={e => setSelectedFile(e.target.files?.[0] || null)} style={{ marginBottom: 16 }} />
-            {selectedFile && <p style={{ fontSize: 13, color: '#10B981', marginBottom: 16 }}>✓ {selectedFile.name}</p>}
-
-            <label style={styles.label}>Team</label>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
-                <input type="checkbox" checked={newInstruction.allTeams} onChange={e => setNewInstruction({ ...newInstruction, allTeams: e.target.checked, teamIds: [] })} />
-                <span>Alle team</span>
-              </label>
-              {!newInstruction.allTeams && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {teams.map(team => (
-                    <button key={team.id} type="button" onClick={() => {
-                      const ids = newInstruction.teamIds.includes(team.id) ? newInstruction.teamIds.filter(id => id !== team.id) : [...newInstruction.teamIds, team.id]
-                      setNewInstruction({ ...newInstruction, teamIds: ids })
-                    }} style={styles.teamChip(newInstruction.teamIds.includes(team.id))}>{team.name}</button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowCreateInstruction(false)}>Avbryt</button>
-              <button style={{...styles.btn, ...(instructionLoading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createInstruction} disabled={instructionLoading}>{instructionLoading ? 'Oppretter...' : 'Opprett'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Instruction Modal */}
-      {showEditInstruction && editingInstruction && (
-        <div style={styles.modal} onClick={() => setShowEditInstruction(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger instruks</h2>
-            
-            <label style={styles.label}>Tittel</label>
-            <input style={styles.input} value={editInstructionTitle} onChange={e => setEditInstructionTitle(e.target.value)} />
-
-            <label style={styles.label}>Mappe</label>
-            <select style={styles.select} value={editInstructionFolder} onChange={e => setEditInstructionFolder(e.target.value)}>
-              <option value="">Ingen mappe</option>
-              {folders.map(f => <option key={f.id} value={f.id}>{f.name}</option>)}
-            </select>
-
-            <label style={styles.label}>Status</label>
-            <select style={styles.select} value={editInstructionStatus} onChange={e => setEditInstructionStatus(e.target.value)}>
-              <option value="draft">Utkast</option>
-              <option value="published">Publisert</option>
-            </select>
-            
-            <label style={styles.label}>Innhold</label>
-            <textarea style={styles.textarea} value={editInstructionContent} onChange={e => setEditInstructionContent(e.target.value)} />
-            
-            <label style={styles.label}>Alvorlighet</label>
-            <select style={styles.select} value={editInstructionSeverity} onChange={e => setEditInstructionSeverity(e.target.value)}>
-              <option value="critical">Kritisk</option>
-              <option value="medium">Middels</option>
-              <option value="low">Lav</option>
-            </select>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowEditInstruction(false)}>Avbryt</button>
-              <button style={{...styles.btn, ...(instructionLoading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={saveEditInstruction} disabled={instructionLoading}>{instructionLoading ? 'Lagrer...' : 'Lagre'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Invite User Modal */}
-      {showInviteUser && (
-        <div style={styles.modal} onClick={() => setShowInviteUser(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Lag invitasjonslenke</h2>
-
-            <label style={styles.label}>E-post (kun for referanse)</label>
-            <input style={styles.input} type="email" value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="bruker@bedrift.no" />
-            <p style={{ fontSize: 13, color: '#64748B', marginTop: -12, marginBottom: 16 }}>
-              E-posten lagres ikke i databasen. Den brukes kun for logging og referanse.
-            </p>
-            
-            <label style={styles.label}>Rolle</label>
-            <select style={styles.select} value={inviteRole} onChange={e => setInviteRole(e.target.value)}>
-              <option value="employee">Ansatt</option>
-              <option value="teamleader">Teamleder</option>
-              <option value="admin">Sikkerhetsansvarlig</option>
-            </select>
-
-            <label style={styles.label}>Team</label>
-            <select style={styles.select} value={inviteTeam} onChange={e => setInviteTeam(e.target.value)}>
-              <option value="">Velg team...</option>
-              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowInviteUser(false)}>Avbryt</button>
-              <button style={{...styles.btn, ...(userLoading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={inviteUser} disabled={userLoading}>{userLoading ? 'Sender...' : 'Opprett invitasjon'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit User Modal */}
-      {showEditUser && editingUser && (
-        <div style={styles.modal} onClick={() => setShowEditUser(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger bruker</h2>
-            <p style={{ color: '#64748B', marginBottom: 16 }}>{editingUser.full_name}</p>
-            
-            <label style={styles.label}>Rolle</label>
-            <select style={styles.select} value={editUserRole} onChange={e => setEditUserRole(e.target.value)}>
-              <option value="employee">Ansatt</option>
-              <option value="teamleader">Teamleder</option>
-              <option value="admin">Sikkerhetsansvarlig</option>
-            </select>
-
-            <label style={styles.label}>Team</label>
-            <select style={styles.select} value={editUserTeam} onChange={e => setEditUserTeam(e.target.value)}>
-              <option value="">Ingen team</option>
-              {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-            </select>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowEditUser(false)}>Avbryt</button>
-              <button style={{...styles.btn, ...(userLoading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={saveEditUser} disabled={userLoading}>{userLoading ? 'Lagrer...' : 'Lagre'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Alert Modal */}
-      {showCreateAlert && (
-        <div style={styles.modal} onClick={() => setShowCreateAlert(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett avvik</h2>
-            
-            <label style={styles.label}>Tittel</label>
-            <input style={styles.input} value={newAlert.title} onChange={e => setNewAlert({ ...newAlert, title: e.target.value })} placeholder="F.eks. Stengt nødutgang" />
-            
-            <label style={styles.label}>Beskrivelse</label>
-            <textarea style={styles.textarea} value={newAlert.description} onChange={e => setNewAlert({ ...newAlert, description: e.target.value })} />
-            
-            <label style={styles.label}>Alvorlighet</label>
-            <select style={styles.select} value={newAlert.severity} onChange={e => setNewAlert({ ...newAlert, severity: e.target.value })}>
-              <option value="critical">Kritisk</option>
-              <option value="medium">Middels</option>
-              <option value="low">Lav</option>
-            </select>
-
-            <label style={styles.label}>Synlig for</label>
-            <div style={{ marginBottom: 16 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input type="checkbox" checked={newAlert.allTeams} onChange={e => setNewAlert({ ...newAlert, allTeams: e.target.checked, teamIds: [] })} />
-                <span>Alle team</span>
-              </label>
-              {!newAlert.allTeams && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-                  {teams.map(team => (
-                    <button
-                      key={team.id}
-                      type="button"
-                      onClick={() => {
-                        const ids = newAlert.teamIds.includes(team.id)
-                          ? newAlert.teamIds.filter(id => id !== team.id)
-                          : [...newAlert.teamIds, team.id]
-                        setNewAlert({ ...newAlert, teamIds: ids })
-                      }}
-                      style={styles.teamChip(newAlert.teamIds.includes(team.id))}
-                    >
-                      {team.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-              <button style={styles.btnSecondary} onClick={() => setShowCreateAlert(false)}>Avbryt</button>
-              <button style={{...styles.btn, ...(alertLoading ? {background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6} : {})}} onClick={createAlert} disabled={alertLoading}>{alertLoading ? 'Oppretter...' : 'Opprett'}</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Disclaimer Modal */}
-      {showDisclaimer && (
-        <div style={styles.modal} onClick={() => setShowDisclaimer(false)}>
-          <div style={styles.modalContent} onClick={e => e.stopPropagation()}>
-            <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>ℹ️ Om AI-assistenten</h2>
-            
-            <div style={styles.disclaimer}>
-              <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Ansvarsfraskrivelse</h3>
-              <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
-                Tetra AI er et <strong>støtteverktøy</strong> som hjelper ansatte med å finne informasjon i bedriftens instrukser og prosedyrer.
-              </p>
-              <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
-                AI-assistenten svarer <strong>kun basert på publiserte dokumenter</strong> i systemet. Den bruker ikke ekstern kunnskap eller generell informasjon.
-              </p>
-              <p style={{ fontSize: 14, lineHeight: 1.6, color: '#92400E' }}>
-                <strong>Viktig:</strong> AI-svar er ikke juridisk bindende eller operativ fasit. Ved tvil, kontakt alltid ansvarlig leder.
-              </p>
-            </div>
-
-            <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Logging</h3>
-            <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
-              Alle spørsmål og svar logges for kvalitetssikring. Loggene er kun tilgjengelige for administratorer.
-            </p>
-
-            <button style={styles.btn} onClick={() => setShowDisclaimer(false)}>Lukk</button>
-          </div>
-        </div>
-      )}
       </div>
+
+      <CreateTeamModal
+        open={showCreateTeam}
+        styles={styles}
+        newTeamName={newTeamName}
+        setNewTeamName={setNewTeamName}
+        onClose={() => setShowCreateTeam(false)}
+        onCreate={createTeam}
+        loading={teamLoading}
+      />
+
+      <CreateFolderModal
+        open={showCreateFolder}
+        styles={styles}
+        newFolderName={newFolderName}
+        setNewFolderName={setNewFolderName}
+        onClose={() => setShowCreateFolder(false)}
+        onCreate={createFolder}
+        loading={folderLoading}
+      />
+
+      <CreateInstructionModal
+        open={showCreateInstruction}
+        styles={styles}
+        folders={folders}
+        teams={teams}
+        newInstruction={newInstruction}
+        selectedFile={selectedFile}
+        setNewInstruction={setNewInstruction}
+        setSelectedFile={setSelectedFile}
+        instructionLoading={instructionLoading}
+        createInstruction={createInstruction}
+        onClose={() => setShowCreateInstruction(false)}
+      />
+
+      <EditInstructionModal
+        open={showEditInstruction}
+        styles={styles}
+        folders={folders}
+        editingInstruction={editingInstruction}
+        editInstructionTitle={editInstructionTitle}
+        setEditInstructionTitle={setEditInstructionTitle}
+        editInstructionContent={editInstructionContent}
+        setEditInstructionContent={setEditInstructionContent}
+        editInstructionSeverity={editInstructionSeverity}
+        setEditInstructionSeverity={setEditInstructionSeverity}
+        editInstructionStatus={editInstructionStatus}
+        setEditInstructionStatus={setEditInstructionStatus}
+        editInstructionFolder={editInstructionFolder}
+        setEditInstructionFolder={setEditInstructionFolder}
+        instructionLoading={instructionLoading}
+        saveEditInstruction={saveEditInstruction}
+        onClose={() => setShowEditInstruction(false)}
+      />
+
+      <InviteUserModal
+        open={showInviteUser}
+        styles={styles}
+        inviteEmail={inviteEmail}
+        setInviteEmail={setInviteEmail}
+        inviteRole={inviteRole}
+        setInviteRole={setInviteRole}
+        inviteTeam={inviteTeam}
+        setInviteTeam={setInviteTeam}
+        teams={teams}
+        userLoading={userLoading}
+        inviteUser={inviteUser}
+        onClose={() => setShowInviteUser(false)}
+      />
+
+      <EditUserModal
+        open={showEditUser}
+        styles={styles}
+        editingUser={editingUser}
+        editUserRole={editUserRole}
+        setEditUserRole={setEditUserRole}
+        editUserTeam={editUserTeam}
+        setEditUserTeam={setEditUserTeam}
+        teams={teams}
+        userLoading={userLoading}
+        saveEditUser={saveEditUser}
+        onClose={() => setShowEditUser(false)}
+      />
+
+      <CreateAlertModal
+        open={showCreateAlert}
+        styles={styles}
+        newAlert={newAlert}
+        setNewAlert={setNewAlert}
+        teams={teams}
+        alertLoading={alertLoading}
+        createAlert={createAlert}
+        onClose={() => setShowCreateAlert(false)}
+      />
+
+      <DisclaimerModal
+        open={showDisclaimer}
+        styles={styles}
+        onClose={() => setShowDisclaimer(false)}
+      />
     </>
   )
 }

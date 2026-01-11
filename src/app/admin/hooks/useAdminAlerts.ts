@@ -12,7 +12,7 @@ type UseAdminAlertsOptions = {
   onCloseCreateAlert?: () => void
 }
 
-type NewAlertState = {
+export type NewAlertState = {
   title: string
   description: string
   severity: string

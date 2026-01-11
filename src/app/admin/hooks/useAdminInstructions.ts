@@ -7,7 +7,7 @@ import type { Folder, Instruction, Profile } from '@/lib/types'
 
 type SupabaseClient = ReturnType<typeof createClient>
 
-type NewInstructionState = {
+export type NewInstructionState = {
   title: string
   content: string
   severity: string

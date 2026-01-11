@@ -101,7 +101,7 @@ export default function InstructionsTab({
                   {inst.title}
                   {inst.file_path && <Paperclip size={14} style={{ marginLeft: 8, color: '#64748B', verticalAlign: 'middle' }} />}
                 </td>
-                <td style={styles.td}>{inst.folders?.name || '—'}</td>
+                <td style={styles.td}>{inst.folders?.name || 'Ingen mappe'}</td>
                 <td style={styles.td}>
                   <span style={styles.badge(statusColor(inst.status).bg, statusColor(inst.status).color)}>
                     {inst.status === 'published' ? 'Publisert' : 'Utkast'}
