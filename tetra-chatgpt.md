@@ -6,6 +6,7 @@
 - RPC accept_invite gjenopprettet: valid token <7d, krever session, upserter profile med rolle/org/team, markerer invite brukt. Migrasjon kjørt i Supabase.
 - /api/upload: PDF-tekst trekkes ut automatisk (pdf-parse). effectiveContent fylles fra PDF hvis content er tom. npm install kjørt, package-lock oppdatert.
 - AdminDashboard-logikk flyttet ut i hooks (brukere/team/instrukser/avvik/auditlogg/leserapport); tabs under src/app/admin/tabs brukes videre fra parent.
+- AdminDashboard.tsx redusert fra ~1500 til ~530 linjer; 9 tab-komponenter: OverviewTab, UsersTab, TeamsTab, InstructionsTab, AlertsTab, AiLogTab, InsightsTab, AuditLogTab, ReadConfirmationsTab. Parent beholder all state/modaler/handlere og sender props.
 - EmployeeApp: chat/instruks/modaldetaljer flyttet til hooks under src/app/employee/hooks; layout/tabber beholdt.
 - Viktig: Hook-refaktor for admin/employee er i main; modaler/tabber beholdt i parent. claude-tetra.md er fortsatt lokalt endret (ikke committed).
 
