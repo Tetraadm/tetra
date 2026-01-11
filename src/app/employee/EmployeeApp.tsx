@@ -3,9 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { useState, useRef, useEffect } from 'react'
-import { trackInstructionRead } from '@/lib/read-tracking'
-import toast from 'react-hot-toast'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
 import FileLink from '@/components/FileLink'
@@ -29,17 +27,10 @@ import type {
   Organization,
   Team,
   Alert,
-  ChatMessage
+  Instruction
 } from '@/lib/types'
 import { severityLabel, severityColor } from '@/lib/ui-helpers'
-
-type Instruction = {
-  id: string
-  title: string
-  content: string | null
-  severity: string
-  file_path: string | null
-}
+import { useEmployeeChat, useEmployeeInstructions } from './hooks'
 
 type Props = {
   profile: Profile
@@ -50,19 +41,47 @@ type Props = {
 }
 
 export default function EmployeeApp({ profile, organization, team: _team, instructions, alerts }: Props) {
+  const supabase = useMemo(() => createClient(), [])
   const [tab, setTab] = useState<'home' | 'instructions' | 'ask'>('home')
-  const [searchQuery, setSearchQuery] = useState('')
-  const [chatInput, setChatInput] = useState('')
-  const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [isTyping, setIsTyping] = useState(false)
-  const [selectedInstruction, setSelectedInstruction] = useState<Instruction | null>(null)
-  const [confirmedInstructions, setConfirmedInstructions] = useState<Set<string>>(new Set())
-  const [confirmingInstruction, setConfirmingInstruction] = useState<string | null>(null)
   const [isMobile, setIsMobile] = useState(true)
-  const chatRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
-  const supabase = createClient()
   void _team
+
+  const {
+    searchQuery,
+    setSearchQuery,
+    selectedInstruction,
+    setSelectedInstruction,
+    confirmedInstructions,
+    confirmingInstruction,
+    filteredInstructions,
+    criticalInstructions,
+    handleConfirmRead,
+    selectInstructionById
+  } = useEmployeeInstructions({
+    profile,
+    instructions,
+    supabase
+  })
+
+  const handleOpenSource = useCallback((sourceId: string) => {
+    selectInstructionById(sourceId)
+    setTab('home')
+  }, [selectInstructionById])
+
+  const {
+    chatInput,
+    setChatInput,
+    messages,
+    isTyping,
+    chatRef,
+    handleAsk,
+    handleSuggestion,
+    handleOpenSource: handleChatOpenSource
+  } = useEmployeeChat({
+    profile,
+    onOpenSource: handleOpenSource
+  })
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768)
@@ -71,130 +90,16 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
     return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
-  useEffect(() => { if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight }, [messages])
-
   useEffect(() => {
     cleanupInviteData()
   }, [])
 
-  useEffect(() => {
-    const loadConfirmed = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('instruction_reads')
-          .select('instruction_id')
-          .eq('user_id', profile.id)
-          .eq('confirmed', true)
-
-        if (error) throw error
-
-        if (data) {
-          setConfirmedInstructions(new Set(data.map(r => r.instruction_id)))
-        }
-      } catch (error) {
-        console.error('Load confirmed instructions error:', error)
-      }
-    }
-    loadConfirmed()
-  }, [profile.id, supabase])
-
-  useEffect(() => {
-    if (selectedInstruction) {
-      trackInstructionRead(supabase, selectedInstruction.id, profile.id, profile.org_id)
-    }
-  }, [selectedInstruction, supabase, profile.id, profile.org_id])
-
-  const handleLogout = async () => { await supabase.auth.signOut(); router.push('/login') }
-
-  const handleConfirmRead = async (instructionId: string) => {
-    setConfirmingInstruction(instructionId)
-    try {
-      const response = await fetch('/api/confirm-read', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ instructionId })
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      if (data.error) {
-        throw new Error(data.error)
-      }
-
-      if (data.success) {
-        setConfirmedInstructions(prev => new Set(prev).add(instructionId))
-        toast.success('Bekreftet! Du har lest og forstatt instruksen.')
-      } else {
-        throw new Error('Ugyldig respons fra server')
-      }
-    } catch (error) {
-      console.error('Confirm read error:', error)
-      toast.error('Kunne ikke bekrefte lesing. Prov igjen.')
-    } finally {
-      setConfirmingInstruction(null)
-    }
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    router.push('/login')
   }
 
-  const filteredInstructions = instructions.filter(inst => inst.title.toLowerCase().includes(searchQuery.toLowerCase()) || (inst.content && inst.content.toLowerCase().includes(searchQuery.toLowerCase())))
-  const criticalInstructions = instructions.filter(i => i.severity === 'critical')
-
-  const handleAsk = async () => {
-    const question = chatInput.trim()
-    if (!question) return
-    setMessages(prev => [...prev, { type: 'user', text: question }])
-    setChatInput('')
-    setIsTyping(true)
-    try {
-      const response = await fetch('/api/ask', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, orgId: profile.org_id, userId: profile.id })
-      })
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
-      }
-
-      const data = await response.json()
-
-      if (data.error) {
-        throw new Error(data.error)
-      }
-
-      if (data.answer) {
-        setMessages(prev => [...prev, {
-          type: 'bot',
-          text: data.answer,
-          source: data.source || undefined
-        }])
-      } else {
-        setMessages(prev => [...prev, { type: 'notfound', text: '' }])
-      }
-    } catch (error) {
-      console.error('Ask error:', error)
-      setMessages(prev => [...prev, {
-        type: 'notfound',
-        text: 'Kunne ikke koble til Tetra. Sjekk nettforbindelsen din og prov igjen.'
-      }])
-    } finally {
-      setIsTyping(false)
-    }
-  }
-
-  const handleSuggestion = (q: string) => setChatInput(q)
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
-
-  const handleOpenSource = (sourceId: string) => {
-    const instruction = instructions.find(i => i.id === sourceId)
-    if (instruction) {
-      setSelectedInstruction(instruction)
-      setTab('home')
-    }
-  }
 
   const s = {
     container: {
@@ -838,19 +743,19 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
                       {msg.text}
                       {msg.source && (
                         <div
-                          style={s.citation}
-                        >
-                          <div style={{ marginBottom: 4 }}>
-                            Kilde: {msg.source.title} (oppdatert {msg.source.updated_at ? new Date(msg.source.updated_at).toISOString().split('T')[0] : 'ukjent'})
-                          </div>
-                          <div
-                            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
-                            onClick={() => handleOpenSource(msg.source!.instruction_id)}
+                            style={s.citation}
                           >
-                            <FileText size={14} />
-                            Klikk for \u00e5 \u00e5pne: {msg.source.title}
+                            <div style={{ marginBottom: 4 }}>
+                              Kilde: {msg.source.title} (oppdatert {msg.source.updated_at ? new Date(msg.source.updated_at).toISOString().split('T')[0] : 'ukjent'})
+                            </div>
+                            <div
+                              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}
+                              onClick={() => handleChatOpenSource(msg.source!.instruction_id)}
+                            >
+                              <FileText size={14} />
+                              Klikk for \u00e5 \u00e5pne: {msg.source.title}
+                            </div>
                           </div>
-                        </div>
                       )}
                     </div>
                   </div>
