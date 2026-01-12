@@ -1,5 +1,7 @@
 'use client'
 
+import { AlertTriangle } from 'lucide-react'
+
 export default function Error({
   error: _error,
   reset,
@@ -27,8 +29,11 @@ export default function Error({
       }}>
         <div style={{
           fontSize: 48,
-          marginBottom: 16
-        }}>⚠️</div>
+          marginBottom: 16,
+          color: '#DC2626'
+        }}>
+          <AlertTriangle size={48} aria-hidden="true" />
+        </div>
         <h2 style={{
           fontSize: 20,
           fontWeight: 700,

@@ -1,4 +1,4 @@
-import { Download } from 'lucide-react'
+import { BarChart3, Download } from 'lucide-react'
 import EmptyState from '@/components/EmptyState'
 import type { createAdminStyles } from '../styles'
 import {
@@ -116,7 +116,7 @@ export default function AuditLogTab({
                 <tr>
                   <td colSpan={4} style={{ padding: 0 }}>
                     <EmptyState
-                      icon="📊"
+                      icon={<BarChart3 size={48} aria-hidden="true" />}
                       title="Ingen aktivitet funnet"
                       description="Prøv å endre filtrene eller kom tilbake senere."
                       actionLabel="Nullstill filter"

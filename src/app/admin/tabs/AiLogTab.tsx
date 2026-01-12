@@ -1,3 +1,4 @@
+import { AlertTriangle, Paperclip } from 'lucide-react'
 import type { AiLog } from '@/lib/types'
 import type { createAdminStyles } from '../styles'
 
@@ -14,7 +15,11 @@ export default function AiLogTab({ aiLogs, styles }: Props) {
 
       <div style={styles.disclaimer}>
         <p style={{ margin: 0 }}>
-          <strong>⚠️ Viktig:</strong> AI-assistenten svarer kun basert på publiserte instrukser.
+          <strong style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <AlertTriangle size={14} aria-hidden="true" />
+            Viktig:
+          </strong>{' '}
+          AI-assistenten svarer kun basert på publiserte instrukser.
         </p>
         <p style={{ margin: 0 }}>
           Alle spørsmål og svar logges for kvalitetssikring og compliance.
@@ -50,7 +55,10 @@ export default function AiLogTab({ aiLogs, styles }: Props) {
                 borderRadius: 8,
                 fontSize: 13
               }}>
-                📄 Kilde: {log.instructions.title}
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <Paperclip size={14} aria-hidden="true" />
+                  Kilde: {log.instructions.title}
+                </span>
               </div>
             )}
           </div>

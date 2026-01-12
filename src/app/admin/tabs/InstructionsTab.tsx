@@ -1,4 +1,4 @@
-import { Plus, FolderOpen, Paperclip } from 'lucide-react'
+import { FolderOpen, Paperclip, Plus, X } from 'lucide-react'
 import type { Instruction, Folder } from '@/lib/types'
 import { severityLabel, severityColor, statusColor } from '@/lib/ui-helpers'
 import type { createAdminStyles } from '../styles'
@@ -78,7 +78,13 @@ export default function InstructionsTab({
             <button style={styles.folderChip(selectedFolder === folder.id)} onClick={() => setSelectedFolder(folder.id)}>
               <FolderOpen size={14} style={{ marginRight: 4 }} />{folder.name}
             </button>
-            <button style={{ ...styles.btnDanger, padding: '4px 8px', fontSize: 10 }} onClick={() => deleteFolder(folder.id)}>✕</button>
+            <button
+              style={{ ...styles.btnDanger, padding: '4px 8px', fontSize: 10 }}
+              onClick={() => deleteFolder(folder.id)}
+              aria-label="Slett mappe"
+            >
+              <X size={12} aria-hidden="true" />
+            </button>
           </div>
         ))}
       </div>

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { FileText, Home, Users } from 'lucide-react'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
 import type { Profile, Organization, Team } from '@/lib/types'
@@ -91,7 +92,9 @@ export default function LeaderDashboard({
       padding: '16px 0',
     },
     navItem: (active: boolean) => ({
-      display: 'block',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
       width: '100%',
       padding: '12px 24px',
       fontSize: 14,
@@ -206,13 +209,16 @@ export default function LeaderDashboard({
         {/* Sidebar */}
         <aside style={styles.sidebar}>
           <button style={styles.navItem(tab === 'oversikt')} onClick={() => setTab('oversikt')}>
-            🏠 Oversikt
+            <Home size={16} aria-hidden="true" />
+            Oversikt
           </button>
           <button style={styles.navItem(tab === 'team')} onClick={() => setTab('team')}>
-            👥 Mitt team
+            <Users size={16} aria-hidden="true" />
+            Mitt team
           </button>
           <button style={styles.navItem(tab === 'instrukser')} onClick={() => setTab('instrukser')}>
-            📋 Instrukser
+            <FileText size={16} aria-hidden="true" />
+            Instrukser
           </button>
         </aside>
 

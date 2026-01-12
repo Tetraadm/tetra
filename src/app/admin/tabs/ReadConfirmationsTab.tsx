@@ -1,4 +1,4 @@
-import { Download, ChevronDown, ChevronRight } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, ClipboardList, Download, X } from 'lucide-react'
 import EmptyState from '@/components/EmptyState'
 import type { createAdminStyles } from '../styles'
 import { exportReadReportCSV as exportReadCSV, type ReadReportItem } from '../utils'
@@ -38,7 +38,7 @@ export default function ReadConfirmationsTab({
       ) : readReport.length === 0 ? (
         <div style={styles.card}>
           <EmptyState
-            icon="📋"
+            icon={<ClipboardList size={48} aria-hidden="true" />}
             title="Ingen lesebekreftelser ennå"
             description="Når ansatte begynner å lese og bekrefte instrukser, vil de vises her."
           />
@@ -99,16 +99,16 @@ export default function ReadConfirmationsTab({
                               <td style={{ padding: 12, fontSize: 13, color: '#64748B' }}>{user.user_email}</td>
                               <td style={{ padding: 12, textAlign: 'center' }}>
                                 {user.read ? (
-                                  <span style={{ color: '#3B82F6', fontSize: 16 }}>✓</span>
+                                  <Check size={16} style={{ color: '#3B82F6' }} aria-hidden="true" />
                                 ) : (
-                                  <span style={{ color: '#CBD5E1', fontSize: 16 }}>○</span>
+                                  <X size={16} style={{ color: '#CBD5E1' }} aria-hidden="true" />
                                 )}
                               </td>
                               <td style={{ padding: 12, textAlign: 'center' }}>
                                 {user.confirmed ? (
-                                  <span style={{ color: '#10B981', fontSize: 16 }}>✓</span>
+                                  <Check size={16} style={{ color: '#10B981' }} aria-hidden="true" />
                                 ) : (
-                                  <span style={{ color: '#CBD5E1', fontSize: 16 }}>○</span>
+                                  <X size={16} style={{ color: '#CBD5E1' }} aria-hidden="true" />
                                 )}
                               </td>
                               <td style={{ padding: 12, fontSize: 13, color: '#64748B' }}>

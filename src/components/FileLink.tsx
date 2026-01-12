@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
+import { AlertTriangle, Paperclip } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 type FileLinkProps = {
@@ -68,9 +69,13 @@ export default function FileLink({ fileUrl, supabase }: FileLinkProps) {
         border: '1px solid #FCA5A5',
         borderRadius: 8,
         color: '#DC2626',
-        fontSize: 14
+        fontSize: 14,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8
       }}>
-        ⚠️ {error}
+        <AlertTriangle size={16} aria-hidden="true" />
+        <span>{error}</span>
       </div>
     )
   }
@@ -99,7 +104,8 @@ export default function FileLink({ fileUrl, supabase }: FileLinkProps) {
         boxSizing: 'border-box' as const
       }}
     >
-      📄 {isOpening ? 'Åpner...' : 'Åpne vedlegg (PDF)'}
+      <Paperclip size={16} aria-hidden="true" />
+      {isOpening ? 'Åpner...' : 'Åpne vedlegg (PDF)'}
     </button>
   )
 }

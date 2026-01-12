@@ -1,5 +1,8 @@
+import { Inbox } from 'lucide-react'
+import type { ReactNode } from 'react'
+
 type EmptyStateProps = {
-  icon?: string
+  icon?: ReactNode
   title: string
   description: string
   actionLabel?: string
@@ -7,7 +10,7 @@ type EmptyStateProps = {
 }
 
 export default function EmptyState({
-  icon = '📭',
+  icon = <Inbox size={48} aria-hidden="true" />,
   title,
   description,
   actionLabel,

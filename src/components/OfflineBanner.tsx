@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { AlertTriangle } from 'lucide-react'
 
 export default function OfflineBanner() {
   const [isOffline, setIsOffline] = useState(false)
@@ -42,7 +43,7 @@ export default function OfflineBanner() {
       justifyContent: 'center',
       gap: 12
     }}>
-      <span>⚠️</span>
+      <AlertTriangle size={16} aria-hidden="true" />
       <span>Du er offline. Noen funksjoner kan være utilgjengelige.</span>
       <button
         onClick={() => window.location.reload()}

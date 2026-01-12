@@ -7,7 +7,12 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit, getClientIp } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
 
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const DEFAULT_MAX_UPLOAD_MB = 10
+const RAW_MAX_UPLOAD_MB = Number.parseInt(process.env.MAX_UPLOAD_MB ?? '', 10)
+const MAX_UPLOAD_MB = Number.isFinite(RAW_MAX_UPLOAD_MB) && RAW_MAX_UPLOAD_MB > 0
+  ? RAW_MAX_UPLOAD_MB
+  : DEFAULT_MAX_UPLOAD_MB
+const MAX_FILE_SIZE = MAX_UPLOAD_MB * 1024 * 1024
 const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
 type SupabaseErrorDetails = {
   code?: string
@@ -75,7 +80,7 @@ export async function POST(request: NextRequest) {
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: `Filen er for stor. Maks størrelse er ${MAX_FILE_SIZE / 1024 / 1024}MB` },
+        { error: `Filen er for stor. Maks størrelse er ${MAX_UPLOAD_MB}MB` },
         { status: 400 }
       )
     }

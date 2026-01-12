@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
+import { CheckCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Organization, Team } from '@/lib/types'
 import { roleLabel } from '@/lib/ui-helpers'
@@ -199,7 +200,9 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
     return (
       <div style={styles.container}>
         <div style={styles.card}>
-          <div style={styles.checkIcon}>✓</div>
+          <div style={styles.checkIcon}>
+            <CheckCircle size={28} aria-hidden="true" />
+          </div>
           <h1 style={styles.title}>Sjekk e-posten din</h1>
           <p style={styles.subtitle}>
             Vi har sendt en innloggingslenke til <strong>{email}</strong>
