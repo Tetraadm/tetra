@@ -51,11 +51,13 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
         throw new Error(data.error)
       }
 
-      if (data?.answer) {
+      const answer = data?.answer
+      const source = data?.source
+      if (typeof answer === 'string') {
         setMessages(prev => [...prev, {
           type: 'bot',
-          text: data.answer,
-          source: data.source || undefined
+          text: answer,
+          source
         }])
       } else {
         setMessages(prev => [...prev, { type: 'notfound', text: '' }])
