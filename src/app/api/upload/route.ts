@@ -6,6 +6,25 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit, getClientIp } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
+import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
+
+GlobalWorkerOptions.workerSrc = ''
+
+async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
+  const pdf = await getDocument({ data: pdfBytes, useSystemFonts: true }).promise
+  const textParts: string[] = []
+
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i)
+    const textContent = await page.getTextContent()
+    const pageText = textContent.items
+      .map((item) => ('str' in item ? item.str : ''))
+      .join(' ')
+    textParts.push(pageText)
+  }
+
+  return textParts.join('\n\n').trim()
+}
 
 const DEFAULT_MAX_UPLOAD_MB = 10
 const RAW_MAX_UPLOAD_MB = Number.parseInt(process.env.MAX_UPLOAD_MB ?? '', 10)
@@ -149,16 +168,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kunne ikke laste opp filen' }, { status: 500 })
     }
 
-    // Ekstraher tekst fra .txt og .pdf (fallback hvis PDF-lesing feiler)
+    // Ekstraher tekst fra .txt og .pdf
     let extractedText = ''
     if (file.type === 'text/plain') {
       extractedText = await file.text()
     } else if (file.type === 'application/pdf') {
       try {
-        const { default: pdfParse } = await import('pdf-parse')
-        const pdfBuffer = Buffer.from(fileBytes)
-        const parsed = await pdfParse(pdfBuffer)
-        extractedText = parsed.text || ''
+        extractedText = await extractPdfText(fileBytes)
       } catch (err) {
         console.error('PDF_PARSE_ERROR', err)
       }
