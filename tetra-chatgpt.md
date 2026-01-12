@@ -1,5 +1,11 @@
 # Tetra logg (kort)
 
+## 2026-01-12 (latest)
+- Rate limiting: Upstash Redis wrapper + safe env parsing; defaults now AI 20/60s, upload 10/60s; prod warns if Upstash missing.
+- Employee chat: shows explicit 429 message from API; notfound bubble displays custom message when present.
+- UI icons: replaced emoji/glyphs with lucide-react across admin/leader/invite/error/offline; EmptyState now accepts ReactNode icon.
+- README: env defaults updated; AI_MIN_RELEVANCE_SCORE default set to 0.35.
+
 ## 2026-01-15
 - Supabase: 14_rls_optimization applied; new migrations 15_policy_consolidation, 16_drop_unused_indexes, 17_add_fk_indexes applied.
 - RLS policies consolidated; admin manage policies split into insert/update/delete to remove multiple permissive policy warnings.
