@@ -90,3 +90,4 @@ git commit -m "chore: security hardening + admin query limits
 
 ### Notes / risks
 - Build logs show `Upstash not configured; falling back to in-memory rate limiter.` (warning only)
+

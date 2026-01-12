@@ -96,3 +96,18 @@
 
 ### Notes / gotchas
 - Upstash env vars now set; build warning should no longer appear
+
+---
+
+## Session: 2026-01-13 00:32 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Verify Upstash env/config
+
+### Commands (if any) + result
+- `npm run build` -> PASS (Upstash-warning borte)
+
+### Resultat
+- PASS - Upstash-warning borte
+
+### Notes / gotchas
+- Upstash env vars lagt til i `.env.local` og Vercel
