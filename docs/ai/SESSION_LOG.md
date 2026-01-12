@@ -83,3 +83,16 @@
 
 ### Notes / gotchas
 - Build warns: `Upstash not configured; falling back to in-memory rate limiter.`
+
+---
+
+## Session: 2026-01-13 00:25 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Log env update and build warning expectation
+
+### Work done
+- [x] Documented Upstash env vars added to .env.local and Vercel
+- [x] Noted build warning expected to be gone
+
+### Notes / gotchas
+- Upstash env vars now set; build warning should no longer appear
