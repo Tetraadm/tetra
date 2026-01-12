@@ -730,7 +730,9 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
           </div>
         ) : (
           <>
-            {messages.map((msg, idx) => (
+            {messages.map((msg, idx) => {
+              const notFoundMessage = msg.type === 'notfound' ? msg.text.trim() : ''
+              return (
               <div key={idx}>
                 {msg.type === 'user' && (
                   <div style={s.message(true)}>
@@ -763,15 +765,17 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
                 {msg.type === 'notfound' && (
                   <div style={s.message(false)}>
                     <div style={s.notFoundBubble}>
-                      <strong>Fant ikke relevant instruks.</strong>
-                      <div style={{ fontSize: 13, marginTop: 4 }}>
-                        Kontakt din nærmeste leder hvis dette haster.
-                      </div>
+                      <strong>{notFoundMessage || 'Fant ikke relevant instruks.'}</strong>
+                      {!notFoundMessage && (
+                        <div style={{ fontSize: 13, marginTop: 4 }}>
+                          Kontakt din nærmeste leder hvis dette haster.
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
-            ))}
+            )})}
             {isTyping && (
               <div style={s.message(false)}>
                 <div style={s.typingIndicator}>

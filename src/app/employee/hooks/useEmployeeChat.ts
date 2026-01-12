@@ -31,17 +31,27 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
         body: JSON.stringify({ question, orgId: profile.org_id, userId: profile.id })
       })
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`)
+      let data: { answer?: string; source?: ChatMessage['source']; error?: string } | null = null
+      try {
+        data = await response.json()
+      } catch {
+        data = null
       }
 
-      const data = await response.json()
+      if (!response.ok) {
+        if (response.status === 429) {
+          const message = data?.error || 'For mange forespørsler. Prøv igjen om litt.'
+          setMessages(prev => [...prev, { type: 'notfound', text: message }])
+          return
+        }
+        throw new Error(data?.error || `HTTP ${response.status}`)
+      }
 
-      if (data.error) {
+      if (data?.error) {
         throw new Error(data.error)
       }
 
-      if (data.answer) {
+      if (data?.answer) {
         setMessages(prev => [...prev, {
           type: 'bot',
           text: data.answer,
@@ -54,7 +64,7 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
       console.error('Ask error:', error)
       setMessages(prev => [...prev, {
         type: 'notfound',
-        text: 'Kunne ikke koble til Tetra. Sjekk nettforbindelsen din og prov igjen.'
+        text: 'Kunne ikke koble til Tetra. Sjekk nettforbindelsen din og prøv igjen.'
       }])
     } finally {
       setIsTyping(false)

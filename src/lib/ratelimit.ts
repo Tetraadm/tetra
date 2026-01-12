@@ -14,9 +14,9 @@ const parseEnvInt = (name: string, fallback: number, min = 1) => {
 }
 
 // Environment configuration with defaults
-const AI_RATE_LIMIT = parseEnvInt('AI_RATE_LIMIT', 10)
+const AI_RATE_LIMIT = parseEnvInt('AI_RATE_LIMIT', 20)
 const AI_RATE_WINDOW_SECONDS = parseEnvInt('AI_RATE_WINDOW_SECONDS', 60)
-const UPLOAD_RATE_LIMIT = parseEnvInt('UPLOAD_RATE_LIMIT', 5)
+const UPLOAD_RATE_LIMIT = parseEnvInt('UPLOAD_RATE_LIMIT', 10)
 const UPLOAD_RATE_WINDOW_SECONDS = parseEnvInt('UPLOAD_RATE_WINDOW_SECONDS', 60)
 
 // Check if Upstash is configured
