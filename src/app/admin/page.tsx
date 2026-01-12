@@ -22,28 +22,33 @@ export default async function AdminPage() {
     .from('teams')
     .select('*')
     .eq('org_id', profile.org_id)
+    .limit(500)
 
   const { data: users } = await supabase
     .from('profiles')
     .select('*')
     .eq('org_id', profile.org_id)
+    .limit(1000)
 
   const { data: instructions } = await supabase
     .from('instructions')
     .select('*, folders(*)')
     .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
+    .limit(1000)
 
   const { data: folders } = await supabase
     .from('folders')
     .select('*')
     .eq('org_id', profile.org_id)
+    .limit(200)
 
   const { data: alerts } = await supabase
     .from('alerts')
     .select('*')
     .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
+    .limit(500)
 
   // Hent AI-logger
   const { data: aiLogs } = await supabase
