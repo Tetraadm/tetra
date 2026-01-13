@@ -91,25 +91,7 @@ function countKeywordOverlap(
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
-    const ip = getClientIp(request)
-    const { success, limit, remaining, reset } = await aiRatelimit.limit(ip)
-
-    if (!success) {
-      return NextResponse.json(
-        { error: 'For mange forespørsler. Prøv igjen om litt.' },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': remaining.toString(),
-            'X-RateLimit-Reset': new Date(reset).toISOString(),
-          },
-        }
-      )
-    }
-
-    // Input validation
+    // Input validation first (cheap operation)
     const body = await request.json()
     const validation = askSchema.safeParse(body)
 
@@ -129,6 +111,29 @@ export async function POST(request: NextRequest) {
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Rate limiting AFTER auth - use user.id for more accurate limits
+    // This prevents IP-based bypass when multiple users share same IP (e.g., behind proxy)
+    const ip = getClientIp(request)
+    const rateLimitKey = `user:${user.id}`
+    const { success, limit, remaining, reset } = await aiRatelimit.limit(rateLimitKey)
+
+    if (!success) {
+      return NextResponse.json(
+        { error: 'For mange forespørsler. Prøv igjen om litt.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': new Date(reset).toISOString(),
+          },
+        }
+      )
+    }
+
+    // Keep ip for potential logging (not used for rate limiting anymore)
+    void ip
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')

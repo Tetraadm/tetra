@@ -79,21 +79,33 @@ export function useAdminInstructions({
       setNewFolderName('')
       onCloseCreateFolder?.()
       toast.success('Mappe opprettet')
+
+      await logAuditEventClient(supabase, {
+        orgId: profile.org_id,
+        userId: profile.id,
+        actionType: 'create_folder',
+        entityType: 'folder',
+        entityId: data.id,
+        details: { folder_name: data.name }
+      })
     } catch (error) {
       console.error('Create folder error:', error)
       toast.error('Kunne ikke opprette mappe. Prøv igjen.')
     } finally {
       setFolderLoading(false)
     }
-  }, [newFolderName, onCloseCreateFolder, profile.org_id, supabase])
+  }, [newFolderName, onCloseCreateFolder, profile.id, profile.org_id, supabase])
 
   const deleteFolder = useCallback(async (folderId: string) => {
     if (!confirm('Slette mappen? Instrukser i mappen beholdes.')) return
 
     try {
+      const folderToDelete = folders.find(f => f.id === folderId)
+
+      // Soft-delete: set deleted_at instead of hard delete
       const { error } = await supabase
         .from('folders')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', folderId)
 
       if (error) throw error
@@ -103,11 +115,23 @@ export function useAdminInstructions({
         i.folder_id === folderId ? { ...i, folder_id: null, folders: null } : i
       ))
       toast.success('Mappe slettet')
+
+      await logAuditEventClient(supabase, {
+        orgId: profile.org_id,
+        userId: profile.id,
+        actionType: 'delete_folder',
+        entityType: 'folder',
+        entityId: folderId,
+        details: {
+          folder_name: folderToDelete?.name || 'Ukjent',
+          soft_delete: true
+        }
+      })
     } catch (error) {
       console.error('Delete folder error:', error)
       toast.error('Kunne ikke slette mappe. Prøv igjen.')
     }
-  }, [supabase])
+  }, [folders, profile.id, profile.org_id, supabase])
 
   const createInstruction = useCallback(async () => {
     if (!newInstruction.title.trim()) return
@@ -265,14 +289,15 @@ export function useAdminInstructions({
   }, [folders, newInstruction, onCloseCreateInstruction, profile.id, profile.org_id, selectedFile, supabase])
 
   const deleteInstruction = useCallback(async (instructionId: string) => {
-    if (!confirm('Slette instruksen? Dette fjerner også tilhørende data.')) return
+    if (!confirm('Slette instruksen? Instruksen arkiveres og kan gjenopprettes av support.')) return
 
     try {
       const instructionToDelete = instructions.find(i => i.id === instructionId)
 
+      // Soft-delete: set deleted_at instead of hard delete (compliance)
       const { error } = await supabase
         .from('instructions')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', instructionId)
 
       if (error) throw error
@@ -288,7 +313,8 @@ export function useAdminInstructions({
         entityId: instructionId,
         details: {
           instruction_title: instructionToDelete?.title || 'Ukjent',
-          severity: instructionToDelete?.severity || 'unknown'
+          severity: instructionToDelete?.severity || 'unknown',
+          soft_delete: true
         }
       })
     } catch (error) {

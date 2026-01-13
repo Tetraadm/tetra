@@ -35,14 +35,9 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
 
     setLoading(true)
 
-    // Store name in localStorage to use after auth
-    localStorage.setItem('invite_data', JSON.stringify({
-      token,
-      fullName,
-      orgId: invite.org_id,
-      teamId: invite.team_id,
-      role: invite.role
-    }))
+    // Store only the user-provided name temporarily (not sensitive data)
+    // Token is already in the callback URL - no need to store it
+    sessionStorage.setItem('invite_fullname', fullName.trim())
 
     // Send magic link
     const { error } = await supabase.auth.signInWithOtp({
@@ -70,14 +65,9 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
 
     setLoading(true)
 
-    // Store name in localStorage to use after auth
-    localStorage.setItem('invite_data', JSON.stringify({
-      token,
-      fullName,
-      orgId: invite.org_id,
-      teamId: invite.team_id,
-      role: invite.role
-    }))
+    // Store only the user-provided name temporarily (not sensitive data)
+    // Token is already in the callback URL - no need to store it
+    sessionStorage.setItem('invite_fullname', fullName.trim())
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'azure',

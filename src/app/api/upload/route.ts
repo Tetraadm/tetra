@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 import { createClient } from '@/lib/supabase/server'
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import { uploadRatelimit, getClientIp } from '@/lib/ratelimit'
+import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 
@@ -33,6 +33,27 @@ const MAX_UPLOAD_MB = Number.isFinite(RAW_MAX_UPLOAD_MB) && RAW_MAX_UPLOAD_MB > 
   : DEFAULT_MAX_UPLOAD_MB
 const MAX_FILE_SIZE = MAX_UPLOAD_MB * 1024 * 1024
 const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain', 'image/png', 'image/jpeg']
+
+// Magic bytes signatures for file type validation
+// This prevents attackers from spoofing file.type (which is client-supplied)
+const FILE_SIGNATURES: Record<string, number[]> = {
+  'application/pdf': [0x25, 0x50, 0x44, 0x46], // %PDF
+  'image/png': [0x89, 0x50, 0x4E, 0x47],       // .PNG
+  'image/jpeg': [0xFF, 0xD8, 0xFF],            // JPEG SOI marker
+}
+
+function validateFileSignature(bytes: Uint8Array, mimeType: string): boolean {
+  const signature = FILE_SIGNATURES[mimeType]
+  if (!signature) {
+    // text/plain has no magic bytes - accept if declared as text
+    return mimeType === 'text/plain'
+  }
+  if (bytes.length < signature.length) {
+    return false
+  }
+  return signature.every((byte, i) => bytes[i] === byte)
+}
+
 type SupabaseErrorDetails = {
   code?: string
   details?: string
@@ -56,24 +77,6 @@ function createServiceClient() {
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting
-    const ip = getClientIp(request)
-    const { success, limit, remaining, reset } = await uploadRatelimit.limit(ip)
-
-    if (!success) {
-      return NextResponse.json(
-        { error: 'For mange opplastinger. Prøv igjen om litt.' },
-        {
-          status: 429,
-          headers: {
-            'X-RateLimit-Limit': limit.toString(),
-            'X-RateLimit-Remaining': remaining.toString(),
-            'X-RateLimit-Reset': new Date(reset).toISOString(),
-          },
-        }
-      )
-    }
-
     const formData = await request.formData()
     const file = formData.get('file') as File
     const title = formData.get('title') as string
@@ -120,6 +123,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
     }
 
+    // Rate limiting AFTER auth - use user.id for accurate per-user limits
+    const rateLimitKey = `user:${user.id}`
+    const { success, limit, remaining, reset } = await uploadRatelimit.limit(rateLimitKey)
+
+    if (!success) {
+      return NextResponse.json(
+        { error: 'For mange opplastinger. Prøv igjen om litt.' },
+        {
+          status: 429,
+          headers: {
+            'X-RateLimit-Limit': limit.toString(),
+            'X-RateLimit-Remaining': remaining.toString(),
+            'X-RateLimit-Reset': new Date(reset).toISOString(),
+          },
+        }
+      )
+    }
+
     // Verify user profile and check if user belongs to the org
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
@@ -149,6 +170,14 @@ export async function POST(request: NextRequest) {
     // Convert file to buffer for service client
     const fileBuffer = await file.arrayBuffer()
     const fileBytes = new Uint8Array(fileBuffer)
+
+    // Validate file signature (magic bytes) to prevent MIME type spoofing
+    if (!validateFileSignature(fileBytes, file.type)) {
+      return NextResponse.json(
+        { error: 'Filinnholdet matcher ikke oppgitt filtype' },
+        { status: 400 }
+      )
+    }
 
     const adminClient = createServiceClient()
     const { error: uploadError } = await adminClient.storage

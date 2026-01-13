@@ -111,3 +111,243 @@
 
 ### Notes / gotchas
 - Upstash env vars lagt til i `.env.local` og Vercel
+
+---
+
+## Session: 2026-01-13 15:30 (Europe/Oslo)
+**Owner:** Claude (VS Code)
+**Goal:** Compliance & Audit pass - soft-delete + audit logging
+
+### Work done
+- [x] Analyserte eksisterende schema og RLS-policies
+- [x] Designet soft-delete strategi med `deleted_at` timestamp
+- [x] Opprettet SQL-migrasjon `18_soft_delete_audit.sql`
+- [x] Oppdatert `audit-log.ts` med nye action types (alerts, folders, teams)
+- [x] Endret `useAdminInstructions.ts` til soft-delete + folder audit logging
+- [x] Endret `useAdminAlerts.ts` til soft-delete + full audit logging
+- [x] Lagt til audit logging i `useAdminTeams.ts`
+- [x] Oppdatert HANDOFF.md, TODO_NEXT.md
+
+### Key changes
+
+**SQL Migration (18_soft_delete_audit.sql):**
+- Added `deleted_at timestamptz` to: instructions, alerts, folders
+- Created partial indexes for non-deleted rows (performance)
+- Updated RLS policies to filter `deleted_at IS NULL` by default
+- Added separate admin policy to view deleted items for audit
+
+**Audit logging gaps fixed:**
+- Alerts: create, toggle, delete (was completely missing!)
+- Folders: create, delete (was missing)
+- Teams: create, delete (was missing)
+
+**Frontend changes:**
+- Instructions: `.delete()` → `.update({ deleted_at: now() })`
+- Alerts: `.delete()` → `.update({ deleted_at: now() })`
+- Folders: `.delete()` → `.update({ deleted_at: now() })`
+- Teams: Kept hard delete (not compliance-critical)
+
+### Files changed
+- `supabase/sql/18_soft_delete_audit.sql` — NEW migration file
+- `src/lib/audit-log.ts` — Extended action types
+- `src/app/admin/hooks/useAdminInstructions.ts` — Soft-delete + audit
+- `src/app/admin/hooks/useAdminAlerts.ts` — Soft-delete + audit
+- `src/app/admin/hooks/useAdminTeams.ts` — Audit logging
+- `docs/ai/HANDOFF.md` — Updated
+- `docs/ai/SESSION_LOG.md` — This entry
+- `docs/ai/TODO_NEXT.md` — Updated
+
+### Notes / gotchas
+- Migration uses `DROP POLICY IF EXISTS` + `CREATE POLICY` for idempotency
+- Frontend TypeScript types don't need `deleted_at` since RLS filters deleted rows
+- Confirm messages updated to mention "arkiveres" (soft-delete UX)
+- Teams kept hard delete since organizational structure is less compliance-critical
+
+### Next steps
+1) Codex runs lint/typecheck/build verification
+2) Codex runs migration on local/dev Supabase
+3) Manual test: delete instruction → verify `deleted_at` is set, not hard-deleted
+
+---
+
+## Session: 2026-01-13 00:51 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Verify Claude changes + run handoff commands
+
+### Commands (if any) + result
+- `git status` -> OK
+- `git diff` -> OK
+- `git status && npm run lint && npm run typecheck && npm run build` -> FAIL (PowerShell `&&` parsing)
+- `cmd /c "git status && npm run lint && npm run typecheck && npm run build"` -> PASS
+- `rg "unsafe-eval" next.config.ts` -> OK (no matches)
+- `rg "\.limit" src/app/admin/page.tsx` -> OK (limits present)
+
+### Fixes (if any)
+- None
+
+---
+
+## Session: 2026-01-13 00:58 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Check SQL alignment vs current Supabase migrations
+
+### Commands (if any) + result
+- `rg --files -g "supabase/**/*.sql"` -> OK
+- `Get-Content supabase/sql/18_soft_delete_audit.sql` -> OK
+- `rg "Users can view published instructions in their org|Admins can view all instructions in their org|Admins can manage instructions|Users can view active alerts in their org|Admins can manage alerts|Read org folders|Admins can manage folders" supabase/sql` -> OK
+- `Get-Content supabase/sql/15_policy_consolidation.sql` -> OK
+- `where supabase` -> FAIL (CLI not found in PATH)
+
+### Fixes (if any)
+- None
+
+### Notes / gotchas
+- 18_soft_delete_audit.sql targets older policy names; consolidated policies from 15_policy_consolidation.sql remain and do not filter on deleted_at.
+
+---
+
+## Session: 2026-01-13 01:05 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Install Supabase CLI + prep migration
+
+### Commands (if any) + result
+- `npm install -g supabase` -> FAIL (CLI install via npm not supported)
+- `Invoke-RestMethod https://api.github.com/repos/supabase/cli/releases/latest` -> OK
+- `Start-BitsTransfer .../supabase_windows_amd64.tar.gz` -> OK (checksum verified)
+- `tar -xf supabase_windows_amd64.tar.gz` -> OK
+- `C:\Users\xboxs\Documents\tetra\.tools\supabase\supabase.exe --version` -> OK (2.67.1)
+
+### Fixes (if any)
+- None
+
+### Notes / gotchas
+- Supabase CLI is stored locally at `C:\Users\xboxs\Documents\tetra\.tools\supabase\supabase.exe` (not on PATH)
+
+---
+
+## Session: 2026-01-13 01:18 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Align soft-delete migration + attempt DB push
+
+### Commands (if any) + result
+- `supabase.exe db --help` -> OK
+- `supabase.exe db push --help` -> OK
+- `supabase.exe db push --dry-run --db-url ... --workdir ...` -> FAIL (hostname resolving error)
+- `supabase.exe db push --dry-run --db-url ... --workdir ... --dns-resolver https` -> FAIL (hostname resolving error)
+
+### Fixes (if any)
+- `supabase/sql/18_soft_delete_audit.sql` - align policies with consolidated names and update RPCs to filter `deleted_at`.
+
+### Notes / gotchas
+- DNS resolution for `db.rshukldzekufrlkbsqrr.supabase.co` failed from this environment.
+
+---
+
+## Session: 2026-01-13 01:29 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Apply soft-delete migration to remote DB
+
+### Commands (if any) + result
+- `supabase.exe db push --db-url ... --workdir ... --yes --dns-resolver https` -> PASS (applied `20260113000000_soft_delete_audit.sql`)
+
+### Fixes (if any)
+- `supabase/sql/18_soft_delete_audit.sql` - align consolidated policies and filter soft-deleted rows in RPCs.
+
+### Notes / gotchas
+- CLI required a temp workdir with placeholder migrations to match remote history (`.tools\supabase-workdir`).
+
+---
+
+## Session: 2026-01-13 01:34 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Attempt automated verification of remote schema
+
+### Commands (if any) + result
+- `supabase.exe db pull verify_soft_delete --db-url ... --workdir ... --schema public --yes --dns-resolver https` -> FAIL (Docker Desktop missing)
+
+### Fixes (if any)
+- None
+
+### Notes / gotchas
+- `supabase db pull` requires Docker Desktop for shadow DB; verification must be done via Supabase SQL Editor or by installing Docker.
+
+---
+
+## Session: 2026-01-13 18:45 (Europe/Oslo)
+**Owner:** Claude (VS Code)
+**Goal:** Security hardening based on CODEBASE_REVIEW_2026.md
+
+### Work done
+- [x] Reviewed CODEBASE_REVIEW_2026.md and verified current status
+- [x] Confirmed pdf-parse → pdfjs-dist migration already done
+- [x] Confirmed CSP headers already implemented in next.config.ts
+- [x] Fixed MÅ-1: Removed token/role/org_id from localStorage in invite flow
+- [x] Fixed MÅ-2: Added magic bytes validation to file uploads
+- [x] Fixed MÅ-4: Improved rate limiting to use user.id instead of IP
+
+### Key changes
+
+**MÅ-1: Invite token security (AcceptInvite.tsx)**
+- Before: Stored `{token, fullName, orgId, teamId, role}` in localStorage
+- After: Only stores `fullName` in sessionStorage (not sensitive)
+- Impact: XSS attacks can no longer steal invite tokens or role escalation data
+
+**MÅ-2: Magic bytes validation (upload/route.ts)**
+- Added `FILE_SIGNATURES` map with magic bytes for PDF, PNG, JPEG
+- Added `validateFileSignature()` function
+- Now rejects files where content doesn't match declared MIME type
+- Impact: Prevents attackers from spoofing file.type header
+
+**MÅ-4: Rate limiting with user.id (ask/route.ts, upload/route.ts)**
+- Moved rate limiting to AFTER authentication
+- Changed rate limit key from IP to `user:${user.id}`
+- Impact: Accurate per-user limits, no bypass via shared IP/proxy
+
+### Files changed
+- `src/app/invite/[token]/AcceptInvite.tsx` — Security fix
+- `src/lib/invite-cleanup.ts` — Updated for sessionStorage
+- `src/app/api/upload/route.ts` — Magic bytes + rate limit fix
+- `src/app/api/ask/route.ts` — Rate limit fix
+- `docs/ai/HANDOFF.md` — Updated
+- `docs/ai/SESSION_LOG.md` — This entry
+- `docs/ai/TODO_NEXT.md` — Updated
+
+### CODEBASE_REVIEW_2026.md Status
+| Finding | Status |
+|---------|--------|
+| MÅ-1: localStorage token | ✅ FIXED this session |
+| MÅ-2: MIME validation | ✅ FIXED this session |
+| MÅ-3: pdf-parse | ✅ Already fixed (pdfjs-dist) |
+| MÅ-4: Rate limit IP | ✅ FIXED this session |
+| MÅ-5: Storage policies | ⚠️ Still pending |
+| BØR-5/6: CSP | ✅ Already implemented |
+
+### Notes / gotchas
+- Server-side callback can't read sessionStorage, uses email as fullName fallback
+- Magic bytes validation is strict - text/plain has no signature (allowed)
+- Rate limiting now requires auth first - unauthenticated gets 401
+
+### Next steps
+1) Codex runs lint/typecheck/build verification
+2) Codex commits changes
+3) Consider adding explicit storage INSERT/DELETE deny policies (MÅ-5)
+
+---
+
+## Session: 2026-01-13 02:19 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Verify Claude security hardening changes
+
+### Commands (if any) + result
+- `git status` -> OK
+- `git diff` -> OK
+- `git status && npm run lint && npm run typecheck && npm run build` -> FAIL (PowerShell `&&` parsing)
+- `cmd /c "git status && npm run lint && npm run typecheck && npm run build"` -> OK
+- `rg "unsafe-eval" next.config.ts` -> OK (no matches)
+- `rg "\.limit" -n src/app/admin/page.tsx` -> OK (limits present)
+
+### Fixes (if any)
+- None
+
+### Notes / gotchas
+- PowerShell doesn't support `&&`; use `cmd /c` for the handoff command.

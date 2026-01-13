@@ -8,16 +8,18 @@ Regel:
 ---
 
 ## Latest: Claude -> Codex
-**Last updated:** 2026-01-13 01:15 (Europe/Oslo)
+**Last updated:** 2026-01-13 18:45 (Europe/Oslo)
 **Owner:** Claude
-**Session goal:** Baseline health check + security fixes
+**Session goal:** Security hardening based on CODEBASE_REVIEW_2026.md
 
 ### What changed (files)
-- `next.config.ts` â€” Removed `unsafe-eval` from CSP (security fix)
-- `src/app/admin/page.tsx` â€” Added `.limit()` to all Supabase queries (performance fix)
-- `docs/ai/TODO_NEXT.md` â€” Updated to reflect actual project state
-- `docs/ai/HANDOFF.md` â€” This file
-- `docs/ai/SESSION_LOG.md` â€” Session notes
+- `src/app/invite/[token]/AcceptInvite.tsx` — **SECURITY FIX** Removed token+role+org_id from localStorage, now only stores fullName in sessionStorage
+- `src/lib/invite-cleanup.ts` — Updated to clean sessionStorage instead of localStorage
+- `src/app/api/upload/route.ts` — **SECURITY FIX** Added magic bytes validation for file uploads + moved rate limiting to after auth with user.id
+- `src/app/api/ask/route.ts` — **SECURITY FIX** Moved rate limiting to after auth, now uses user.id instead of IP
+- `docs/ai/HANDOFF.md` — This file
+- `docs/ai/SESSION_LOG.md` — Session notes
+- `docs/ai/TODO_NEXT.md` — Updated priorities
 
 ### Commands to run (copy/paste)
 ```bash
@@ -36,11 +38,12 @@ npm run build
 
 # 5. If all OK, commit
 git add -A
-git commit -m "chore: security hardening + admin query limits
+git commit -m "fix: security hardening from codebase review
 
-- Remove unsafe-eval from CSP (security)
-- Add .limit() to admin page queries (performance)
-- Update AI workflow docs to reflect actual state"
+- Remove sensitive data (token, role, org_id) from localStorage in invite flow
+- Add magic bytes validation to prevent MIME type spoofing on file uploads
+- Move rate limiting after auth, use user.id instead of IP for accurate limits
+- Clean up sessionStorage instead of localStorage after invite"
 ```
 
 ### Expected result
@@ -49,45 +52,48 @@ git commit -m "chore: security hardening + admin query limits
 - build: OK (all pages built)
 
 ### If it fails, debug like this
-- **Lint fails:** Check which file/line, usually a formatting issue
-- **Typecheck fails:** Look for type errors in changed files
-- **Build fails:** Check for runtime errors, missing imports
+- **Lint fails:** Check for unused imports (getClientIp removed from upload/route.ts)
+- **Typecheck fails:** Check validateFileSignature function signature
+- **Build fails:** Check for missing imports
 
-### Questions for Codex
-- [ ] Does the build pass?
-- [ ] Any CSP errors in browser console during testing?
+### Test scenarios for Codex
+1. **Invite flow test:** Accept an invite, verify only `invite_fullname` is in sessionStorage (not `invite_data` in localStorage)
+2. **File upload test:** Try uploading a file with spoofed MIME type (should fail with "Filinnholdet matcher ikke")
+3. **Rate limit test:** Verify rate limiting still works (now per-user instead of per-IP)
 
 ### Notes / risks
-- `unsafe-inline` is still in CSP for Next.js compatibility; future improvement is nonce-based CSP
+- Invite callback still uses email as fallback for fullName (server-side can't read sessionStorage)
+- Magic bytes validation is strict - rejects any file that doesn't match signature
+- Rate limiting now happens AFTER auth - unauthenticated requests get 401 before rate limit check
 
 ---
 
 ## Latest: Codex -> Claude
-**Last updated:** 2026-01-13 00:07 (Europe/Oslo)
+**Last updated:** 2026-01-13 02:19 (Europe/Oslo)
 **Owner:** Codex
-**Session goal:** Verify Claude changes + run handoff commands
+**Session goal:** Verify Claude security hardening changes
 
 ### Commands run + results
-- `git status -sb` -> OK
+- `git status` -> OK
 - `git diff` -> OK
-- `cmd /c "git status && npm run lint && npm run typecheck && npm run build"` -> FAIL (missing `typecheck` script)
-- `cmd /c "git status && npm run lint && npm run typecheck && npm run build"` -> OK (after adding script)
+- `git status && npm run lint && npm run typecheck && npm run build` -> FAIL (PowerShell `&&` parsing)
+- `cmd /c "git status && npm run lint && npm run typecheck && npm run build"` -> OK
 - `rg "unsafe-eval" next.config.ts` -> OK (no matches)
 - `rg "\.limit" -n src/app/admin/page.tsx` -> OK (limits present)
 
 ### What I fixed (files)
-- `package.json` — added `typecheck` script (`tsc --noEmit`) so handoff command can run
+- None
 
 ### Failures / errors (paste the important part)
 - Error:
-  - `npm error Missing script: "typecheck"`
+  - `The token '&&' is not a valid statement separator in this version.`
 - Where it happened:
-  - `cmd /c "git status && npm run lint && npm run typecheck && npm run build"`
+  - `git status && npm run lint && npm run typecheck && npm run build`
 
 ### What Claude should do next
-1) Decide whether to keep the new `typecheck` script in `package.json`.
-2) If OK, commit all changes (including Claude's changes + script addition).
+1) Run the manual test scenarios from Claude's handoff (invite flow, upload magic bytes, rate limit per-user).
+2) Commit changes if everything looks good.
 
 ### Notes / risks
-- Build logs show `Upstash not configured; falling back to in-memory rate limiter.` (warning only)
+- PowerShell doesn't support `&&`; use `cmd /c` for the handoff command.
 
