@@ -2,8 +2,9 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Paperclip } from 'lucide-react'
+import { AlertTriangle, Paperclip, ExternalLink } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { colors, shadows, radius, transitions } from '@/lib/ui-helpers'
 
 type FileLinkProps = {
   fileUrl: string
@@ -46,42 +47,62 @@ export default function FileLink({ fileUrl, supabase }: FileLinkProps) {
 
     setIsOpening(true)
 
-    // Detect iOS
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
 
     if (isIOS) {
-      // iOS Safari: Use window.location for reliable PDF opening
       window.location.href = signedUrl
     } else {
-      // Other browsers: Open in new tab
       window.open(signedUrl, '_blank', 'noopener,noreferrer')
     }
 
-    // Reset opening state after a delay
     setTimeout(() => setIsOpening(false), 1000)
   }
 
   if (error) {
     return (
       <div style={{
-        padding: '12px 16px',
-        background: '#FEF2F2',
-        border: '1px solid #FCA5A5',
-        borderRadius: 8,
-        color: '#DC2626',
+        padding: '14px 18px',
+        background: colors.dangerLight,
+        border: `1px solid ${colors.dangerBorder}`,
+        borderRadius: radius.md,
+        color: colors.danger,
         fontSize: 14,
         display: 'flex',
         alignItems: 'center',
-        gap: 8
+        gap: 10,
+        fontWeight: 500,
       }}>
-        <AlertTriangle size={16} aria-hidden="true" />
+        <AlertTriangle size={18} aria-hidden="true" />
         <span>{error}</span>
       </div>
     )
   }
 
   if (!signedUrl) {
-    return <p style={{ color: '#64748B', fontSize: 14 }}>Laster vedlegg...</p>
+    return (
+      <div style={{
+        padding: '14px 18px',
+        background: colors.backgroundSubtle,
+        border: `1px solid ${colors.border}`,
+        borderRadius: radius.md,
+        color: colors.textMuted,
+        fontSize: 14,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+      }}>
+        <div style={{
+          width: 18,
+          height: 18,
+          border: `2px solid ${colors.border}`,
+          borderTopColor: colors.primary,
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <span>Laster vedlegg...</span>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    )
   }
 
   return (
@@ -91,21 +112,39 @@ export default function FileLink({ fileUrl, supabase }: FileLinkProps) {
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: 8,
-        padding: '12px 16px',
-        background: isOpening ? '#DBEAFE' : '#EFF6FF',
-        border: '1px solid #BFDBFE',
-        borderRadius: 8,
-        color: '#2563EB',
+        justifyContent: 'space-between',
+        gap: 12,
+        padding: '14px 18px',
+        background: isOpening ? colors.primarySubtle : colors.primarySubtle,
+        border: `1px solid ${colors.primaryMuted}`,
+        borderRadius: radius.md,
+        color: colors.primary,
         fontWeight: 600,
         fontSize: 14,
         width: '100%',
         cursor: isOpening ? 'wait' : 'pointer',
-        boxSizing: 'border-box' as const
+        boxSizing: 'border-box',
+        transition: `all ${transitions.normal}`,
+        fontFamily: 'inherit',
+      }}
+      onMouseEnter={(e) => {
+        if (!isOpening) {
+          e.currentTarget.style.background = colors.primary
+          e.currentTarget.style.color = '#FFFFFF'
+          e.currentTarget.style.boxShadow = shadows.md
+        }
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = colors.primarySubtle
+        e.currentTarget.style.color = colors.primary
+        e.currentTarget.style.boxShadow = 'none'
       }}
     >
-      <Paperclip size={16} aria-hidden="true" />
-      {isOpening ? 'Åpner...' : 'Åpne vedlegg (PDF)'}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <Paperclip size={18} aria-hidden="true" />
+        {isOpening ? 'Apner...' : 'Apne vedlegg (PDF)'}
+      </div>
+      <ExternalLink size={16} />
     </button>
   )
 }

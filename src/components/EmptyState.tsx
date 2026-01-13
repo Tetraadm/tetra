@@ -1,5 +1,6 @@
 import { Inbox } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { colors, shadows, radius, transitions } from '@/lib/ui-helpers'
 
 type EmptyStateProps = {
   icon?: ReactNode
@@ -19,28 +20,38 @@ export default function EmptyState({
   return (
     <div style={{
       textAlign: 'center',
-      padding: '48px 24px',
-      color: '#64748B'
+      padding: '56px 32px',
+      color: colors.textMuted,
     }}>
       <div style={{
-        fontSize: 48,
-        marginBottom: 16,
-        opacity: 0.5
+        width: 80,
+        height: 80,
+        borderRadius: '50%',
+        background: colors.primarySubtle,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        margin: '0 auto 20px',
+        color: colors.primary,
       }}>
         {icon}
       </div>
       <h3 style={{
-        fontSize: 16,
+        fontSize: 17,
         fontWeight: 600,
-        color: '#1E293B',
-        marginBottom: 8
+        color: colors.text,
+        marginBottom: 10,
+        letterSpacing: '-0.01em',
       }}>
         {title}
       </h3>
       <p style={{
         fontSize: 14,
-        lineHeight: 1.5,
-        marginBottom: actionLabel ? 20 : 0
+        lineHeight: 1.6,
+        marginBottom: actionLabel ? 24 : 0,
+        color: colors.textSecondary,
+        maxWidth: 320,
+        margin: actionLabel ? '0 auto 24px' : '0 auto',
       }}>
         {description}
       </p>
@@ -48,14 +59,26 @@ export default function EmptyState({
         <button
           onClick={onAction}
           style={{
-            padding: '10px 20px',
+            padding: '12px 24px',
             fontSize: 14,
             fontWeight: 600,
-            color: '#2563EB',
-            background: '#EFF6FF',
-            border: '1px solid #BFDBFE',
-            borderRadius: 8,
-            cursor: 'pointer'
+            color: colors.primary,
+            background: colors.primarySubtle,
+            border: `1px solid ${colors.primaryMuted}`,
+            borderRadius: radius.md,
+            cursor: 'pointer',
+            transition: `all ${transitions.normal}`,
+            boxShadow: shadows.xs,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = colors.primary
+            e.currentTarget.style.color = '#FFFFFF'
+            e.currentTarget.style.boxShadow = shadows.md
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = colors.primarySubtle
+            e.currentTarget.style.color = colors.primary
+            e.currentTarget.style.boxShadow = shadows.xs
           }}
         >
           {actionLabel}

@@ -2,10 +2,10 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Shield, Building2, Users, UserCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Organization, Team } from '@/lib/types'
-import { roleLabel } from '@/lib/ui-helpers'
+import { roleLabel, colors, shadows, radius, transitions } from '@/lib/ui-helpers'
 
 type Invite = {
   id: string
@@ -34,12 +34,8 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
     if (!fullName.trim() || !email.trim()) return
 
     setLoading(true)
-
-    // Store only the user-provided name temporarily (not sensitive data)
-    // Token is already in the callback URL - no need to store it
     sessionStorage.setItem('invite_fullname', fullName.trim())
 
-    // Send magic link
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
       options: {
@@ -64,9 +60,6 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
     }
 
     setLoading(true)
-
-    // Store only the user-provided name temporarily (not sensitive data)
-    // Token is already in the callback URL - no need to store it
     sessionStorage.setItem('invite_fullname', fullName.trim())
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -89,114 +82,191 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#F8FAFC',
-      padding: 20,
+      background: `linear-gradient(145deg, ${colors.background} 0%, #E6F7F5 50%, ${colors.background} 100%)`,
+      padding: 24,
+      fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+      position: 'relative' as const,
+      overflow: 'hidden',
+    },
+    decorShape1: {
+      position: 'absolute' as const,
+      top: '-15%',
+      right: '-10%',
+      width: '50%',
+      height: '60%',
+      borderRadius: '50%',
+      background: `radial-gradient(circle, rgba(13, 148, 136, 0.08) 0%, transparent 70%)`,
+      pointerEvents: 'none' as const,
+    },
+    decorShape2: {
+      position: 'absolute' as const,
+      bottom: '-20%',
+      left: '-15%',
+      width: '60%',
+      height: '70%',
+      borderRadius: '50%',
+      background: `radial-gradient(circle, rgba(13, 148, 136, 0.06) 0%, transparent 70%)`,
+      pointerEvents: 'none' as const,
     },
     card: {
-      background: 'white',
-      padding: 40,
-      borderRadius: 16,
-      boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-      maxWidth: 450,
+      position: 'relative' as const,
+      zIndex: 1,
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      padding: '44px 40px',
+      borderRadius: radius.xl,
+      boxShadow: shadows.xl,
+      border: '1px solid rgba(255, 255, 255, 0.8)',
+      maxWidth: 460,
       width: '100%',
     },
     logo: {
-      width: 48,
-      height: 48,
-      background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
-      borderRadius: 12,
+      width: 56,
+      height: 56,
+      background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryHover} 100%)`,
+      borderRadius: radius.lg,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      margin: '0 auto 24px',
+      margin: '0 auto 28px',
       color: 'white',
       fontWeight: 800,
-      fontSize: 20,
+      fontSize: 24,
+      boxShadow: `0 8px 20px -4px ${colors.primary}40`,
     },
     title: {
-      fontSize: 24,
+      fontSize: 26,
       fontWeight: 700,
       textAlign: 'center' as const,
-      marginBottom: 8,
+      marginBottom: 10,
+      color: colors.text,
+      letterSpacing: '-0.02em',
     },
     subtitle: {
-      color: '#64748B',
+      color: colors.textSecondary,
       textAlign: 'center' as const,
-      marginBottom: 24,
+      marginBottom: 28,
       fontSize: 15,
+      lineHeight: 1.6,
     },
     infoBox: {
-      background: '#F8FAFC',
-      border: '1px solid #E2E8F0',
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 24,
+      background: colors.backgroundSubtle,
+      border: `1px solid ${colors.border}`,
+      borderRadius: radius.lg,
+      padding: 20,
+      marginBottom: 28,
     },
     infoRow: {
       display: 'flex',
+      alignItems: 'center',
       justifyContent: 'space-between',
-      padding: '8px 0',
+      padding: '10px 0',
       fontSize: 14,
+      borderBottom: `1px solid ${colors.borderSubtle}`,
     },
     infoLabel: {
-      color: '#64748B',
+      color: colors.textMuted,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
     },
     infoValue: {
       fontWeight: 600,
+      color: colors.text,
     },
     label: {
       display: 'block',
       fontSize: 14,
       fontWeight: 600,
-      marginBottom: 8,
-      color: '#334155',
+      marginBottom: 10,
+      color: colors.text,
+      letterSpacing: '-0.01em',
     },
     input: {
       width: '100%',
-      padding: '12px 16px',
-      fontSize: 16,
-      border: '1px solid #E2E8F0',
-      borderRadius: 8,
+      padding: '14px 18px',
+      fontSize: 15,
+      border: `1px solid ${colors.border}`,
+      borderRadius: radius.md,
       marginBottom: 20,
       outline: 'none',
       boxSizing: 'border-box' as const,
+      transition: `border-color ${transitions.fast}, box-shadow ${transitions.fast}`,
+      fontFamily: 'inherit',
+      color: colors.text,
+      background: colors.surface,
     },
     btn: {
       width: '100%',
-      padding: '14px 20px',
-      fontSize: 16,
+      padding: '15px 22px',
+      fontSize: 15,
       fontWeight: 600,
       color: 'white',
-      background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+      background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryHover} 100%)`,
       border: 'none',
-      borderRadius: 8,
+      borderRadius: radius.md,
       cursor: 'pointer',
+      transition: `all ${transitions.normal}`,
+      boxShadow: `0 4px 12px -2px ${colors.primary}40`,
+      fontFamily: 'inherit',
     },
     checkIcon: {
-      width: 64,
-      height: 64,
-      background: 'linear-gradient(135deg, #2563EB 0%, #7C3AED 100%)',
+      width: 80,
+      height: 80,
+      background: `linear-gradient(135deg, ${colors.successLight} 0%, ${colors.successBorder} 100%)`,
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      margin: '0 auto 20px',
-      color: 'white',
-      fontSize: 28,
+      margin: '0 auto 24px',
+      color: colors.success,
+      boxShadow: `0 8px 20px -4px rgba(5, 150, 105, 0.25)`,
     },
   }
 
   if (step === 'check-email') {
     return (
       <div style={styles.container}>
+        <div style={styles.decorShape1} />
+        <div style={styles.decorShape2} />
         <div style={styles.card}>
           <div style={styles.checkIcon}>
-            <CheckCircle size={28} aria-hidden="true" />
+            <CheckCircle size={40} strokeWidth={2} />
           </div>
           <h1 style={styles.title}>Sjekk e-posten din</h1>
           <p style={styles.subtitle}>
-            Vi har sendt en innloggingslenke til <strong>{email}</strong>
+            Vi har sendt en innloggingslenke til
           </p>
+          <p style={{
+            color: colors.text,
+            textAlign: 'center',
+            fontSize: 16,
+            fontWeight: 600,
+            padding: '10px 18px',
+            background: colors.primarySubtle,
+            borderRadius: radius.md,
+            border: `1px solid ${colors.primaryMuted}`,
+            marginBottom: 20,
+          }}>
+            {email}
+          </p>
+          <div style={{
+            padding: '16px 20px',
+            background: colors.backgroundSubtle,
+            borderRadius: radius.md,
+            border: `1px solid ${colors.border}`,
+          }}>
+            <p style={{
+              color: colors.textSecondary,
+              textAlign: 'center',
+              fontSize: 13,
+              lineHeight: 1.6,
+              margin: 0,
+            }}>
+              Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -204,25 +274,36 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
 
   return (
     <div style={styles.container}>
+      <div style={styles.decorShape1} />
+      <div style={styles.decorShape2} />
       <div style={styles.card}>
         <div style={styles.logo}>T</div>
         <h1 style={styles.title}>Du er invitert!</h1>
         <p style={styles.subtitle}>
-          Du har blitt invitert til å bli med i Tetra
+          Du har blitt invitert til a bli med i Tetra HMS-plattformen
         </p>
 
         <div style={styles.infoBox}>
-          <div style={styles.infoRow}>
-            <span style={styles.infoLabel}>Bedrift</span>
+          <div style={{ ...styles.infoRow, borderBottom: team ? `1px solid ${colors.borderSubtle}` : 'none' }}>
+            <span style={styles.infoLabel}>
+              <Building2 size={16} />
+              Bedrift
+            </span>
             <span style={styles.infoValue}>{organization.name}</span>
           </div>
-          <div style={styles.infoRow}>
-            <span style={styles.infoLabel}>Rolle</span>
+          <div style={{ ...styles.infoRow, borderBottom: team ? `1px solid ${colors.borderSubtle}` : 'none' }}>
+            <span style={styles.infoLabel}>
+              <UserCircle size={16} />
+              Rolle
+            </span>
             <span style={styles.infoValue}>{roleLabel(invite.role)}</span>
           </div>
           {team && (
-            <div style={styles.infoRow}>
-              <span style={styles.infoLabel}>Team</span>
+            <div style={{ ...styles.infoRow, borderBottom: 'none' }}>
+              <span style={styles.infoLabel}>
+                <Users size={16} />
+                Team
+              </span>
               <span style={styles.infoValue}>{team.name}</span>
             </div>
           )}
@@ -237,6 +318,14 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
             onChange={e => setFullName(e.target.value)}
             placeholder="Ola Nordmann"
             required
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = colors.primary
+              e.currentTarget.style.boxShadow = shadows.focus
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = colors.border
+              e.currentTarget.style.boxShadow = 'none'
+            }}
           />
 
           <label style={styles.label}>E-postadresse</label>
@@ -247,30 +336,52 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
             onChange={e => setEmail(e.target.value)}
             placeholder="ola@bedrift.no"
             required
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = colors.primary
+              e.currentTarget.style.boxShadow = shadows.focus
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = colors.border
+              e.currentTarget.style.boxShadow = 'none'
+            }}
           />
 
-          {/* SSO Button */}
           <button
             onClick={handleAzureAccept}
             disabled={loading}
             style={{
               width: '100%',
-              padding: '12px 20px',
+              padding: '15px 22px',
               fontSize: 15,
               fontWeight: 600,
-              color: '#334155',
-              background: 'white',
-              border: '1px solid #E2E8F0',
-              borderRadius: 8,
+              color: colors.text,
+              background: colors.surface,
+              border: `1px solid ${colors.border}`,
+              borderRadius: radius.md,
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               gap: 12,
-              marginBottom: 20
+              marginBottom: 8,
+              transition: `all ${transitions.normal}`,
+              boxShadow: shadows.xs,
+              fontFamily: 'inherit',
+            }}
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.background = colors.backgroundSubtle
+                e.currentTarget.style.borderColor = colors.borderStrong
+                e.currentTarget.style.boxShadow = shadows.sm
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = colors.surface
+              e.currentTarget.style.borderColor = colors.border
+              e.currentTarget.style.boxShadow = shadows.xs
             }}
           >
-            <svg width="18" height="18" viewBox="0 0 23 23">
+            <svg width="20" height="20" viewBox="0 0 23 23">
               <path fill="#f35325" d="M0 0h10.931v10.931H0z"/>
               <path fill="#81bc06" d="M12.069 0H23v10.931H12.069z"/>
               <path fill="#05a6f0" d="M0 12.069h10.931V23H0z"/>
@@ -279,16 +390,15 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
             Fortsett med Microsoft
           </button>
 
-          {/* Divider */}
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            margin: '16px 0',
-            gap: 12
+            margin: '24px 0',
+            gap: 16
           }}>
-            <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
-            <span style={{ fontSize: 13, color: '#64748B' }}>eller</span>
-            <div style={{ flex: 1, height: 1, background: '#E2E8F0' }} />
+            <div style={{ flex: 1, height: 1, background: colors.border }} />
+            <span style={{ fontSize: 13, color: colors.textMuted, fontWeight: 500 }}>eller</span>
+            <div style={{ flex: 1, height: 1, background: colors.border }} />
           </div>
 
           <form onSubmit={handleAccept}>
@@ -296,14 +406,49 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
               type="submit"
               style={{
                 ...styles.btn,
-                background: loading ? '#94A3B8' : styles.btn.background,
-                cursor: loading ? 'not-allowed' : 'pointer'
+                background: loading ? colors.textMuted : styles.btn.background,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                boxShadow: loading ? 'none' : styles.btn.boxShadow,
               }}
               disabled={loading}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = `0 6px 16px -2px ${colors.primary}50`
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = `0 4px 12px -2px ${colors.primary}40`
+                }
+              }}
             >
-              {loading ? 'Sender...' : 'Send innloggingslenke på e-post'}
+              {loading ? 'Sender...' : 'Send innloggingslenke pa e-post'}
             </button>
           </form>
+
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            marginTop: 24,
+            padding: '12px 16px',
+            background: colors.primarySubtle,
+            borderRadius: radius.md,
+            border: `1px solid ${colors.primaryMuted}`,
+          }}>
+            <Shield size={16} style={{ color: colors.primary }} />
+            <p style={{
+              color: colors.textSecondary,
+              fontSize: 12,
+              margin: 0,
+              lineHeight: 1.5,
+            }}>
+              Sikker invitasjon til HMS-plattformen
+            </p>
+          </div>
         </div>
       </div>
     </div>
