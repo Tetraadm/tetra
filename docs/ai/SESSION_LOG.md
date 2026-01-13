@@ -351,3 +351,21 @@
 
 ### Notes / gotchas
 - PowerShell doesn't support `&&`; use `cmd /c` for the handoff command.
+
+---
+
+## Session: 2026-01-13 02:44 (Europe/Oslo)
+**Owner:** Codex (Terminal)
+**Goal:** Commit and push all current changes
+
+### Commands (if any) + result
+- `git add docs src supabase/sql/18_soft_delete_audit.sql` -> OK
+- `git commit -m "fix: security hardening and audit logging"` -> OK
+- `git push` -> OK
+
+### Fixes (if any)
+- None
+
+### Notes / gotchas
+- Manual test scenarios were not run in this session.
+- `.tools/` and `supabase/.temp/` remain untracked local artifacts.
