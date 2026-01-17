@@ -82,7 +82,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: `linear-gradient(145deg, ${colors.background} 0%, #E6F7F5 50%, ${colors.background} 100%)`,
+      background: '#FFFFFF',
       padding: 24,
       fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
       position: 'relative' as const,
@@ -95,7 +95,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       width: '50%',
       height: '60%',
       borderRadius: '50%',
-      background: `radial-gradient(circle, rgba(13, 148, 136, 0.08) 0%, transparent 70%)`,
+      background: `radial-gradient(circle, rgba(5, 150, 105, 0.05) 0%, transparent 70%)`,
       pointerEvents: 'none' as const,
     },
     decorShape2: {
@@ -105,26 +105,24 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       width: '60%',
       height: '70%',
       borderRadius: '50%',
-      background: `radial-gradient(circle, rgba(13, 148, 136, 0.06) 0%, transparent 70%)`,
+      background: `radial-gradient(circle, rgba(2, 132, 199, 0.04) 0%, transparent 70%)`,
       pointerEvents: 'none' as const,
     },
     card: {
       position: 'relative' as const,
       zIndex: 1,
-      background: 'rgba(255, 255, 255, 0.95)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
+      background: '#FFFFFF',
       padding: '44px 40px',
       borderRadius: radius.xl,
-      boxShadow: shadows.xl,
-      border: '1px solid rgba(255, 255, 255, 0.8)',
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)',
+      border: '1px solid #E2E8F0',
       maxWidth: 460,
       width: '100%',
     },
     logo: {
       width: 56,
       height: 56,
-      background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryHover} 100%)`,
+      background: `linear-gradient(135deg, #059669 0%, #047857 100%)`,
       borderRadius: radius.lg,
       display: 'flex',
       alignItems: 'center',
@@ -133,7 +131,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       color: 'white',
       fontWeight: 800,
       fontSize: 24,
-      boxShadow: `0 8px 20px -4px ${colors.primary}40`,
+      boxShadow: `0 8px 20px -4px rgba(5, 150, 105, 0.3)`,
     },
     title: {
       fontSize: 26,
@@ -203,24 +201,24 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       fontSize: 15,
       fontWeight: 600,
       color: 'white',
-      background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryHover} 100%)`,
+      background: `linear-gradient(135deg, #059669 0%, #047857 100%)`,
       border: 'none',
       borderRadius: radius.md,
       cursor: 'pointer',
       transition: `all ${transitions.normal}`,
-      boxShadow: `0 4px 12px -2px ${colors.primary}40`,
+      boxShadow: `0 4px 12px -2px rgba(5, 150, 105, 0.35)`,
       fontFamily: 'inherit',
     },
     checkIcon: {
       width: 80,
       height: 80,
-      background: `linear-gradient(135deg, ${colors.successLight} 0%, ${colors.successBorder} 100%)`,
+      background: '#D1FAE5',
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       margin: '0 auto 24px',
-      color: colors.success,
+      color: '#059669',
       boxShadow: `0 8px 20px -4px rgba(5, 150, 105, 0.25)`,
     },
   }
@@ -382,10 +380,10 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
             }}
           >
             <svg width="20" height="20" viewBox="0 0 23 23">
-              <path fill="#f35325" d="M0 0h10.931v10.931H0z"/>
-              <path fill="#81bc06" d="M12.069 0H23v10.931H12.069z"/>
-              <path fill="#05a6f0" d="M0 12.069h10.931V23H0z"/>
-              <path fill="#ffba08" d="M12.069 12.069H23V23H12.069z"/>
+              <path fill="#f35325" d="M0 0h10.931v10.931H0z" />
+              <path fill="#81bc06" d="M12.069 0H23v10.931H12.069z" />
+              <path fill="#05a6f0" d="M0 12.069h10.931V23H0z" />
+              <path fill="#ffba08" d="M12.069 12.069H23V23H12.069z" />
             </svg>
             Fortsett med Microsoft
           </button>

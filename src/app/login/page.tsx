@@ -4,8 +4,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
-import { Mail, CheckCircle, Shield } from 'lucide-react'
-import { colors, shadows, radius, transitions } from '@/lib/ui-helpers'
+import { Mail, CheckCircle, Shield, Sparkles } from 'lucide-react'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -54,251 +53,31 @@ export default function LoginPage() {
     }
   }
 
-  const containerStyles: React.CSSProperties = {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    position: 'relative',
-    overflow: 'hidden',
-    fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
-  }
-
-  const backgroundStyles: React.CSSProperties = {
-    position: 'absolute',
-    inset: 0,
-    background: `linear-gradient(145deg, ${colors.background} 0%, #E6F7F5 50%, ${colors.background} 100%)`,
-    zIndex: 0,
-  }
-
-  const decorShape1: React.CSSProperties = {
-    position: 'absolute',
-    top: '-15%',
-    right: '-10%',
-    width: '50%',
-    height: '60%',
-    borderRadius: '50%',
-    background: `radial-gradient(circle, rgba(13, 148, 136, 0.08) 0%, transparent 70%)`,
-    pointerEvents: 'none',
-  }
-
-  const decorShape2: React.CSSProperties = {
-    position: 'absolute',
-    bottom: '-20%',
-    left: '-15%',
-    width: '60%',
-    height: '70%',
-    borderRadius: '50%',
-    background: `radial-gradient(circle, rgba(13, 148, 136, 0.06) 0%, transparent 70%)`,
-    pointerEvents: 'none',
-  }
-
-  const decorShape3: React.CSSProperties = {
-    position: 'absolute',
-    top: '40%',
-    left: '5%',
-    width: '20%',
-    height: '30%',
-    borderRadius: '50%',
-    background: `radial-gradient(circle, rgba(13, 148, 136, 0.04) 0%, transparent 70%)`,
-    pointerEvents: 'none',
-  }
-
-  const cardStyles: React.CSSProperties = {
-    position: 'relative',
-    zIndex: 1,
-    background: 'rgba(255, 255, 255, 0.95)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
-    padding: '44px 40px',
-    borderRadius: radius.xl,
-    boxShadow: shadows.xl,
-    border: '1px solid rgba(255, 255, 255, 0.8)',
-    maxWidth: 440,
-    width: '100%',
-  }
-
-  const logoContainerStyles: React.CSSProperties = {
-    display: 'flex',
-    justifyContent: 'center',
-    marginBottom: 32,
-  }
-
-  const titleStyles: React.CSSProperties = {
-    fontSize: 28,
-    fontWeight: 700,
-    textAlign: 'center',
-    marginBottom: 10,
-    color: colors.text,
-    letterSpacing: '-0.02em',
-  }
-
-  const subtitleStyles: React.CSSProperties = {
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 32,
-    fontSize: 15,
-    lineHeight: 1.6,
-  }
-
-  const ssoButtonStyles: React.CSSProperties = {
-    width: '100%',
-    padding: '15px 22px',
-    fontSize: 15,
-    fontWeight: 600,
-    color: colors.text,
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: radius.md,
-    cursor: loading ? 'not-allowed' : 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 12,
-    marginBottom: 8,
-    transition: `all ${transitions.normal}`,
-    boxShadow: shadows.xs,
-  }
-
-  const dividerStyles: React.CSSProperties = {
-    display: 'flex',
-    alignItems: 'center',
-    margin: '28px 0',
-    gap: 16,
-  }
-
-  const dividerLineStyles: React.CSSProperties = {
-    flex: 1,
-    height: 1,
-    background: colors.border,
-  }
-
-  const dividerTextStyles: React.CSSProperties = {
-    fontSize: 13,
-    color: colors.textMuted,
-    fontWeight: 500,
-  }
-
-  const labelStyles: React.CSSProperties = {
-    display: 'block',
-    fontSize: 14,
-    fontWeight: 600,
-    marginBottom: 10,
-    color: colors.text,
-    letterSpacing: '-0.01em',
-  }
-
-  const inputStyles: React.CSSProperties = {
-    width: '100%',
-    padding: '14px 18px',
-    fontSize: 15,
-    border: `1px solid ${colors.border}`,
-    borderRadius: radius.md,
-    marginBottom: 10,
-    outline: 'none',
-    boxSizing: 'border-box',
-    transition: `border-color ${transitions.fast}, box-shadow ${transitions.fast}`,
-    background: colors.surface,
-    fontFamily: 'inherit',
-    color: colors.text,
-  }
-
-  const inputHintStyles: React.CSSProperties = {
-    fontSize: 13,
-    color: colors.textMuted,
-    marginBottom: 24,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 6,
-  }
-
-  const errorStyles: React.CSSProperties = {
-    color: colors.danger,
-    fontSize: 14,
-    marginBottom: 20,
-    padding: '12px 16px',
-    background: colors.dangerLight,
-    borderRadius: radius.md,
-    border: `1px solid ${colors.dangerBorder}`,
-    fontWeight: 500,
-  }
-
-  const submitButtonStyles: React.CSSProperties = {
-    width: '100%',
-    padding: '15px 22px',
-    fontSize: 15,
-    fontWeight: 600,
-    color: colors.textInverse,
-    background: loading ? colors.textMuted : colors.primary,
-    border: 'none',
-    borderRadius: radius.md,
-    cursor: loading ? 'not-allowed' : 'pointer',
-    transition: `all ${transitions.normal}`,
-    boxShadow: loading ? 'none' : `0 4px 12px -2px rgba(13, 148, 136, 0.35)`,
-    fontFamily: 'inherit',
-  }
-
   if (sent) {
     return (
-      <div style={containerStyles}>
-        <div style={backgroundStyles}>
-          <div style={decorShape1} />
-          <div style={decorShape2} />
-          <div style={decorShape3} />
-        </div>
-        <div style={cardStyles}>
-          <div style={{
-            width: 80,
-            height: 80,
-            background: `linear-gradient(135deg, ${colors.successLight} 0%, ${colors.successBorder} 100%)`,
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 28px',
-            color: colors.success,
-            boxShadow: `0 8px 20px -4px rgba(5, 150, 105, 0.25)`,
-          }}>
-            <CheckCircle size={40} strokeWidth={2} />
+      <div className="login-container">
+        <div className="login-glow login-glow--1" />
+        <div className="login-glow login-glow--2" />
+        <div className="login-glow login-glow--3" />
+
+        <div className="login-card login-card--success">
+          <div className="login-success-icon">
+            <CheckCircle size={48} strokeWidth={1.5} />
           </div>
-          <h1 style={{ ...titleStyles, marginBottom: 14 }}>
-            Sjekk e-posten din
-          </h1>
-          <p style={{ ...subtitleStyles, marginBottom: 8 }}>
+
+          <h1 className="login-title">Sjekk e-posten din</h1>
+          <p className="login-subtitle">
             Vi har sendt en innloggingslenke til
           </p>
-          <p style={{
-            color: colors.text,
-            textAlign: 'center',
-            fontSize: 16,
-            fontWeight: 600,
-            marginTop: 4,
-            padding: '8px 16px',
-            background: colors.primarySubtle,
-            borderRadius: radius.md,
-            display: 'inline-block',
-            margin: '8px auto 0',
-            width: 'fit-content',
-          }}>
+
+          <div className="login-email-badge">
+            <Mail size={16} />
             {email}
-          </p>
-          <div style={{
-            marginTop: 28,
-            padding: '16px 20px',
-            background: colors.backgroundSubtle,
-            borderRadius: radius.md,
-            border: `1px solid ${colors.border}`,
-          }}>
-            <p style={{
-              color: colors.textSecondary,
-              textAlign: 'center',
-              fontSize: 13,
-              lineHeight: 1.6,
-              margin: 0,
-            }}>
-              Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.
-            </p>
+          </div>
+
+          <div className="login-info-box">
+            <Sparkles size={16} />
+            <span>Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.</span>
           </div>
         </div>
       </div>
@@ -306,52 +85,34 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={containerStyles}>
-      <div style={backgroundStyles}>
-        <div style={decorShape1} />
-        <div style={decorShape2} />
-        <div style={decorShape3} />
-      </div>
-      <div style={cardStyles}>
-        <div style={logoContainerStyles}>
+    <div className="login-container">
+      <div className="login-glow login-glow--1" />
+      <div className="login-glow login-glow--2" />
+      <div className="login-glow login-glow--3" />
+
+      <div className="login-card">
+        <div className="login-logo">
           <Image
             src="/tetra-logo.png"
-            alt="Tetra Logo"
-            width={200}
-            height={60}
-            style={{
-              height: 60,
-              width: 'auto',
-            }}
+            alt="Tetra"
+            width={180}
+            height={50}
+            style={{ height: 50, width: 'auto' }}
+            priority
           />
         </div>
 
-        <h1 style={titleStyles}>
-          Velkommen til Tetra
-        </h1>
-
-        <p style={subtitleStyles}>
-          Logg inn for å administrere HMS-instrukser og avvik
-        </p>
+        <div className="login-header">
+          <h1 className="login-title">Velkommen tilbake</h1>
+          <p className="login-subtitle">
+            Logg inn for å administrere HMS-instrukser og avvik
+          </p>
+        </div>
 
         <button
           onClick={handleAzureLogin}
           disabled={loading}
-          style={ssoButtonStyles}
-          onMouseEnter={(e) => {
-            if (!loading) {
-              e.currentTarget.style.background = colors.backgroundSubtle
-              e.currentTarget.style.borderColor = colors.borderStrong
-              e.currentTarget.style.transform = 'translateY(-1px)'
-              e.currentTarget.style.boxShadow = shadows.sm
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = colors.surface
-            e.currentTarget.style.borderColor = colors.border
-            e.currentTarget.style.transform = 'translateY(0)'
-            e.currentTarget.style.boxShadow = shadows.xs
-          }}
+          className="login-sso-btn"
         >
           <svg width="20" height="20" viewBox="0 0 23 23">
             <path fill="#f35325" d="M0 0h10.931v10.931H0z" />
@@ -362,91 +123,313 @@ export default function LoginPage() {
           Fortsett med Microsoft
         </button>
 
-        <div style={dividerStyles}>
-          <div style={dividerLineStyles} />
-          <span style={dividerTextStyles}>eller bruk e-post</span>
-          <div style={dividerLineStyles} />
+        <div className="login-divider">
+          <span>eller bruk e-post</span>
         </div>
 
-        <form onSubmit={handleLogin}>
-          <label htmlFor="email" style={labelStyles}>
-            E-postadresse
-          </label>
+        <form onSubmit={handleLogin} className="login-form">
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">
+              E-postadresse
+            </label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="navn@bedrift.no"
+              required
+              className="form-input"
+              autoComplete="email"
+            />
+          </div>
 
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="navn@bedrift.no"
-            required
-            style={inputStyles}
-            onFocus={(e) => {
-              e.currentTarget.style.borderColor = colors.primary
-              e.currentTarget.style.boxShadow = shadows.focus
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.borderColor = colors.border
-              e.currentTarget.style.boxShadow = 'none'
-            }}
-          />
-
-          <p style={inputHintStyles}>
+          <p className="login-hint">
             <Mail size={14} />
             Du får en innloggingslenke på e-post
           </p>
 
           {error && (
-            <p style={errorStyles}>
+            <div className="login-error">
               {error}
-            </p>
+            </div>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            style={submitButtonStyles}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background = colors.primaryHover
-                e.currentTarget.style.transform = 'translateY(-1px)'
-                e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(13, 148, 136, 0.4)'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background = colors.primary
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(13, 148, 136, 0.35)'
-              }
-            }}
+            className="btn btn-primary btn-lg login-submit"
           >
-            {loading ? 'Sender...' : 'Send innloggingslenke'}
+            {loading ? (
+              <>
+                <span className="spinner spinner-sm spinner-white" />
+                Sender...
+              </>
+            ) : (
+              'Send innloggingslenke'
+            )}
           </button>
         </form>
 
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 8,
-          marginTop: 28,
-          padding: '12px 16px',
-          background: colors.primarySubtle,
-          borderRadius: radius.md,
-          border: `1px solid ${colors.primaryMuted}`,
-        }}>
-          <Shield size={16} style={{ color: colors.primary }} />
-          <p style={{
-            color: colors.textSecondary,
-            fontSize: 12,
-            margin: 0,
-            lineHeight: 1.5,
-          }}>
-            Sikker innlogging for HMS-plattformen
-          </p>
+        <div className="login-footer">
+          <Shield size={16} />
+          <span>Sikker innlogging for HMS-plattformen</span>
         </div>
       </div>
+
+      <style jsx>{`
+        .login-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          position: relative;
+          overflow: hidden;
+          background: var(--hms-white, #FFFFFF);
+        }
+
+        .login-glow {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+          pointer-events: none;
+        }
+
+        .login-glow--1 {
+          top: -20%;
+          right: -10%;
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, rgba(5, 150, 105, 0.06) 0%, transparent 70%);
+        }
+
+        .login-glow--2 {
+          bottom: -30%;
+          left: -15%;
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, rgba(2, 132, 199, 0.05) 0%, transparent 70%);
+        }
+
+        .login-glow--3 {
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 300px;
+          height: 300px;
+          background: radial-gradient(circle, rgba(5, 150, 105, 0.04) 0%, transparent 70%);
+        }
+
+        .login-card {
+          position: relative;
+          z-index: 1;
+          background: var(--hms-white, #FFFFFF);
+          border: 1px solid var(--hms-frost, #E2E8F0);
+          border-radius: var(--radius-2xl);
+          padding: 48px 44px;
+          max-width: 440px;
+          width: 100%;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
+          animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .login-card--success {
+          text-align: center;
+        }
+
+        .login-logo {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 36px;
+        }
+
+        .login-header {
+          text-align: center;
+          margin-bottom: 32px;
+        }
+
+        .login-title {
+          font-family: var(--font-display);
+          font-size: 28px;
+          font-weight: 700;
+          color: var(--hms-charcoal, #1E293B);
+          letter-spacing: -0.03em;
+          margin-bottom: 10px;
+        }
+
+        .login-subtitle {
+          font-size: 15px;
+          color: var(--hms-slate, #64748B);
+          line-height: 1.6;
+        }
+
+        .login-success-icon {
+          width: 88px;
+          height: 88px;
+          margin: 0 auto 28px;
+          background: var(--hms-safe-light, #D1FAE5);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--hms-safe, #059669);
+          animation: safetyPulse 2s ease-in-out infinite;
+        }
+
+        .login-email-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 10px;
+          padding: 12px 20px;
+          background: var(--hms-safe-light, #D1FAE5);
+          border: 1px solid rgba(5, 150, 105, 0.2);
+          border-radius: var(--radius-full);
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--hms-safe, #059669);
+          margin-top: 16px;
+        }
+
+        .login-info-box {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-top: 28px;
+          padding: 16px 20px;
+          background: var(--hms-snow, #F8FAFC);
+          border: 1px solid var(--hms-frost, #E2E8F0);
+          border-radius: var(--radius-lg);
+          font-size: 13px;
+          color: var(--hms-slate, #64748B);
+          line-height: 1.5;
+        }
+
+        .login-info-box svg {
+          flex-shrink: 0;
+          color: var(--hms-info, #0284C7);
+        }
+
+        .login-sso-btn {
+          width: 100%;
+          padding: 16px 24px;
+          font-family: var(--font-body);
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--hms-charcoal, #1E293B);
+          background: var(--hms-white, #FFFFFF);
+          border: 1px solid var(--hms-frost, #E2E8F0);
+          border-radius: var(--radius-lg);
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 14px;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .login-sso-btn:hover:not(:disabled) {
+          background: var(--hms-snow, #F8FAFC);
+          border-color: var(--hms-steel, #CBD5E1);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .login-sso-btn:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+
+        .login-divider {
+          display: flex;
+          align-items: center;
+          margin: 28px 0;
+          gap: 16px;
+        }
+
+        .login-divider::before,
+        .login-divider::after {
+          content: '';
+          flex: 1;
+          height: 1px;
+          background: var(--hms-frost, #E2E8F0);
+        }
+
+        .login-divider span {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--hms-slate, #64748B);
+        }
+
+        .login-form {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .login-hint {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          color: var(--hms-slate, #64748B);
+          margin-bottom: 24px;
+        }
+
+        .login-error {
+          padding: 14px 18px;
+          background: var(--hms-danger-light, #FEE2E2);
+          border: 1px solid rgba(220, 38, 38, 0.2);
+          border-radius: var(--radius-md);
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--hms-danger, #DC2626);
+          margin-bottom: 20px;
+        }
+
+        .login-submit {
+          width: 100%;
+        }
+
+        .login-footer {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-top: 28px;
+          padding: 14px 18px;
+          background: var(--hms-safe-light, #D1FAE5);
+          border: 1px solid rgba(5, 150, 105, 0.15);
+          border-radius: var(--radius-lg);
+          font-size: 12px;
+          color: var(--hms-charcoal, #1E293B);
+        }
+
+        .login-footer svg {
+          color: var(--hms-safe, #059669);
+          animation: safetyPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes scaleIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        @media (max-width: 480px) {
+          .login-card {
+            padding: 36px 28px;
+          }
+
+          .login-title {
+            font-size: 24px;
+          }
+        }
+      `}</style>
     </div>
   )
 }
