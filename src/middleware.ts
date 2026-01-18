@@ -11,6 +11,17 @@ import { NextResponse, type NextRequest } from 'next/server'
  * Authenticated users accessing /login are redirected to /post-auth
  */
 
+// Cookie options type for Supabase SSR
+interface CookieOptions {
+  domain?: string
+  path?: string
+  expires?: Date
+  httpOnly?: boolean
+  secure?: boolean
+  sameSite?: 'lax' | 'strict' | 'none'
+  maxAge?: number
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -30,7 +41,7 @@ export async function middleware(request: NextRequest) {
         get(name: string) {
           return request.cookies.get(name)?.value
         },
-        set(name: string, value: string, options: Record<string, unknown>) {
+        set(name: string, value: string, options: CookieOptions) {
           request.cookies.set({ name, value, ...options })
           response = NextResponse.next({
             request: {
@@ -39,7 +50,7 @@ export async function middleware(request: NextRequest) {
           })
           response.cookies.set({ name, value, ...options })
         },
-        remove(name: string, options: Record<string, unknown>) {
+        remove(name: string, options: CookieOptions) {
           request.cookies.set({ name, value: '', ...options })
           response = NextResponse.next({
             request: {
@@ -67,12 +78,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/') &&
     !pathname.startsWith('/api/health')
 
-  // Public routes (no auth required)
-  const isPublicRoute =
-    pathname === '/' ||
-    pathname === '/login' ||
-    pathname.startsWith('/invite') ||
-    pathname.startsWith('/auth')
+  // Public routes (no auth required) - handled by matcher config
+  // Routes: /, /login, /invite/*, /auth/*
 
   // Redirect unauthenticated users from protected routes
   if (!user && (isProtectedRoute || isProtectedApi)) {

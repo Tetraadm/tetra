@@ -1,249 +1,287 @@
 # Tetra HMS
 
-> **Digital Safety Platform for Norwegian Enterprises**
+> **Digital HMS-plattform for norske virksomheter**
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.1-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)](https://supabase.com/)
+[![License](https://img.shields.io/badge/License-Proprietary-red)]()
 
-Tetra is a digital HMS (Health, Safety & Environment) platform that makes workplace safety management simple and accessible for Norwegian businesses. It features AI-powered assistance via Claude, document management, team organization, and comprehensive audit logging.
-
----
-
-## ✨ Features
-
-- **AI Assistant (Spør Tetra)** - Natural language Q&A powered by Claude 3.5 Haiku with context from company safety documents
-- **Instruction Management** - Upload, organize, and distribute safety instructions with PDF text extraction
-- **Team Organization** - Hierarchical team structure with role-based access (Admin, Team Leader, Employee)
-- **Real-time Alerts** - Create and distribute safety alerts to specific teams
-- **Read Confirmations** - Track which employees have read and confirmed safety documents
-- **Audit Logging** - Comprehensive activity logging for compliance
-- **Multi-tenant** - Full tenant isolation with Row Level Security (RLS)
-- **Norwegian UI** - All user-facing text in Norwegian Bokmål
+Tetra er en digital HMS-plattform (Helse, Miljø og Sikkerhet) som gjør arbeidsmiljøstyring enkelt og tilgjengelig for norske bedrifter. Plattformen har AI-drevet assistanse via Claude, dokumenthåndtering, teamorganisering og omfattende revisjonslogging.
 
 ---
 
-## 🛠 Tech Stack
+## Innhold
 
-| Layer | Technology |
-|-------|------------|
+- [Funksjoner](#-funksjoner)
+- [Teknologi](#-teknologi)
+- [Forutsetninger](#-forutsetninger)
+- [Installasjon](#-installasjon)
+- [Miljøvariabler](#-miljøvariabler)
+- [Bruk](#-bruk)
+- [Prosjektstruktur](#-prosjektstruktur)
+- [Database](#-database)
+- [API-dokumentasjon](#-api-dokumentasjon)
+- [Autentisering](#-autentisering)
+- [Deployment](#-deployment)
+- [Bidrag](#-bidrag)
+
+---
+
+## Funksjoner
+
+| Funksjon | Beskrivelse |
+|----------|-------------|
+| **Spør Tetra (AI)** | Naturlig språk Q&A drevet av Claude 3.5 Haiku med kontekst fra bedriftens sikkerhetsdokumenter |
+| **Instrukshåndtering** | Last opp, organiser og distribuer sikkerhetsinstrukser med PDF-tekstekstraksjon |
+| **Teamorganisering** | Hierarkisk teamstruktur med rollebasert tilgang (Admin, Teamleder, Ansatt) |
+| **Sanntidsvarsler** | Opprett og distribuer sikkerhetsvarsler til spesifikke team |
+| **Lesebekreftelser** | Spor hvilke ansatte som har lest og bekreftet sikkerhetsdokumenter |
+| **Revisjonslogging** | Omfattende aktivitetslogging for compliance |
+| **Multi-tenant** | Full tenant-isolasjon med Row Level Security (RLS) |
+| **Norsk grensesnitt** | All brukervendt tekst på norsk bokmål |
+
+---
+
+## Teknologi
+
+| Lag | Teknologi |
+|-----|-----------|
 | **Frontend** | Next.js 16 (App Router), React 19, TypeScript 5 |
-| **Styling** | Tailwind CSS 3.4, Custom CSS Variables |
+| **Styling** | Tailwind CSS 3.4, CSS Custom Properties |
 | **Backend** | Next.js API Routes (Node.js runtime) |
-| **Database** | Supabase (PostgreSQL with RLS) |
-| **Auth** | Supabase Auth (Magic Link + Microsoft Azure SSO) |
-| **Storage** | Supabase Storage (document uploads) |
+| **Database** | Supabase (PostgreSQL med RLS) |
+| **Autentisering** | Supabase Auth (Magic Link + Microsoft Azure SSO) |
+| **Lagring** | Supabase Storage (dokumentopplasting) |
 | **AI** | Anthropic Claude 3.5 Haiku |
-| **Rate Limiting** | Upstash Redis (with in-memory fallback) |
-| **Email** | Resend (transactional emails) |
+| **Rate Limiting** | Upstash Redis (med in-memory fallback) |
+| **E-post** | Resend (transaksjonelle e-poster) |
 | **Deployment** | Vercel |
 
 ---
 
-## 📋 Prerequisites
+## Forutsetninger
 
-- **Node.js** 20+ (LTS recommended)
+- **Node.js** 20+ (LTS anbefalt)
 - **npm** 10+
-- **Supabase Project** with database configured
-- **Anthropic API Key** for AI features
-- **Resend Account** (optional, for email invitations)
-- **Upstash Redis** (optional, falls back to in-memory)
+- **Supabase-prosjekt** med database konfigurert
+- **Anthropic API-nøkkel** for AI-funksjoner
+- **Resend-konto** (valgfritt, for e-postinvitasjoner)
+- **Upstash Redis** (valgfritt, faller tilbake til in-memory)
 
 ---
 
-## 🚀 Installation
+## Installasjon
 
-### 1. Clone the repository
+### 1. Klon repositoriet
 
 ```bash
 git clone https://github.com/Tetraadm/tetra.git
 cd tetra
 ```
 
-### 2. Install dependencies
+### 2. Installer avhengigheter
 
 ```bash
 npm install
 ```
 
-### 3. Set up environment variables
+### 3. Konfigurer miljøvariabler
 
-Create a `.env.local` file in the project root:
+Opprett en `.env.local`-fil i prosjektroten:
 
 ```bash
-cp .env.example .env.local  # If example exists, otherwise create manually
+cp .env.example .env.local
 ```
 
-See [Environment Variables](#-environment-variables) section for all required variables.
+Se [Miljøvariabler](#-miljøvariabler) for alle nødvendige variabler.
 
-### 4. Set up the database
+### 4. Sett opp databasen
 
-Run the SQL migrations in order in Supabase SQL Editor:
+Kjør SQL-migrasjoner i rekkefølge i Supabase SQL Editor:
 
 ```
+supabase/sql/00_migrations_table.sql
 supabase/sql/01_schema.sql
 supabase/sql/02_seed.sql
 ...
-supabase/sql/23_document_profile_email_trigger.sql
+supabase/sql/26_rpc_security_fix.sql
 ```
 
-### 5. Start development server
+### 5. Start utviklingsserver
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Åpne [http://localhost:3000](http://localhost:3000) i nettleseren.
 
 ---
 
-## 🔐 Environment Variables
+## Miljøvariabler
 
-### Required Variables
+### Påkrevde variabler
 
-| Variable | Description |
+| Variabel | Beskrivelse |
 |----------|-------------|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous/public key |
-| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key (server-only, never expose to client) |
-| `ANTHROPIC_API_KEY` | Anthropic API key for Claude AI |
+| `NEXT_PUBLIC_SUPABASE_URL` | Din Supabase prosjekt-URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonym/offentlig nøkkel |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role nøkkel (kun server, aldri eksponer til klient) |
+| `ANTHROPIC_API_KEY` | Anthropic API-nøkkel for Claude AI |
 
-### Optional Variables
+### Valgfrie variabler
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Base URL for invite links |
-| `RESEND_API_KEY` | - | Resend API key for email invitations |
-| `RESEND_FROM_EMAIL` | `Tetra HMS <onboarding@resend.dev>` | Sender email for invitations |
+| Variabel | Standard | Beskrivelse |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Basis-URL for invitasjonslenker |
+| `RESEND_API_KEY` | - | Resend API-nøkkel for e-postinvitasjoner |
+| `RESEND_FROM_EMAIL` | `Tetra HMS <onboarding@resend.dev>` | Avsender-e-post for invitasjoner |
 | `UPSTASH_REDIS_REST_URL` | - | Upstash Redis URL (rate limiting) |
 | `UPSTASH_REDIS_REST_TOKEN` | - | Upstash Redis token |
-| `AI_RATE_LIMIT` | `20` | Max AI requests per window |
-| `AI_RATE_WINDOW_SECONDS` | `60` | Rate limit window (seconds) |
-| `UPLOAD_RATE_LIMIT` | `10` | Max uploads per window |
-| `UPLOAD_RATE_WINDOW_SECONDS` | `60` | Upload rate limit window |
-| `INVITE_RATE_LIMIT` | `10` | Max invitations per window |
-| `INVITE_RATE_WINDOW_SECONDS` | `3600` | Invite rate limit window (1 hour) |
-| `MAX_UPLOAD_MB` | `10` | Maximum file upload size in MB |
-| `AI_MIN_RELEVANCE_SCORE` | `0.35` | Minimum relevance score for AI answers |
+| `AI_RATE_LIMIT` | `20` | Maks AI-forespørsler per vindu |
+| `AI_RATE_WINDOW_SECONDS` | `60` | Rate limit vindu (sekunder) |
+| `UPLOAD_RATE_LIMIT` | `10` | Maks opplastinger per vindu |
+| `UPLOAD_RATE_WINDOW_SECONDS` | `60` | Opplasting rate limit vindu |
+| `INVITE_RATE_LIMIT` | `10` | Maks invitasjoner per vindu |
+| `INVITE_RATE_WINDOW_SECONDS` | `3600` | Invitasjon rate limit vindu (1 time) |
+| `MAX_UPLOAD_MB` | `10` | Maksimal filopplastingsstørrelse i MB |
+| `AI_MIN_RELEVANCE_SCORE` | `0.35` | Minimum relevansscore for AI-svar |
 
-### Example `.env.local`
+### Eksempel `.env.local`
 
 ```env
-# Supabase (required)
+# Supabase (påkrevd)
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
-# AI (required)
+# AI (påkrevd)
 ANTHROPIC_API_KEY=sk-ant-api03-...
 
-# App URL (required for production)
+# App URL (påkrevd for produksjon)
 NEXT_PUBLIC_APP_URL=https://tetra.onl
 
-# Email (optional - for invitation emails)
+# E-post (valgfritt)
 RESEND_API_KEY=re_...
 RESEND_FROM_EMAIL=Tetra HMS <no-reply@tetra.onl>
 
-# Redis (optional - falls back to in-memory)
+# Redis (valgfritt - faller tilbake til in-memory)
 UPSTASH_REDIS_REST_URL=https://....upstash.io
 UPSTASH_REDIS_REST_TOKEN=...
 ```
 
 ---
 
-## 📝 Usage
+## Bruk
 
-### Available Scripts
+### Tilgjengelige kommandoer
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with Turbopack |
-| `npm run build` | Build for production |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint |
-| `npm run typecheck` | Run TypeScript type checking |
-| `npm run spellcheck` | Run spell checker on source files |
+| Kommando | Beskrivelse |
+|----------|-------------|
+| `npm run dev` | Start utviklingsserver med Turbopack |
+| `npm run build` | Bygg for produksjon |
+| `npm run start` | Start produksjonsserver |
+| `npm run lint` | Kjør ESLint |
+| `npm run typecheck` | Kjør TypeScript typesjekkeing |
+| `npm run spellcheck` | Kjør stavekontroll på kildefiler |
 
-### User Roles
+### Brukerroller
 
-| Role | Access |
-|------|--------|
-| **Admin** | Full access: manage users, teams, instructions, alerts, view logs |
-| **Team Leader** | View team members, instructions, manage team alerts |
-| **Employee** | View assigned instructions, confirm reads, ask AI questions |
+| Rolle | Tilgang |
+|-------|---------|
+| **Admin** | Full tilgang: administrer brukere, team, instrukser, varsler, se logger |
+| **Teamleder** | Se teammedlemmer, instrukser, administrer teamvarsler, inviter brukere |
+| **Ansatt** | Se tildelte instrukser, bekreft lesing, still spørsmål til AI |
 
 ---
 
-## 📁 Project Structure
+## Prosjektstruktur
 
 ```
 tetra/
 ├── src/
-│   ├── app/                    # Next.js App Router pages
-│   │   ├── admin/              # Admin dashboard
-│   │   ├── employee/           # Employee dashboard
-│   │   ├── leader/             # Team leader dashboard
-│   │   ├── login/              # Authentication page
-│   │   ├── invite/[token]/     # Invitation acceptance flow
-│   │   ├── auth/               # Auth callback handlers
+│   ├── app/                    # Next.js App Router sider
+│   │   ├── admin/              # Admin-dashboard
+│   │   ├── employee/           # Ansatt-dashboard
+│   │   ├── leader/             # Teamleder-dashboard
+│   │   ├── login/              # Autentiseringsside
+│   │   ├── invite/[token]/     # Invitasjonsaksept-flyt
+│   │   ├── auth/               # Auth callback-håndterere
 │   │   ├── post-auth/          # Post-login routing
-│   │   └── api/                # API routes
-│   │       ├── ask/            # AI Q&A endpoint
-│   │       ├── upload/         # File upload endpoint
-│   │       ├── invite/         # Invitation endpoint
-│   │       └── ...
-│   ├── components/             # Shared React components
-│   ├── lib/                    # Utility libraries
-│   │   ├── supabase/           # Supabase client setup
-│   │   ├── ratelimit.ts        # Rate limiting logic
-│   │   ├── types.ts            # TypeScript type definitions
-│   │   └── ...
+│   │   └── api/                # API-ruter
+│   │       ├── ask/            # AI Q&A endepunkt
+│   │       ├── upload/         # Filopplasting endepunkt
+│   │       ├── invite/         # Invitasjon endepunkt
+│   │       ├── read-confirmations/ # Lesebekreftelser
+│   │       └── audit-logs/     # Revisjonslogger
+│   ├── components/             # Delte React-komponenter
+│   ├── lib/                    # Hjelpefunksjoner
+│   │   ├── supabase/           # Supabase klient-oppsett
+│   │   ├── ratelimit.ts        # Rate limiting logikk
+│   │   ├── types.ts            # TypeScript typedefinisjoner
+│   │   └── ui-helpers.ts       # UI-hjelpefunksjoner
 │   └── middleware.ts           # Auth middleware
 ├── supabase/
-│   └── sql/                    # Database migrations (01-23)
-├── public/                     # Static assets
-├── docs/                       # Documentation
-└── types/                      # Additional type definitions
+│   └── sql/                    # Database-migrasjoner (00-26)
+├── public/                     # Statiske ressurser
+├── docs/                       # Dokumentasjon
+└── .agent/                     # AI-agent konfigurasjon
 ```
 
 ---
 
-## 🗄 Database Schema
+## Database
 
-### Core Tables
+### Hovedtabeller
 
-| Table | Description |
-|-------|-------------|
-| `organizations` | Tenant organizations |
-| `teams` | Teams within organizations |
-| `profiles` | User profiles (extends auth.users) |
-| `instructions` | Safety documents and instructions |
-| `instruction_teams` | M:N mapping of instructions to teams |
-| `instruction_reads` | Read confirmation tracking |
-| `folders` | Document organization folders |
-| `alerts` | Safety alerts and notifications |
-| `alert_teams` | M:N mapping of alerts to teams |
-| `invites` | User invitation tokens |
-| `audit_logs` | Activity audit trail |
-| `ask_tetra_logs` | AI Q&A history |
-| `ai_unanswered_questions` | Questions AI couldn't answer |
+| Tabell | Beskrivelse |
+|--------|-------------|
+| `organizations` | Tenant-organisasjoner |
+| `teams` | Team innenfor organisasjoner |
+| `profiles` | Brukerprofiler (utvider auth.users) |
+| `instructions` | Sikkerhetsdokumenter og instrukser |
+| `instruction_teams` | M:N mapping av instrukser til team |
+| `instruction_reads` | Sporing av lesebekreftelser |
+| `folders` | Mapper for dokumentorganisering |
+| `alerts` | Sikkerhetsvarsler og notifikasjoner |
+| `alert_teams` | M:N mapping av varsler til team |
+| `invites` | Brukerinvitasjonstokens |
+| `audit_logs` | Aktivitets-audit trail |
+| `ask_tetra_logs` | AI Q&A historikk |
+| `ai_unanswered_questions` | Spørsmål AI ikke kunne svare på |
 
-### Security Features
+### Sikkerhetsfunksjoner
 
-- **Row Level Security (RLS)** enabled on all tables
-- **Tenant isolation** - users can only access data within their organization
-- **Role-based access** - policies enforce Admin/TeamLeader/Employee permissions
-- **Soft delete** - `deleted_at` column for GDPR compliance
-- **Audit logging** - all mutations are logged
+- **Row Level Security (RLS)** aktivert på alle tabeller
+- **Tenant-isolasjon** - brukere kan kun se data i egen organisasjon
+- **Rollebasert tilgang** - policyer håndhever Admin/Teamleder/Ansatt-tillatelser
+- **Soft delete** - `deleted_at` kolonne for GDPR-compliance
+- **Revisjonslogging** - alle mutasjoner logges
+
+### Migrasjoner
+
+Migrasjoner ligger i `supabase/sql/` og skal kjøres i numerisk rekkefølge:
+
+| Fil | Beskrivelse |
+|-----|-------------|
+| `00_migrations_table.sql` | Migrasjonssporing |
+| `01_schema.sql` | Hovedskjema |
+| `02_seed.sql` | Testdata |
+| `03_rpc_functions.sql` | RPC-funksjoner |
+| `04_security_helpers.sql` | Sikkerhetshjelpere |
+| `05-23_*.sql` | Diverse oppdateringer |
+| `24_block_direct_client_storage.sql` | Storage-sikkerhet |
+| `25_read_confirmations_rpc.sql` | Lesebekreftelser RPC |
+| `26_rpc_security_fix.sql` | RPC sikkerhetsfiks + profiles.deleted_at |
 
 ---
 
-## 🔌 API Documentation
+## API-dokumentasjon
 
 ### `POST /api/ask`
 
-AI-powered Q&A endpoint.
+AI-drevet Q&A endepunkt.
 
 **Request:**
 ```json
@@ -267,104 +305,116 @@ AI-powered Q&A endpoint.
 
 ### `POST /api/upload`
 
-Upload instruction documents (Admin only).
+Last opp instruksdokumenter (kun Admin).
 
 **Request:** `multipart/form-data`
-- `file`: PDF, TXT, PNG, or JPG (max 10MB)
-- `title`: Document title
-- `orgId`: Organization UUID
-- `severity`: `low` | `medium` | `critical`
-- `status`: `draft` | `published`
-- `folderId`: (optional) Folder UUID
-- `teamIds`: JSON array of team UUIDs
-- `allTeams`: `true` | `false`
+| Felt | Type | Beskrivelse |
+|------|------|-------------|
+| `file` | File | PDF, TXT, PNG eller JPG (maks 10MB) |
+| `title` | String | Dokumenttittel |
+| `orgId` | UUID | Organisasjons-ID |
+| `severity` | String | `low` \| `medium` \| `critical` |
+| `status` | String | `draft` \| `published` |
+| `folderId` | UUID | (valgfritt) Mappe-ID |
+| `teamIds` | JSON | Array av team-UUIDs |
+| `allTeams` | Boolean | `true` \| `false` |
 
 ### `POST /api/invite`
 
-Send user invitation (Admin/TeamLeader only).
+Send brukerinvitasjon (kun Admin/Teamleder).
 
 **Request:**
 ```json
 {
-  "email": "user@example.com",
+  "email": "bruker@eksempel.no",
   "role": "employee",
   "team_id": "uuid"
 }
 ```
 
----
+### `GET /api/read-confirmations`
 
-## 🔐 Authentication & Roles
+Hent lesebekreftelsesstatistikk (kun Admin/Teamleder).
 
-### Authentication Methods
-
-1. **Magic Link (OTP)** - Email-based passwordless login
-2. **Microsoft Azure SSO** - OAuth integration for enterprise SSO
-
-### Authorization Flow
-
-1. User logs in via `/login`
-2. Supabase Auth callback at `/auth/callback`
-3. Middleware checks session on protected routes
-4. Role-based redirect to appropriate dashboard:
-   - Admin → `/admin`
-   - Team Leader → `/leader`
-   - Employee → `/employee`
-
-### Invitation Flow
-
-1. Admin creates invite via `/api/invite`
-2. Email sent with link `/invite/[token]`
-3. User accepts invite, creates account
-4. Profile automatically linked to organization/team
+**Query params:** `limit`, `offset`
 
 ---
 
-## 🚀 Deployment
+## Autentisering
 
-### Vercel (Recommended)
+### Autentiseringsmetoder
 
-1. Import project from GitHub
-2. Set environment variables in Vercel dashboard
+1. **Magic Link (OTP)** - E-postbasert passordløs innlogging
+2. **Microsoft Azure SSO** - OAuth-integrasjon for enterprise SSO
+
+### Autorisasjonsflyt
+
+```
+1. Bruker logger inn via /login
+2. Supabase Auth callback på /auth/callback
+3. Middleware sjekker sesjon på beskyttede ruter
+4. Rollebasert redirect til riktig dashboard:
+   - Admin → /admin
+   - Teamleder → /leader
+   - Ansatt → /employee
+```
+
+### Invitasjonsflyt
+
+```
+1. Admin oppretter invitasjon via /api/invite
+2. E-post sendes med lenke /invite/[token]
+3. Bruker aksepterer invitasjon, oppretter konto
+4. Profil kobles automatisk til organisasjon/team
+```
+
+---
+
+## Deployment
+
+### Vercel (anbefalt)
+
+1. Importer prosjekt fra GitHub
+2. Sett miljøvariabler i Vercel dashboard
 3. Deploy
 
-**Required Vercel Environment Variables:**
-- All variables from [Environment Variables](#-environment-variables)
+**Nødvendige Vercel-miljøvariabler:**
+- Alle variabler fra [Miljøvariabler](#-miljøvariabler)
 
-### Production URL
+### Produksjons-URL
 
-Live at: [https://tetra.onl](https://tetra.onl)
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/amazing-feature`
-3. Commit changes: `git commit -m 'Add amazing feature'`
-4. Push to branch: `git push origin feature/amazing-feature`
-5. Open a Pull Request
-
-### Code Standards
-
-- Run `npm run lint` before committing
-- Run `npm run typecheck` to ensure type safety
-- All UI text must be in Norwegian Bokmål
-- Follow existing code patterns and styling
+Live på: [https://tetra.onl](https://tetra.onl)
 
 ---
 
-## 📄 License
+## Bidrag
 
-Proprietary. All rights reserved.
+1. Fork repositoriet
+2. Opprett en feature-branch: `git checkout -b feature/ny-funksjon`
+3. Commit endringer: `git commit -m 'Legg til ny funksjon'`
+4. Push til branch: `git push origin feature/ny-funksjon`
+5. Åpne en Pull Request
+
+### Kodestandarder
+
+- Kjør `npm run lint` før commit
+- Kjør `npm run typecheck` for å sikre typesikkerhet
+- All UI-tekst må være på norsk bokmål
+- Følg eksisterende kodemønstre og styling
 
 ---
 
-## 📞 Contact & Support
+## Lisens
 
-- **GitHub Issues**: [Report bugs or request features](https://github.com/Tetraadm/tetra/issues)
-- **Email**: support@tetra.onl
+Proprietær. Alle rettigheter forbeholdt.
 
 ---
 
-*Built with ❤️ for Norwegian workplace safety*
+## Kontakt
+
+- **GitHub Issues**: [Rapporter feil eller be om funksjoner](https://github.com/Tetraadm/tetra/issues)
+- **E-post**: support@tetra.onl
+
+---
+
+*Bygget for norsk arbeidsmiljøsikkerhet*

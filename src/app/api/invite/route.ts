@@ -30,9 +30,9 @@ export async function POST(request: Request) {
                     getAll() {
                         return cookieStore.getAll()
                     },
-                    setAll(cookiesToSet: any) {
+                    setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
                         try {
-                            cookiesToSet.forEach(({ name, value, options }: any) =>
+                            cookiesToSet.forEach(({ name, value, options }) =>
                                 cookieStore.set(name, value, options)
                             )
                         } catch {
@@ -55,7 +55,7 @@ export async function POST(request: Request) {
             .eq('id', user.id)
             .single()
 
-        if (!profile || !['admin', 'teamleder'].includes(profile.role)) {
+        if (!profile || !['admin', 'teamleader'].includes(profile.role)) {
             return NextResponse.json(
                 { error: 'Ingen tilgang til å invitere brukere' },
                 { status: 403 }

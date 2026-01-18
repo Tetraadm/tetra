@@ -129,14 +129,13 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
+* {
+  @apply border-border;
+  outline-color: hsl(var(--ring) / 0.5);
+}
 
-  body {
-    @apply bg-background text-foreground;
-  }
+body {
+  @apply bg-background text-foreground;
 }
 
 /* ===========================
@@ -163,7 +162,7 @@
   }
 
   .nt-app-header {
-    @apply sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center justify-between px-6 h-16 shadow-sm;
+    @apply sticky top-0 z-50 w-full border-b bg-background backdrop-blur flex items-center justify-between px-6 h-16 shadow-sm;
   }
 
   .nt-app-header__brand {
@@ -256,11 +255,11 @@
 
   /* Empty States */
   .nt-empty-state {
-    @apply flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-border rounded-xl bg-muted/30;
+    @apply flex flex-col items-center justify-center py-12 px-4 text-center border-2 border-dashed border-border rounded-xl bg-muted bg-opacity-30;
   }
 
   .nt-empty-state__icon {
-    @apply size-16 text-muted-foreground/50 mb-4;
+    @apply size-16 text-muted-foreground opacity-50 mb-4;
   }
 
   .nt-empty-state__title {
@@ -277,15 +276,15 @@
   }
 
   .nt-btn-primary {
-    @apply bg-primary text-primary-foreground hover:bg-primary/90 shadow;
+    @apply bg-primary text-primary-foreground hover:opacity-90 shadow;
   }
 
   .nt-btn-secondary {
-    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 border border-input shadow-sm;
+    @apply bg-secondary text-secondary-foreground hover:opacity-80 border border-input shadow-sm;
   }
 
   .nt-btn-danger {
-    @apply bg-destructive text-destructive-foreground hover:bg-destructive/90 shadow-sm;
+    @apply bg-destructive text-destructive-foreground hover:opacity-90 shadow-sm;
   }
 
   .nt-btn-sm {
@@ -321,11 +320,11 @@
   }
 
   .nt-table thead {
-    @apply [&_tr]:border-b bg-muted/50;
+    @apply [&_tr]:border-b bg-muted bg-opacity-50;
   }
 
   .nt-table tbody tr {
-    @apply border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted;
+    @apply border-b transition-colors hover:bg-muted hover:bg-opacity-50 data-[state=selected]:bg-muted;
   }
 
   .nt-table th {
@@ -354,7 +353,7 @@
   }
 
   .nt-badge--inactive {
-    @apply bg-secondary text-muted-foreground hover:bg-secondary/80;
+    @apply bg-secondary text-muted-foreground hover:opacity-80;
   }
 
   /* Utilities */
@@ -373,5 +372,43 @@
 
   .spinner-white {
     @apply text-white;
+  }
+
+  /* Typing indicator for chat */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .typing-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--muted-foreground, #6b7280);
+    border-radius: 50%;
+    animation: typing-bounce 1.4s ease-in-out infinite;
+  }
+
+  .typing-dot:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  .typing-dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .typing-dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes typing-bounce {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    30% {
+      transform: translateY(-6px);
+      opacity: 1;
+    }
   }
 }

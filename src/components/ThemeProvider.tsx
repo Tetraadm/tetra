@@ -14,6 +14,19 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
 const THEME_KEY = 'tetra-theme'
 
+// Helper to apply theme class and attribute
+function applyTheme(theme: Theme) {
+  const root = document.documentElement
+  // Set class for Tailwind CSS (.dark)
+  if (theme === 'dark') {
+    root.classList.add('dark')
+  } else {
+    root.classList.remove('dark')
+  }
+  // Also set data-theme for any components using it
+  root.setAttribute('data-theme', theme)
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('dark')
   const [mounted, setMounted] = useState(false)
@@ -23,19 +36,19 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem(THEME_KEY) as Theme | null
     if (stored === 'light' || stored === 'dark') {
       setThemeState(stored)
-      document.documentElement.setAttribute('data-theme', stored)
+      applyTheme(stored)
     } else {
       // Check system preference
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
       const initialTheme = prefersDark ? 'dark' : 'light'
       setThemeState(initialTheme)
-      document.documentElement.setAttribute('data-theme', initialTheme)
+      applyTheme(initialTheme)
     }
   }, [])
 
   useEffect(() => {
     if (mounted) {
-      document.documentElement.setAttribute('data-theme', theme)
+      applyTheme(theme)
       localStorage.setItem(THEME_KEY, theme)
     }
   }, [theme, mounted])

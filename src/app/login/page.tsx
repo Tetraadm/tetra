@@ -5,12 +5,7 @@ import { useState } from 'react'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { Mail, CheckCircle, Shield, Sparkles } from 'lucide-react'
-import { cn } from '@/lib/utils' // Assuming you have a cn utility, if not I will replace it or create it. 
-// Actually I should verify if '@/lib/utils' exists. 
-// Step 9 showed 'lib' dir exists.
-// I'll stick to standard className strings if uncertain, but usually shadcn has cn.
-// I will assume standard strings for safety or check first. 
-// Let's use template literals for now to be safe.
+// Using standard className strings for styling
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')

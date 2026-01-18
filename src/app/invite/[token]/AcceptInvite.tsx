@@ -34,7 +34,8 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
     if (!fullName.trim() || !email.trim()) return
 
     setLoading(true)
-    sessionStorage.setItem('invite_fullname', fullName.trim())
+    // Store full name in cookie for server-side callback to read
+    document.cookie = `invite_fullname=${encodeURIComponent(fullName.trim())}; path=/; max-age=3600; SameSite=Lax`
 
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),
@@ -60,7 +61,8 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
     }
 
     setLoading(true)
-    sessionStorage.setItem('invite_fullname', fullName.trim())
+    // Store full name in cookie for server-side callback to read
+    document.cookie = `invite_fullname=${encodeURIComponent(fullName.trim())}; path=/; max-age=3600; SameSite=Lax`
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'azure',

@@ -59,16 +59,23 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/login?error=Mangler invite token`)
     }
 
+    // Get full name from cookie (set by AcceptInvite form)
+    const fullNameCookie = request.cookies.get('invite_fullname')?.value
+    const fullName = fullNameCookie ? decodeURIComponent(fullNameCookie) : (user.email?.split('@')[0] || 'Bruker')
+
     // Use RPC function for atomic invite acceptance
     const { error: acceptError } = await supabase.rpc('accept_invite', {
       p_token: token,
-      p_full_name: user.email?.split('@')[0] || 'Bruker'
+      p_full_name: fullName
     })
 
     if (acceptError) {
       console.error('INVITE_FATAL: RPC accept_invite failed', acceptError.message)
       return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(acceptError.message)}`)
     }
+
+    // Clear the invite_fullname cookie
+    response.cookies.set({ name: 'invite_fullname', value: '', path: '/', maxAge: 0 })
 
     // Redirect to post-auth for role routing in new request (cookies fully settled)
     response.headers.set('Location', new URL('/post-auth', origin).toString())
