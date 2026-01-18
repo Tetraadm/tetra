@@ -6,7 +6,7 @@ import { severityLabel, severityColor } from '@/lib/ui-helpers'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
+
 
 type Props = {
   searchQuery: string
