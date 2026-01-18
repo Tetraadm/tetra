@@ -2,11 +2,15 @@
  * Shared TypeScript type definitions used across the application
  */
 
+export type Role = 'admin' | 'teamleader' | 'employee'
+export type Severity = 'critical' | 'high' | 'medium' | 'low'
+export type InstructionStatus = 'draft' | 'published' | 'archived'
+
 export type Profile = {
   id: string
   full_name: string
   email?: string | null
-  role: string
+  role: Role
   org_id: string
   team_id: string | null
 }
@@ -26,8 +30,8 @@ export type Instruction = {
   id: string
   title: string
   content: string | null
-  severity: string
-  status: string
+  severity: Severity
+  status: InstructionStatus
   folder_id: string | null
   file_path: string | null
   folders: { name: string } | null
@@ -42,7 +46,7 @@ export type Alert = {
   id: string
   title: string
   description: string | null
-  severity: string
+  severity: Severity
   active: boolean
   created_at: string
 }

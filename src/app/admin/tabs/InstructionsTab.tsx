@@ -16,6 +16,9 @@ type Props = {
   deleteFolder: (id: string) => void
   setShowCreateInstruction: (show: boolean) => void
   setShowCreateFolder: (show: boolean) => void
+  instructionsHasMore: boolean
+  instructionsLoadingMore: boolean
+  loadMoreInstructions: () => void
 }
 
 export default function InstructionsTab({
@@ -30,7 +33,10 @@ export default function InstructionsTab({
   deleteInstruction,
   deleteFolder,
   setShowCreateInstruction,
-  setShowCreateFolder
+  setShowCreateFolder,
+  instructionsHasMore,
+  instructionsLoadingMore,
+  loadMoreInstructions
 }: Props) {
   return (
     <>
@@ -217,8 +223,9 @@ export default function InstructionsTab({
           )}
         </div>
       ) : (
-        <div className="nt-table-container">
-          <table className="nt-table">
+        <div>
+          <div className="nt-table-container">
+            <table className="nt-table">
             <thead>
               <tr>
                 <th>Tittel</th>
@@ -299,6 +306,19 @@ export default function InstructionsTab({
               ))}
             </tbody>
           </table>
+        </div>
+
+          {instructionsHasMore && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
+              <button
+                className="nt-btn nt-btn-secondary"
+                onClick={loadMoreInstructions}
+                disabled={instructionsLoadingMore}
+              >
+                {instructionsLoadingMore ? 'Laster...' : 'Vis flere'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>

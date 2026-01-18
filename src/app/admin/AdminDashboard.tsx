@@ -1,6 +1,5 @@
 'use client'
 
-import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import {
@@ -12,11 +11,7 @@ import {
   Bot,
   BarChart3,
   ClipboardList,
-  CheckSquare,
-  Menu,
-  X,
-  Info,
-  LogOut
+  CheckSquare
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
@@ -88,7 +83,6 @@ export default function AdminDashboard({
   const supabase = useMemo(() => createClient(), [])
 
   const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'avvik' | 'ailogg' | 'innsikt' | 'auditlog' | 'lesebekreftelser'>('oversikt')
-  const [isMobile, setIsMobile] = useState(false)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   const [showCreateTeam, setShowCreateTeam] = useState(false)
@@ -101,19 +95,19 @@ export default function AdminDashboard({
   const [showDisclaimer, setShowDisclaimer] = useState(false)
 
   useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768)
-    checkMobile()
-    window.addEventListener('resize', checkMobile)
     cleanupInviteData()
-    return () => window.removeEventListener('resize', checkMobile)
   }, [])
 
   const {
     teams,
+    teamMemberCounts,
     newTeamName,
     setNewTeamName,
     createTeam,
     deleteTeam,
+    teamsHasMore,
+    teamsLoadingMore,
+    loadMoreTeams,
     teamLoading
   } = useAdminTeams({
     profile,
@@ -139,7 +133,10 @@ export default function AdminDashboard({
     deleteUser,
     openEditUser,
     saveEditUser,
-    inviteUser
+    inviteUser,
+    usersHasMore,
+    usersLoadingMore,
+    loadMoreUsers
   } = useAdminUsers({
     profile,
     initialUsers,
@@ -165,6 +162,8 @@ export default function AdminDashboard({
     editInstructionFolder,
     instructionLoading,
     folderLoading,
+    instructionsHasMore,
+    instructionsLoadingMore,
     filteredInstructions,
     setSelectedFolder,
     setStatusFilter,
@@ -182,7 +181,8 @@ export default function AdminDashboard({
     deleteInstruction,
     toggleInstructionStatus,
     openEditInstruction,
-    saveEditInstruction
+    saveEditInstruction,
+    loadMoreInstructions
   } = useAdminInstructions({
     profile,
     initialInstructions,
@@ -201,7 +201,10 @@ export default function AdminDashboard({
     setNewAlert,
     createAlert,
     toggleAlert,
-    deleteAlert
+    deleteAlert,
+    alertsHasMore,
+    alertsLoadingMore,
+    loadMoreAlerts
   } = useAdminAlerts({
     profile,
     initialAlerts,
@@ -214,7 +217,11 @@ export default function AdminDashboard({
     auditLogsLoading,
     auditFilter,
     setAuditFilter,
-    loadAuditLogs
+    loadAuditLogs,
+    pagination: auditPagination,
+    currentPage: auditCurrentPage,
+    totalPages: auditTotalPages,
+    goToPage: goToAuditPage
   } = useAuditLogs()
 
   const {
@@ -285,7 +292,7 @@ export default function AdminDashboard({
           <AppSidebar
             tabs={adminTabs}
             activeTab={tab}
-            onTabChange={(t) => handleTabChange(t as any)}
+            onTabChange={(t) => handleTabChange(t as typeof tab)}
             open={showMobileMenu}
             onClose={() => setShowMobileMenu(false)}
           />

@@ -6,6 +6,8 @@ import type { Profile } from '@/lib/types'
 
 type SupabaseClient = ReturnType<typeof createClient>
 
+const PAGE_SIZE = 50
+
 type UseAdminUsersOptions = {
   profile: Profile
   initialUsers: Profile[]
@@ -24,6 +26,8 @@ export function useAdminUsers({
   onOpenEdit
 }: UseAdminUsersOptions) {
   const [users, setUsers] = useState<Profile[]>(initialUsers)
+  const [usersHasMore, setUsersHasMore] = useState(initialUsers.length >= PAGE_SIZE)
+  const [usersLoadingMore, setUsersLoadingMore] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState('employee')
   const [inviteTeam, setInviteTeam] = useState('')
@@ -167,7 +171,35 @@ export function useAdminUsers({
     } finally {
       setUserLoading(false)
     }
-  }, [inviteEmail, inviteRole, inviteTeam, profile.id, profile.org_id, supabase, onInviteCompleted])
+  }, [inviteEmail, inviteRole, inviteTeam, onInviteCompleted])
+
+
+
+const loadMoreUsers = useCallback(async () => {
+  if (usersLoadingMore || !usersHasMore) return
+  setUsersLoadingMore(true)
+
+  try {
+    const offset = users.length
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('org_id', profile.org_id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    if (error) throw error
+
+    const nextUsers = data || []
+    setUsers(prev => [...prev, ...nextUsers])
+    setUsersHasMore(nextUsers.length >= PAGE_SIZE)
+  } catch (error) {
+    console.error('Load more users error:', error)
+    toast.error('Kunne ikke laste flere brukere. Prøv igjen.')
+  } finally {
+    setUsersLoadingMore(false)
+  }
+}, [profile.org_id, supabase, users.length, usersHasMore, usersLoadingMore])
 
   return {
     users,
@@ -187,6 +219,9 @@ export function useAdminUsers({
     deleteUser,
     openEditUser,
     saveEditUser,
-    inviteUser
+    inviteUser,
+    usersHasMore,
+    usersLoadingMore,
+    loadMoreUsers
   }
 }

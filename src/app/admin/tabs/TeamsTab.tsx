@@ -6,9 +6,22 @@ type Props = {
   users: Profile[]
   deleteTeam: (teamId: string) => void
   setShowCreateTeam: (show: boolean) => void
+  teamMemberCounts: Record<string, number>
+  teamsHasMore: boolean
+  teamsLoadingMore: boolean
+  loadMoreTeams: () => void
 }
 
-export default function TeamsTab({ teams, users, deleteTeam, setShowCreateTeam }: Props) {
+export default function TeamsTab({
+  teams,
+  users,
+  deleteTeam,
+  setShowCreateTeam,
+  teamMemberCounts,
+  teamsHasMore,
+  teamsLoadingMore,
+  loadMoreTeams
+}: Props) {
   return (
     <>
       <div style={{
@@ -84,7 +97,12 @@ export default function TeamsTab({ teams, users, deleteTeam, setShowCreateTeam }
                     color: 'var(--text-secondary)'
                   }}>
                     <Users size={14} />
-                    <span>{users.filter(u => u.team_id === team.id).length} medlemmer</span>
+                    <span>
+                      {teamMemberCounts[team.id] !== undefined
+                        ? teamMemberCounts[team.id]
+                        : users.filter(u => u.team_id === team.id).length}
+                      {' '}medlemmer
+                    </span>
                   </div>
                 </div>
                 <button
@@ -96,6 +114,18 @@ export default function TeamsTab({ teams, users, deleteTeam, setShowCreateTeam }
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {teamsHasMore && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
+          <button
+            className="nt-btn nt-btn-secondary"
+            onClick={loadMoreTeams}
+            disabled={teamsLoadingMore}
+          >
+            {teamsLoadingMore ? 'Laster...' : 'Vis flere'}
+          </button>
         </div>
       )}
     </>

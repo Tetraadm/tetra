@@ -20,3 +20,16 @@ create policy "Org members can read instruction files"
         and p.org_id::text = split_part(name, '/', 1)
     )
   );
+
+-- Explicitly block client-side writes (service role bypasses RLS)
+create policy "Deny instruction file uploads"
+  on storage.objects for insert
+  with check (false);
+
+create policy "Deny instruction file updates"
+  on storage.objects for update
+  using (false);
+
+create policy "Deny instruction file deletes"
+  on storage.objects for delete
+  using (false);

@@ -7,9 +7,20 @@ type Props = {
   toggleAlert: (alertId: string, active: boolean) => void
   deleteAlert: (alertId: string) => void
   setShowCreateAlert: (show: boolean) => void
+  alertsHasMore: boolean
+  alertsLoadingMore: boolean
+  loadMoreAlerts: () => void
 }
 
-export default function AlertsTab({ alerts, toggleAlert, deleteAlert, setShowCreateAlert }: Props) {
+export default function AlertsTab({
+  alerts,
+  toggleAlert,
+  deleteAlert,
+  setShowCreateAlert,
+  alertsHasMore,
+  alertsLoadingMore,
+  loadMoreAlerts
+}: Props) {
   return (
     <>
       <div style={{
@@ -56,7 +67,8 @@ export default function AlertsTab({ alerts, toggleAlert, deleteAlert, setShowCre
           </button>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+        <div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           {alerts.map(alert => (
             <div key={alert.id} className="nt-card" style={{
               borderLeft: `4px solid ${severityColor(alert.severity).color}`,
@@ -126,6 +138,19 @@ export default function AlertsTab({ alerts, toggleAlert, deleteAlert, setShowCre
               </div>
             </div>
           ))}
+        </div>
+
+          {alertsHasMore && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 20 }}>
+              <button
+                className="nt-btn nt-btn-secondary"
+                onClick={loadMoreAlerts}
+                disabled={alertsLoadingMore}
+              >
+                {alertsLoadingMore ? 'Laster...' : 'Vis flere'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </>

@@ -6,6 +6,8 @@ import type { Alert, Profile } from '@/lib/types'
 
 type SupabaseClient = ReturnType<typeof createClient>
 
+const PAGE_SIZE = 50
+
 type UseAdminAlertsOptions = {
   profile: Profile
   initialAlerts: Alert[]
@@ -28,6 +30,8 @@ export function useAdminAlerts({
   onCloseCreateAlert
 }: UseAdminAlertsOptions) {
   const [alerts, setAlerts] = useState<Alert[]>(initialAlerts)
+  const [alertsHasMore, setAlertsHasMore] = useState(initialAlerts.length >= PAGE_SIZE)
+  const [alertsLoadingMore, setAlertsLoadingMore] = useState(false)
   const [newAlert, setNewAlert] = useState<NewAlertState>({
     title: '',
     description: '',
@@ -165,6 +169,34 @@ export function useAdminAlerts({
     }
   }, [alerts, profile.id, profile.org_id, supabase])
 
+
+
+const loadMoreAlerts = useCallback(async () => {
+  if (alertsLoadingMore || !alertsHasMore) return
+  setAlertsLoadingMore(true)
+
+  try {
+    const offset = alerts.length
+    const { data, error } = await supabase
+      .from('alerts')
+      .select('*')
+      .eq('org_id', profile.org_id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    if (error) throw error
+
+    const nextAlerts = data || []
+    setAlerts(prev => [...prev, ...nextAlerts])
+    setAlertsHasMore(nextAlerts.length >= PAGE_SIZE)
+  } catch (error) {
+    console.error('Load more alerts error:', error)
+    toast.error('Kunne ikke laste flere avvik. Prøv igjen.')
+  } finally {
+    setAlertsLoadingMore(false)
+  }
+}, [alerts.length, alertsHasMore, alertsLoadingMore, profile.org_id, supabase])
+
   return {
     alerts,
     newAlert,
@@ -173,6 +205,9 @@ export function useAdminAlerts({
     setAlerts,
     createAlert,
     toggleAlert,
-    deleteAlert
+    deleteAlert,
+    alertsHasMore,
+    alertsLoadingMore,
+    loadMoreAlerts
   }
 }

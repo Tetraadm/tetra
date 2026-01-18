@@ -7,6 +7,8 @@ import type { Folder, Instruction, Profile } from '@/lib/types'
 
 type SupabaseClient = ReturnType<typeof createClient>
 
+const PAGE_SIZE = 50
+
 export type NewInstructionState = {
   title: string
   content: string
@@ -39,6 +41,8 @@ export function useAdminInstructions({
   onCloseCreateFolder
 }: UseAdminInstructionsOptions) {
   const [instructions, setInstructions] = useState<Instruction[]>(initialInstructions)
+  const [instructionsHasMore, setInstructionsHasMore] = useState(initialInstructions.length >= PAGE_SIZE)
+  const [instructionsLoadingMore, setInstructionsLoadingMore] = useState(false)
   const [folders, setFolders] = useState<Folder[]>(initialFolders)
   const [selectedFolder, setSelectedFolder] = useState<string>('all')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -458,6 +462,34 @@ export function useAdminInstructions({
     })
   }, [instructions, selectedFolder, statusFilter])
 
+
+
+const loadMoreInstructions = useCallback(async () => {
+  if (instructionsLoadingMore || !instructionsHasMore) return
+  setInstructionsLoadingMore(true)
+
+  try {
+    const offset = instructions.length
+    const { data, error } = await supabase
+      .from('instructions')
+      .select('*, folders(*)')
+      .eq('org_id', profile.org_id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    if (error) throw error
+
+    const nextInstructions = data || []
+    setInstructions(prev => [...prev, ...nextInstructions])
+    setInstructionsHasMore(nextInstructions.length >= PAGE_SIZE)
+  } catch (error) {
+    console.error('Load more instructions error:', error)
+    toast.error('Kunne ikke laste flere instrukser. Prøv igjen.')
+  } finally {
+    setInstructionsLoadingMore(false)
+  }
+}, [instructions.length, instructionsHasMore, instructionsLoadingMore, profile.org_id, supabase])
+
   return {
     instructions,
     folders,
@@ -474,6 +506,8 @@ export function useAdminInstructions({
     editInstructionFolder,
     instructionLoading,
     folderLoading,
+    instructionsHasMore,
+    instructionsLoadingMore,
     filteredInstructions,
     setSelectedFolder,
     setStatusFilter,
@@ -491,6 +525,7 @@ export function useAdminInstructions({
     deleteInstruction,
     toggleInstructionStatus,
     openEditInstruction,
-    saveEditInstruction
+    saveEditInstruction,
+    loadMoreInstructions
   }
 }

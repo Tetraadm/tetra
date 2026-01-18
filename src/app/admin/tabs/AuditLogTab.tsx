@@ -1,10 +1,49 @@
-import { BarChart3, Download } from 'lucide-react'
+import { BarChart3, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import EmptyState from '@/components/EmptyState'
-import {
-  formatActionType as formatActionTypeFn,
-  exportAuditLogsCSV as exportAuditCSV,
-  type AuditLogRow
-} from '../utils'
+import type { AuditLogRow } from '../hooks/useAuditLogs'
+
+/**
+ * Translate action types to Norwegian
+ */
+function formatActionType(actionType: string): string {
+  const translations: Record<string, string> = {
+    'create_instruction': 'Opprettet instruks',
+    'publish_instruction': 'Publisert instruks',
+    'unpublish_instruction': 'Avpublisert instruks',
+    'delete_instruction': 'Slettet instruks',
+    'create_user': 'Opprettet bruker',
+    'edit_user': 'Redigert bruker',
+    'delete_user': 'Slettet bruker',
+    'invite_user': 'Invitert bruker',
+    'change_role': 'Endret rolle'
+  }
+  return translations[actionType] || actionType
+}
+
+/**
+ * Export audit logs to CSV file
+ */
+function exportAuditLogsCSV(auditLogs: AuditLogRow[]): void {
+  const headers = ['Tidspunkt', 'Bruker', 'Handling', 'Entitet', 'Detaljer']
+  const rows = auditLogs.map(log => [
+    new Date(log.created_at).toLocaleString('nb-NO'),
+    log.profiles?.full_name || 'Ukjent',
+    formatActionType(log.action_type),
+    log.entity_type,
+    JSON.stringify(log.details)
+  ])
+
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+  ].join('\n')
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`
+  link.click()
+}
 
 type AuditFilter = {
   actionType: string
@@ -18,6 +57,10 @@ type Props = {
   auditFilter: AuditFilter
   setAuditFilter: (filter: AuditFilter) => void
   loadAuditLogs: () => void
+  auditTotal: number
+  currentPage: number
+  totalPages: number
+  goToPage: (page: number) => void
 }
 
 export default function AuditLogTab({
@@ -25,7 +68,11 @@ export default function AuditLogTab({
   auditLogsLoading,
   auditFilter,
   setAuditFilter,
-  loadAuditLogs
+  loadAuditLogs,
+  auditTotal,
+  currentPage,
+  totalPages,
+  goToPage
 }: Props) {
   return (
     <>
@@ -56,7 +103,7 @@ export default function AuditLogTab({
         </div>
         <button
           className="nt-btn nt-btn-primary"
-          onClick={() => exportAuditCSV(auditLogs, formatActionTypeFn)}
+          onClick={() => exportAuditLogsCSV(auditLogs)}
         >
           <Download size={16} />
           <span>Eksporter CSV</span>
@@ -184,7 +231,7 @@ export default function AuditLogTab({
           color: 'var(--text-primary)',
           marginBottom: 'var(--space-5)'
         }}>
-          Aktivitetslogg ({auditLogs.length} hendelser)
+          Aktivitetslogg ({auditTotal} hendelser)
         </h3>
 
         <div style={{ overflowX: 'auto' }}>
@@ -253,7 +300,7 @@ export default function AuditLogTab({
                             : 'var(--color-primary-700)'
                         }}
                       >
-                        {formatActionTypeFn(log.action_type)}
+                        {formatActionType(log.action_type)}
                       </span>
                     </td>
                     <td>
@@ -274,6 +321,38 @@ export default function AuditLogTab({
           </table>
         </div>
       </div>
+
+      {totalPages > 1 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 16,
+          marginTop: 24
+        }}>
+          <button
+            className="nt-btn nt-btn-secondary"
+            onClick={() => goToPage(currentPage - 1)}
+            disabled={currentPage === 0}
+            style={{ opacity: currentPage === 0 ? 0.5 : 1 }}
+          >
+            <ChevronLeft size={16} />
+            Forrige
+          </button>
+          <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+            Side {currentPage + 1} av {totalPages}
+          </span>
+          <button
+            className="nt-btn nt-btn-secondary"
+            onClick={() => goToPage(currentPage + 1)}
+            disabled={currentPage >= totalPages - 1}
+            style={{ opacity: currentPage >= totalPages - 1 ? 0.5 : 1 }}
+          >
+            Neste
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
     </>
   )
 }

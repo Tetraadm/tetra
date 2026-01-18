@@ -1,6 +1,13 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import AdminDashboard from './AdminDashboard'
+
+const ADMIN_PAGE_SIZE = 50
+const ALERT_PAGE_SIZE = 50
+const FOLDER_PAGE_SIZE = 200
+const AI_LOG_PAGE_SIZE = 100
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -30,33 +37,36 @@ export default async function AdminPage() {
     .from('teams')
     .select('*')
     .eq('org_id', profile.org_id)
-    .limit(500)
+    .order('created_at', { ascending: false })
+    .limit(ADMIN_PAGE_SIZE)
 
   const { data: users } = await supabase
     .from('profiles')
     .select('*')
     .eq('org_id', profile.org_id)
-    .limit(1000)
+    .order('created_at', { ascending: false })
+    .limit(ADMIN_PAGE_SIZE)
 
   const { data: instructions } = await supabase
     .from('instructions')
     .select('*, folders(*)')
     .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
-    .limit(1000)
+    .limit(ADMIN_PAGE_SIZE)
 
   const { data: folders } = await supabase
     .from('folders')
     .select('*')
     .eq('org_id', profile.org_id)
-    .limit(200)
+    .order('created_at', { ascending: false })
+    .limit(FOLDER_PAGE_SIZE)
 
   const { data: alerts } = await supabase
     .from('alerts')
     .select('*')
     .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
-    .limit(500)
+    .limit(ALERT_PAGE_SIZE)
 
   // Hent AI-logger
   const { data: aiLogs } = await supabase
@@ -64,7 +74,7 @@ export default async function AdminPage() {
     .select('*, profiles(full_name), instructions(title)')
     .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
-    .limit(100)
+    .limit(AI_LOG_PAGE_SIZE)
 
   return (
     <AdminDashboard
