@@ -1,14 +1,7 @@
-﻿import { useEffect, useId, useRef, type Dispatch, type ReactNode, type SetStateAction } from 'react'
+import { useEffect, useId, useRef, type Dispatch, type ReactNode, type SetStateAction } from 'react'
 import type { Folder, Instruction, Profile, Team } from '@/lib/types'
-import type { createAdminStyles } from '../styles'
 import type { NewInstructionState } from '../hooks/useAdminInstructions'
 import type { NewAlertState } from '../hooks/useAdminAlerts'
-
-type Styles = ReturnType<typeof createAdminStyles>
-
-const loadingButtonStyles = (isLoading: boolean) => (
-  isLoading ? { background: '#9CA3AF', cursor: 'not-allowed', opacity: 0.6 } : {}
-)
 
 const focusableSelector = [
   'a[href]',
@@ -26,12 +19,11 @@ const getFocusableElements = (container: HTMLElement | null) => (
 type ModalShellProps = {
   open: boolean
   onClose: () => void
-  styles: Styles
   titleId: string
   children: ReactNode
 }
 
-function ModalShell({ open, onClose, styles, titleId, children }: ModalShellProps) {
+function ModalShell({ open, onClose, titleId, children }: ModalShellProps) {
   const contentRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -84,10 +76,32 @@ function ModalShell({ open, onClose, styles, titleId, children }: ModalShellProp
   if (!open) return null
 
   return (
-    <div style={styles.modal} onClick={onClose}>
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
+        WebkitBackdropFilter: 'blur(4px)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1000,
+        padding: 'var(--space-4)',
+        animation: 'fadeIn 200ms ease-out',
+      }}
+      onClick={onClose}
+    >
       <div
         ref={contentRef}
-        style={styles.modalContent}
+        className="nt-card"
+        style={{
+          width: '100%',
+          maxWidth: '560px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          animation: 'slideUp 300ms ease-out',
+        }}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -102,7 +116,6 @@ function ModalShell({ open, onClose, styles, titleId, children }: ModalShellProp
 
 type CreateTeamModalProps = {
   open: boolean
-  styles: Styles
   newTeamName: string
   setNewTeamName: Dispatch<SetStateAction<string>>
   onCreate: () => void
@@ -112,7 +125,6 @@ type CreateTeamModalProps = {
 
 export function CreateTeamModal({
   open,
-  styles,
   newTeamName,
   setNewTeamName,
   onCreate,
@@ -122,23 +134,43 @@ export function CreateTeamModal({
   const titleId = useId()
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett team</h2>
-      <label style={styles.label}>Teamnavn</label>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Opprett team
+      </h2>
+      <label className="nt-label">Teamnavn</label>
       <input
-        style={styles.input}
+        className="nt-input"
         value={newTeamName}
         onChange={(e) => setNewTeamName(e.target.value)}
         placeholder="F.eks. Lager, Butikk"
       />
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button style={styles.btnSecondary} onClick={onClose}>Avbryt</button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <button className="nt-btn nt-btn-secondary" onClick={onClose}>
+          Avbryt
+        </button>
         <button
-          style={{ ...styles.btn, ...loadingButtonStyles(loading) }}
+          className="nt-btn nt-btn-primary"
           onClick={onCreate}
           disabled={loading}
         >
-          {loading ? 'Oppretter...' : 'Opprett'}
+          {loading ? (
+            <>
+              <div className="spinner spinner-sm spinner-white" />
+              Oppretter...
+            </>
+          ) : (
+            'Opprett'
+          )}
         </button>
       </div>
     </ModalShell>
@@ -147,7 +179,6 @@ export function CreateTeamModal({
 
 type CreateFolderModalProps = {
   open: boolean
-  styles: Styles
   newFolderName: string
   setNewFolderName: Dispatch<SetStateAction<string>>
   onCreate: () => void
@@ -157,7 +188,6 @@ type CreateFolderModalProps = {
 
 export function CreateFolderModal({
   open,
-  styles,
   newFolderName,
   setNewFolderName,
   onCreate,
@@ -167,23 +197,43 @@ export function CreateFolderModal({
   const titleId = useId()
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett mappe</h2>
-      <label style={styles.label}>Mappenavn</label>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Opprett mappe
+      </h2>
+      <label className="nt-label">Mappenavn</label>
       <input
-        style={styles.input}
+        className="nt-input"
         value={newFolderName}
         onChange={(e) => setNewFolderName(e.target.value)}
         placeholder="F.eks. Brann, HMS"
       />
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button style={styles.btnSecondary} onClick={onClose}>Avbryt</button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <button className="nt-btn nt-btn-secondary" onClick={onClose}>
+          Avbryt
+        </button>
         <button
-          style={{ ...styles.btn, ...loadingButtonStyles(loading) }}
+          className="nt-btn nt-btn-primary"
           onClick={onCreate}
           disabled={loading}
         >
-          {loading ? 'Oppretter...' : 'Opprett'}
+          {loading ? (
+            <>
+              <div className="spinner spinner-sm spinner-white" />
+              Oppretter...
+            </>
+          ) : (
+            'Opprett'
+          )}
         </button>
       </div>
     </ModalShell>
@@ -192,7 +242,6 @@ export function CreateFolderModal({
 
 type CreateInstructionModalProps = {
   open: boolean
-  styles: Styles
   folders: Folder[]
   teams: Team[]
   newInstruction: NewInstructionState
@@ -206,7 +255,6 @@ type CreateInstructionModalProps = {
 
 export function CreateInstructionModal({
   open,
-  styles,
   folders,
   teams,
   newInstruction,
@@ -220,20 +268,31 @@ export function CreateInstructionModal({
   const titleId = useId()
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett instruks</h2>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Opprett instruks
+      </h2>
 
-      <label style={styles.label}>Tittel</label>
+      <label className="nt-label">Tittel</label>
       <input
-        style={styles.input}
+        className="nt-input"
         value={newInstruction.title}
         onChange={(e) => setNewInstruction({ ...newInstruction, title: e.target.value })}
         placeholder="F.eks. Brannrutiner"
       />
 
-      <label style={styles.label}>Mappe</label>
+      <label className="nt-label">Mappe</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={newInstruction.folderId}
         onChange={(e) => setNewInstruction({ ...newInstruction, folderId: e.target.value })}
       >
@@ -243,9 +302,9 @@ export function CreateInstructionModal({
         ))}
       </select>
 
-      <label style={styles.label}>Status</label>
+      <label className="nt-label">Status</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={newInstruction.status}
         onChange={(e) => setNewInstruction({ ...newInstruction, status: e.target.value })}
       >
@@ -253,23 +312,28 @@ export function CreateInstructionModal({
         <option value="published">Publisert (synlig for ansatte og AI)</option>
       </select>
 
-      <label style={styles.label}>
+      <label className="nt-label">
         Innhold (brukes av AI)
-        <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', marginLeft: 8 }}>
+        <span style={{
+          fontSize: '0.75rem',
+          fontWeight: 400,
+          color: 'var(--text-tertiary)',
+          marginLeft: 'var(--space-2)',
+        }}>
           Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
         </span>
       </label>
       <textarea
-        style={styles.textarea}
+        className="nt-textarea"
         value={newInstruction.content}
         onChange={(e) => setNewInstruction({ ...newInstruction, content: e.target.value })}
         placeholder="Skriv eller lim inn tekst fra PDF her for at AI skal kunne svare på spørsmål om denne instruksen..."
         rows={8}
       />
 
-      <label style={styles.label}>Alvorlighet</label>
+      <label className="nt-label">Alvorlighet</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={newInstruction.severity}
         onChange={(e) => setNewInstruction({ ...newInstruction, severity: e.target.value })}
       >
@@ -278,54 +342,108 @@ export function CreateInstructionModal({
         <option value="low">Lav</option>
       </select>
 
-      <label style={styles.label}>Vedlegg (PDF)</label>
+      <label className="nt-label">Vedlegg (PDF)</label>
       <input
         type="file"
         accept=".pdf"
         onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-        style={{ marginBottom: 16 }}
+        style={{
+          marginBottom: 'var(--space-4)',
+          fontSize: '0.875rem',
+          color: 'var(--text-secondary)',
+        }}
       />
-      {selectedFile && <p style={{ fontSize: 13, color: '#10B981', marginBottom: 16 }}>Valgt fil: {selectedFile.name}</p>}
+      {selectedFile && (
+        <p style={{
+          fontSize: '0.8125rem',
+          color: 'var(--color-success-700)',
+          marginBottom: 'var(--space-4)',
+          fontWeight: 500,
+        }}>
+          Valgt fil: {selectedFile.name}
+        </p>
+      )}
 
-      <label style={styles.label}>Team</label>
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, cursor: 'pointer' }}>
+      <label className="nt-label">Team</label>
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
+          marginBottom: 'var(--space-3)',
+          cursor: 'pointer',
+          fontSize: '0.875rem',
+          color: 'var(--text-secondary)',
+        }}>
           <input
             type="checkbox"
             checked={newInstruction.allTeams}
             onChange={(e) => setNewInstruction({ ...newInstruction, allTeams: e.target.checked, teamIds: [] })}
+            style={{
+              width: '16px',
+              height: '16px',
+              cursor: 'pointer',
+            }}
           />
           <span>Alle team</span>
         </label>
         {!newInstruction.allTeams && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {teams.map((team) => (
-              <button
-                key={team.id}
-                type="button"
-                onClick={() => {
-                  const ids = newInstruction.teamIds.includes(team.id)
-                    ? newInstruction.teamIds.filter((id) => id !== team.id)
-                    : [...newInstruction.teamIds, team.id]
-                  setNewInstruction({ ...newInstruction, teamIds: ids })
-                }}
-                style={styles.teamChip(newInstruction.teamIds.includes(team.id))}
-              >
-                {team.name}
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            {teams.map((team) => {
+              const isSelected = newInstruction.teamIds.includes(team.id)
+              return (
+                <button
+                  key={team.id}
+                  type="button"
+                  onClick={() => {
+                    const ids = isSelected
+                      ? newInstruction.teamIds.filter((id) => id !== team.id)
+                      : [...newInstruction.teamIds, team.id]
+                    setNewInstruction({ ...newInstruction, teamIds: ids })
+                  }}
+                  style={{
+                    padding: 'var(--space-2) var(--space-4)',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius-full)',
+                    border: isSelected
+                      ? '2px solid var(--color-primary-600)'
+                      : '1px solid var(--border-primary)',
+                    background: isSelected
+                      ? 'var(--color-primary-100)'
+                      : 'var(--bg-elevated)',
+                    color: isSelected
+                      ? 'var(--color-primary-700)'
+                      : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'var(--transition-fast)',
+                  }}
+                >
+                  {team.name}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button style={styles.btnSecondary} onClick={onClose}>Avbryt</button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <button className="nt-btn nt-btn-secondary" onClick={onClose}>
+          Avbryt
+        </button>
         <button
-          style={{ ...styles.btn, ...loadingButtonStyles(instructionLoading) }}
+          className="nt-btn nt-btn-primary"
           onClick={createInstruction}
           disabled={instructionLoading}
         >
-          {instructionLoading ? 'Oppretter...' : 'Opprett'}
+          {instructionLoading ? (
+            <>
+              <div className="spinner spinner-sm spinner-white" />
+              Oppretter...
+            </>
+          ) : (
+            'Opprett'
+          )}
         </button>
       </div>
     </ModalShell>
@@ -334,7 +452,6 @@ export function CreateInstructionModal({
 
 type EditInstructionModalProps = {
   open: boolean
-  styles: Styles
   folders: Folder[]
   editingInstruction: Instruction | null
   editInstructionTitle: string
@@ -354,7 +471,6 @@ type EditInstructionModalProps = {
 
 export function EditInstructionModal({
   open,
-  styles,
   folders,
   editingInstruction,
   editInstructionTitle,
@@ -376,19 +492,30 @@ export function EditInstructionModal({
   if (!open || !editingInstruction) return null
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger instruks</h2>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Rediger instruks
+      </h2>
 
-      <label style={styles.label}>Tittel</label>
+      <label className="nt-label">Tittel</label>
       <input
-        style={styles.input}
+        className="nt-input"
         value={editInstructionTitle}
         onChange={(e) => setEditInstructionTitle(e.target.value)}
       />
 
-      <label style={styles.label}>Mappe</label>
+      <label className="nt-label">Mappe</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={editInstructionFolder}
         onChange={(e) => setEditInstructionFolder(e.target.value)}
       >
@@ -398,9 +525,9 @@ export function EditInstructionModal({
         ))}
       </select>
 
-      <label style={styles.label}>Status</label>
+      <label className="nt-label">Status</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={editInstructionStatus}
         onChange={(e) => setEditInstructionStatus(e.target.value)}
       >
@@ -408,16 +535,17 @@ export function EditInstructionModal({
         <option value="published">Publisert</option>
       </select>
 
-      <label style={styles.label}>Innhold</label>
+      <label className="nt-label">Innhold</label>
       <textarea
-        style={styles.textarea}
+        className="nt-textarea"
         value={editInstructionContent}
         onChange={(e) => setEditInstructionContent(e.target.value)}
+        rows={8}
       />
 
-      <label style={styles.label}>Alvorlighet</label>
+      <label className="nt-label">Alvorlighet</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={editInstructionSeverity}
         onChange={(e) => setEditInstructionSeverity(e.target.value)}
       >
@@ -426,14 +554,23 @@ export function EditInstructionModal({
         <option value="low">Lav</option>
       </select>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button style={styles.btnSecondary} onClick={onClose}>Avbryt</button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <button className="nt-btn nt-btn-secondary" onClick={onClose}>
+          Avbryt
+        </button>
         <button
-          style={{ ...styles.btn, ...loadingButtonStyles(instructionLoading) }}
+          className="nt-btn nt-btn-primary"
           onClick={saveEditInstruction}
           disabled={instructionLoading}
         >
-          {instructionLoading ? 'Lagrer...' : 'Lagre'}
+          {instructionLoading ? (
+            <>
+              <div className="spinner spinner-sm spinner-white" />
+              Lagrer...
+            </>
+          ) : (
+            'Lagre'
+          )}
         </button>
       </div>
     </ModalShell>
@@ -442,7 +579,6 @@ export function EditInstructionModal({
 
 type InviteUserModalProps = {
   open: boolean
-  styles: Styles
   inviteEmail: string
   setInviteEmail: Dispatch<SetStateAction<string>>
   inviteRole: string
@@ -457,7 +593,6 @@ type InviteUserModalProps = {
 
 export function InviteUserModal({
   open,
-  styles,
   inviteEmail,
   setInviteEmail,
   inviteRole,
@@ -472,24 +607,40 @@ export function InviteUserModal({
   const titleId = useId()
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Lag invitasjonslenke</h2>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Lag invitasjonslenke
+      </h2>
 
-      <label style={styles.label}>E-post (kun for referanse)</label>
+      <label className="nt-label">E-post (kun for referanse)</label>
       <input
-        style={styles.input}
+        className="nt-input"
         type="email"
         value={inviteEmail}
         onChange={(e) => setInviteEmail(e.target.value)}
         placeholder="bruker@bedrift.no"
       />
-      <p style={{ fontSize: 13, color: '#64748B', marginTop: -12, marginBottom: 16 }}>
+      <p style={{
+        fontSize: '0.8125rem',
+        color: 'var(--text-tertiary)',
+        marginTop: 'calc(var(--space-3) * -1)',
+        marginBottom: 'var(--space-4)',
+      }}>
         E-posten lagres ikke i databasen. Den brukes kun for logging og referanse.
       </p>
 
-      <label style={styles.label}>Rolle</label>
+      <label className="nt-label">Rolle</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={inviteRole}
         onChange={(e) => setInviteRole(e.target.value)}
       >
@@ -498,9 +649,9 @@ export function InviteUserModal({
         <option value="admin">Sikkerhetsansvarlig</option>
       </select>
 
-      <label style={styles.label}>Team</label>
+      <label className="nt-label">Team</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={inviteTeam}
         onChange={(e) => setInviteTeam(e.target.value)}
       >
@@ -510,14 +661,23 @@ export function InviteUserModal({
         ))}
       </select>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button style={styles.btnSecondary} onClick={onClose}>Avbryt</button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <button className="nt-btn nt-btn-secondary" onClick={onClose}>
+          Avbryt
+        </button>
         <button
-          style={{ ...styles.btn, ...loadingButtonStyles(userLoading) }}
+          className="nt-btn nt-btn-primary"
           onClick={inviteUser}
           disabled={userLoading}
         >
-          {userLoading ? 'Sender...' : 'Opprett invitasjon'}
+          {userLoading ? (
+            <>
+              <div className="spinner spinner-sm spinner-white" />
+              Sender...
+            </>
+          ) : (
+            'Opprett invitasjon'
+          )}
         </button>
       </div>
     </ModalShell>
@@ -526,7 +686,6 @@ export function InviteUserModal({
 
 type EditUserModalProps = {
   open: boolean
-  styles: Styles
   editingUser: Profile | null
   editUserRole: string
   setEditUserRole: Dispatch<SetStateAction<string>>
@@ -540,7 +699,6 @@ type EditUserModalProps = {
 
 export function EditUserModal({
   open,
-  styles,
   editingUser,
   editUserRole,
   setEditUserRole,
@@ -556,13 +714,30 @@ export function EditUserModal({
   if (!open || !editingUser) return null
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Rediger bruker</h2>
-      <p style={{ color: '#64748B', marginBottom: 16 }}>{editingUser.full_name}</p>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Rediger bruker
+      </h2>
+      <p style={{
+        color: 'var(--text-tertiary)',
+        marginBottom: 'var(--space-4)',
+        fontSize: '0.875rem',
+      }}>
+        {editingUser.full_name}
+      </p>
 
-      <label style={styles.label}>Rolle</label>
+      <label className="nt-label">Rolle</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={editUserRole}
         onChange={(e) => setEditUserRole(e.target.value)}
       >
@@ -571,9 +746,9 @@ export function EditUserModal({
         <option value="admin">Sikkerhetsansvarlig</option>
       </select>
 
-      <label style={styles.label}>Team</label>
+      <label className="nt-label">Team</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={editUserTeam}
         onChange={(e) => setEditUserTeam(e.target.value)}
       >
@@ -583,14 +758,23 @@ export function EditUserModal({
         ))}
       </select>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button style={styles.btnSecondary} onClick={onClose}>Avbryt</button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <button className="nt-btn nt-btn-secondary" onClick={onClose}>
+          Avbryt
+        </button>
         <button
-          style={{ ...styles.btn, ...loadingButtonStyles(userLoading) }}
+          className="nt-btn nt-btn-primary"
           onClick={saveEditUser}
           disabled={userLoading}
         >
-          {userLoading ? 'Lagrer...' : 'Lagre'}
+          {userLoading ? (
+            <>
+              <div className="spinner spinner-sm spinner-white" />
+              Lagrer...
+            </>
+          ) : (
+            'Lagre'
+          )}
         </button>
       </div>
     </ModalShell>
@@ -599,7 +783,6 @@ export function EditUserModal({
 
 type CreateAlertModalProps = {
   open: boolean
-  styles: Styles
   newAlert: NewAlertState
   setNewAlert: Dispatch<SetStateAction<NewAlertState>>
   teams: Team[]
@@ -610,7 +793,6 @@ type CreateAlertModalProps = {
 
 export function CreateAlertModal({
   open,
-  styles,
   newAlert,
   setNewAlert,
   teams,
@@ -621,27 +803,39 @@ export function CreateAlertModal({
   const titleId = useId()
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Opprett avvik</h2>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Opprett avvik
+      </h2>
 
-      <label style={styles.label}>Tittel</label>
+      <label className="nt-label">Tittel</label>
       <input
-        style={styles.input}
+        className="nt-input"
         value={newAlert.title}
         onChange={(e) => setNewAlert({ ...newAlert, title: e.target.value })}
         placeholder="F.eks. Stengt nødutgang"
       />
 
-      <label style={styles.label}>Beskrivelse</label>
+      <label className="nt-label">Beskrivelse</label>
       <textarea
-        style={styles.textarea}
+        className="nt-textarea"
         value={newAlert.description}
         onChange={(e) => setNewAlert({ ...newAlert, description: e.target.value })}
+        rows={4}
       />
 
-      <label style={styles.label}>Alvorlighet</label>
+      <label className="nt-label">Alvorlighet</label>
       <select
-        style={styles.select}
+        className="nt-select"
         value={newAlert.severity}
         onChange={(e) => setNewAlert({ ...newAlert, severity: e.target.value })}
       >
@@ -650,45 +844,86 @@ export function CreateAlertModal({
         <option value="low">Lav</option>
       </select>
 
-      <label style={styles.label}>Synlig for</label>
-      <div style={{ marginBottom: 16 }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+      <label className="nt-label">Synlig for</label>
+      <div style={{ marginBottom: 'var(--space-4)' }}>
+        <label style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 'var(--space-2)',
+          cursor: 'pointer',
+          fontSize: '0.875rem',
+          color: 'var(--text-secondary)',
+          marginBottom: 'var(--space-3)',
+        }}>
           <input
             type="checkbox"
             checked={newAlert.allTeams}
             onChange={(e) => setNewAlert({ ...newAlert, allTeams: e.target.checked, teamIds: [] })}
+            style={{
+              width: '16px',
+              height: '16px',
+              cursor: 'pointer',
+            }}
           />
           <span>Alle team</span>
         </label>
         {!newAlert.allTeams && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-            {teams.map((team) => (
-              <button
-                key={team.id}
-                type="button"
-                onClick={() => {
-                  const ids = newAlert.teamIds.includes(team.id)
-                    ? newAlert.teamIds.filter((id) => id !== team.id)
-                    : [...newAlert.teamIds, team.id]
-                  setNewAlert({ ...newAlert, teamIds: ids })
-                }}
-                style={styles.teamChip(newAlert.teamIds.includes(team.id))}
-              >
-                {team.name}
-              </button>
-            ))}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+            {teams.map((team) => {
+              const isSelected = newAlert.teamIds.includes(team.id)
+              return (
+                <button
+                  key={team.id}
+                  type="button"
+                  onClick={() => {
+                    const ids = isSelected
+                      ? newAlert.teamIds.filter((id) => id !== team.id)
+                      : [...newAlert.teamIds, team.id]
+                    setNewAlert({ ...newAlert, teamIds: ids })
+                  }}
+                  style={{
+                    padding: 'var(--space-2) var(--space-4)',
+                    fontSize: '0.8125rem',
+                    fontWeight: 600,
+                    borderRadius: 'var(--radius-full)',
+                    border: isSelected
+                      ? '2px solid var(--color-primary-600)'
+                      : '1px solid var(--border-primary)',
+                    background: isSelected
+                      ? 'var(--color-primary-100)'
+                      : 'var(--bg-elevated)',
+                    color: isSelected
+                      ? 'var(--color-primary-700)'
+                      : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    transition: 'var(--transition-fast)',
+                  }}
+                >
+                  {team.name}
+                </button>
+              )
+            })}
           </div>
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
-        <button style={styles.btnSecondary} onClick={onClose}>Avbryt</button>
+      <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
+        <button className="nt-btn nt-btn-secondary" onClick={onClose}>
+          Avbryt
+        </button>
         <button
-          style={{ ...styles.btn, ...loadingButtonStyles(alertLoading) }}
+          className="nt-btn nt-btn-primary"
           onClick={createAlert}
           disabled={alertLoading}
         >
-          {alertLoading ? 'Oppretter...' : 'Opprett'}
+          {alertLoading ? (
+            <>
+              <div className="spinner spinner-sm spinner-white" />
+              Oppretter...
+            </>
+          ) : (
+            'Opprett'
+          )}
         </button>
       </div>
     </ModalShell>
@@ -697,39 +932,92 @@ export function CreateAlertModal({
 
 type DisclaimerModalProps = {
   open: boolean
-  styles: Styles
   onClose: () => void
 }
 
-export function DisclaimerModal({ open, styles, onClose }: DisclaimerModalProps) {
+export function DisclaimerModal({ open, onClose }: DisclaimerModalProps) {
   const titleId = useId()
 
   if (!open) return null
 
   return (
-    <ModalShell open={open} onClose={onClose} styles={styles} titleId={titleId}>
-      <h2 id={titleId} style={{ fontSize: 18, fontWeight: 700, marginBottom: 20 }}>Om AI-assistenten</h2>
+    <ModalShell open={open} onClose={onClose} titleId={titleId}>
+      <h2
+        id={titleId}
+        style={{
+          fontSize: '1.125rem',
+          fontWeight: 700,
+          letterSpacing: '-0.01em',
+          marginBottom: 'var(--space-5)',
+          color: 'var(--text-primary)',
+        }}
+      >
+        Om AI-assistenten
+      </h2>
 
-      <div style={styles.disclaimer}>
-        <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Ansvarsfraskrivelse</h3>
-        <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
+      <div
+        style={{
+          background: 'linear-gradient(135deg, var(--color-warning-50), var(--color-warning-100))',
+          border: '2px solid var(--color-warning-200)',
+          borderLeft: '4px solid var(--color-warning-600)',
+          borderRadius: 'var(--radius-md)',
+          padding: 'var(--space-4)',
+          marginBottom: 'var(--space-6)',
+        }}
+      >
+        <h3 style={{
+          fontWeight: 600,
+          marginBottom: 'var(--space-2)',
+          color: 'var(--text-primary)',
+          fontSize: '0.9375rem',
+        }}>
+          Ansvarsfraskrivelse
+        </h3>
+        <p style={{
+          fontSize: '0.875rem',
+          lineHeight: 1.6,
+          marginBottom: 'var(--space-3)',
+          color: 'var(--text-secondary)',
+        }}>
           Tetra AI er et <strong>støtteverktøy</strong> som hjelper ansatte med å finne informasjon i bedriftens instrukser og prosedyrer.
         </p>
-        <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 12 }}>
+        <p style={{
+          fontSize: '0.875rem',
+          lineHeight: 1.6,
+          marginBottom: 'var(--space-3)',
+          color: 'var(--text-secondary)',
+        }}>
           AI-assistenten svarer <strong>kun basert på publiserte dokumenter</strong> i systemet. Den bruker ikke ekstern kunnskap eller generell informasjon.
         </p>
-        <p style={{ fontSize: 14, lineHeight: 1.6, color: '#92400E' }}>
+        <p style={{
+          fontSize: '0.875rem',
+          lineHeight: 1.6,
+          color: 'var(--color-warning-800)',
+        }}>
           <strong>Viktig:</strong> AI-svar er ikke juridisk bindende eller operativ fasit. Ved tvil, kontakt alltid ansvarlig leder.
         </p>
       </div>
 
-      <h3 style={{ fontWeight: 600, marginBottom: 8 }}>Logging</h3>
-      <p style={{ fontSize: 14, lineHeight: 1.6, marginBottom: 16 }}>
+      <h3 style={{
+        fontWeight: 600,
+        marginBottom: 'var(--space-2)',
+        color: 'var(--text-primary)',
+        fontSize: '0.9375rem',
+      }}>
+        Logging
+      </h3>
+      <p style={{
+        fontSize: '0.875rem',
+        lineHeight: 1.6,
+        marginBottom: 'var(--space-5)',
+        color: 'var(--text-secondary)',
+      }}>
         Alle spørsmål og svar logges for kvalitetssikring. Loggene er kun tilgjengelige for administratorer.
       </p>
 
-      <button style={styles.btn} onClick={onClose}>Lukk</button>
+      <button className="nt-btn nt-btn-primary" onClick={onClose} style={{ width: '100%' }}>
+        Lukk
+      </button>
     </ModalShell>
   )
 }
-

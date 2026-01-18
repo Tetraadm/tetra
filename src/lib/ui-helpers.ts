@@ -1,6 +1,6 @@
 /**
  * Tetra HMS - UI Helper Functions
- * Nordic Enterprise Premium Design System
+ * Nordic Aurora Design System
  *
  * Shared utilities for severity, role labels, colors, and styling
  */
@@ -20,77 +20,85 @@ export interface ColorSet {
 }
 
 // ============================================
-// DESIGN TOKENS - Premium Petrol Palette
+// DESIGN TOKENS - Nordic Aurora Palette
 // ============================================
 
 export const colors = {
-  // Primary - Deep Petrol
-  primary: '#0D9488',
-  primaryHover: '#0F766E',
-  primaryActive: '#115E59',
-  primaryMuted: '#CCFBF1',
-  primarySubtle: '#F0FDFA',
+  // Primary - Aurora Green
+  primary: '#00d4aa',
+  primaryHover: '#00c4b4',
+  primaryActive: '#00b3a3',
+  primaryMuted: 'rgba(0, 212, 170, 0.25)',
+  primarySubtle: 'rgba(0, 212, 170, 0.08)',
 
-  // Background & Surface
-  background: '#F8FAFB',
-  backgroundSubtle: '#F1F5F7',
-  surface: '#FFFFFF',
-  surfaceHover: '#FAFCFC',
+  // Background & Surface (Dark mode)
+  background: '#0a0f1a',
+  backgroundSubtle: '#0f1424',
+  surface: '#141a2e',
+  surfaceHover: '#1a2139',
 
-  // Text
-  text: '#0F172A',
-  textSecondary: '#475569',
-  textMuted: '#94A3B8',
-  textInverse: '#FFFFFF',
+  // Text (Dark mode)
+  text: 'rgba(255, 255, 255, 0.95)',
+  textSecondary: 'rgba(255, 255, 255, 0.7)',
+  textMuted: 'rgba(255, 255, 255, 0.35)',
+  textInverse: '#050810',
 
   // Borders
-  border: '#E2E8F0',
-  borderStrong: '#CBD5E1',
-  borderSubtle: '#F1F5F9',
+  border: 'rgba(255, 255, 255, 0.12)',
+  borderStrong: 'rgba(255, 255, 255, 0.18)',
+  borderSubtle: 'rgba(255, 255, 255, 0.08)',
 
   // Semantic - Danger/Critical
-  danger: '#DC2626',
-  dangerHover: '#B91C1C',
-  dangerLight: '#FEF2F2',
-  dangerBorder: '#FECACA',
+  danger: '#ef4444',
+  dangerHover: '#dc2626',
+  dangerLight: 'rgba(239, 68, 68, 0.12)',
+  dangerBorder: 'rgba(239, 68, 68, 0.25)',
 
   // Semantic - Warning/High
-  warning: '#D97706',
-  warningHover: '#B45309',
-  warningLight: '#FFFBEB',
-  warningBorder: '#FDE68A',
+  warning: '#f59e0b',
+  warningHover: '#d97706',
+  warningLight: 'rgba(245, 158, 11, 0.12)',
+  warningBorder: 'rgba(245, 158, 11, 0.25)',
 
   // Semantic - High Priority (Orange)
-  high: '#EA580C',
-  highLight: '#FFF7ED',
-  highBorder: '#FED7AA',
+  high: '#ea580c',
+  highLight: 'rgba(234, 88, 12, 0.12)',
+  highBorder: 'rgba(234, 88, 12, 0.25)',
 
   // Semantic - Success/Low
-  success: '#059669',
-  successHover: '#047857',
-  successLight: '#ECFDF5',
-  successBorder: '#A7F3D0',
+  success: '#22c55e',
+  successHover: '#16a34a',
+  successLight: 'rgba(34, 197, 94, 0.12)',
+  successBorder: 'rgba(34, 197, 94, 0.25)',
 
   // Semantic - Info
-  info: '#0891B2',
-  infoHover: '#0E7490',
-  infoLight: '#ECFEFF',
-  infoBorder: '#A5F3FC',
+  info: '#00a8ff',
+  infoHover: '#0091e0',
+  infoLight: 'rgba(0, 168, 255, 0.12)',
+  infoBorder: 'rgba(0, 168, 255, 0.25)',
+
+  // Aurora accent colors
+  auroraGreen: '#00d4aa',
+  auroraViolet: '#7b61ff',
+  auroraBlue: '#00a8ff',
+  auroraPink: '#ff6b9d',
 } as const
 
 // ============================================
-// SHADOWS - Soft with petrol tint
+// SHADOWS - Aurora glow effects
 // ============================================
 
 export const shadows = {
-  xs: '0 1px 2px 0 rgba(13, 148, 136, 0.04)',
-  sm: '0 1px 3px 0 rgba(13, 148, 136, 0.06), 0 1px 2px -1px rgba(13, 148, 136, 0.06)',
-  md: '0 4px 6px -1px rgba(13, 148, 136, 0.08), 0 2px 4px -2px rgba(13, 148, 136, 0.06)',
-  lg: '0 10px 15px -3px rgba(13, 148, 136, 0.08), 0 4px 6px -4px rgba(13, 148, 136, 0.06)',
-  xl: '0 20px 25px -5px rgba(13, 148, 136, 0.1), 0 8px 10px -6px rgba(13, 148, 136, 0.06)',
-  elevated: '0 12px 24px -4px rgba(13, 148, 136, 0.12), 0 4px 8px -2px rgba(13, 148, 136, 0.06)',
-  focus: '0 0 0 3px rgba(13, 148, 136, 0.2)',
-  focusDanger: '0 0 0 3px rgba(220, 38, 38, 0.2)',
+  xs: '0 1px 2px rgba(0, 0, 0, 0.3)',
+  sm: '0 2px 8px rgba(0, 0, 0, 0.3)',
+  md: '0 4px 16px rgba(0, 0, 0, 0.4)',
+  lg: '0 8px 32px rgba(0, 0, 0, 0.5)',
+  xl: '0 16px 48px rgba(0, 0, 0, 0.6)',
+  elevated: '0 12px 40px rgba(0, 0, 0, 0.5)',
+  focus: '0 0 0 3px rgba(0, 212, 170, 0.2)',
+  focusDanger: '0 0 0 3px rgba(239, 68, 68, 0.2)',
+  glow: '0 0 40px rgba(0, 212, 170, 0.15)',
+  glowViolet: '0 0 40px rgba(123, 97, 255, 0.12)',
 } as const
 
 // ============================================
@@ -102,8 +110,8 @@ export const radius = {
   sm: '6px',
   md: '10px',
   lg: '14px',
-  xl: '18px',
-  '2xl': '24px',
+  xl: '20px',
+  '2xl': '28px',
   full: '9999px',
 } as const
 
@@ -112,9 +120,9 @@ export const radius = {
 // ============================================
 
 export const transitions = {
-  fast: '150ms cubic-bezier(0.4, 0, 0.2, 1)',
-  normal: '200ms cubic-bezier(0.4, 0, 0.2, 1)',
-  slow: '300ms cubic-bezier(0.4, 0, 0.2, 1)',
+  fast: '120ms cubic-bezier(0.16, 1, 0.3, 1)',
+  normal: '200ms cubic-bezier(0.16, 1, 0.3, 1)',
+  slow: '350ms cubic-bezier(0.16, 1, 0.3, 1)',
   spring: '500ms cubic-bezier(0.34, 1.56, 0.64, 1)',
 } as const
 
@@ -128,7 +136,7 @@ export const transitions = {
 export function severityLabel(severity: string): string {
   switch (severity) {
     case 'critical': return 'Kritisk'
-    case 'high': return 'Høy'
+    case 'high': return 'Hoy'
     case 'medium': return 'Middels'
     case 'low': return 'Lav'
     default: return 'Ukjent'
@@ -136,7 +144,7 @@ export function severityLabel(severity: string): string {
 }
 
 /**
- * Get styling for severity badge - Premium color scheme
+ * Get styling for severity badge - Nordic Aurora colors
  */
 export function severityColor(severity: string): ColorSet {
   switch (severity) {
@@ -283,8 +291,8 @@ export function cardStyle(elevated = false): React.CSSProperties {
   return {
     background: colors.surface,
     border: `1px solid ${colors.border}`,
-    borderRadius: radius.lg,
-    boxShadow: elevated ? shadows.md : shadows.sm,
+    borderRadius: radius.xl,
+    boxShadow: elevated ? shadows.lg : shadows.md,
     transition: `all ${transitions.normal}`,
   }
 }
@@ -297,13 +305,13 @@ export function badgeStyle(colorSet: ColorSet): React.CSSProperties {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '4px',
-    padding: '4px 10px',
-    fontSize: '11px',
+    padding: '3px 8px',
+    fontSize: '10px',
     fontWeight: 600,
     lineHeight: 1,
-    borderRadius: radius.full,
+    borderRadius: radius.sm,
     whiteSpace: 'nowrap',
-    letterSpacing: '0.01em',
+    letterSpacing: '0.05em',
     textTransform: 'uppercase' as const,
     background: colorSet.bg,
     color: colorSet.color,
@@ -320,15 +328,15 @@ export function primaryButtonStyle(disabled = false): React.CSSProperties {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '10px 18px',
-    fontSize: '13px',
+    padding: '12px 20px',
+    fontSize: '14px',
     fontWeight: 600,
     lineHeight: 1,
     borderRadius: radius.md,
     border: 'none',
     background: disabled ? colors.textMuted : colors.primary,
     color: colors.textInverse,
-    boxShadow: disabled ? 'none' : shadows.sm,
+    boxShadow: disabled ? 'none' : shadows.glow,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
     transition: `all ${transitions.normal}`,
@@ -344,8 +352,8 @@ export function secondaryButtonStyle(disabled = false): React.CSSProperties {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '10px 18px',
-    fontSize: '13px',
+    padding: '12px 20px',
+    fontSize: '14px',
     fontWeight: 600,
     lineHeight: 1,
     borderRadius: radius.md,
@@ -367,14 +375,14 @@ export function dangerButtonStyle(disabled = false): React.CSSProperties {
     alignItems: 'center',
     justifyContent: 'center',
     gap: '8px',
-    padding: '10px 18px',
-    fontSize: '13px',
+    padding: '12px 20px',
+    fontSize: '14px',
     fontWeight: 600,
     lineHeight: 1,
     borderRadius: radius.md,
-    border: 'none',
-    background: disabled ? colors.textMuted : colors.danger,
-    color: colors.textInverse,
+    border: `1px solid ${colors.dangerBorder}`,
+    background: colors.dangerLight,
+    color: colors.danger,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.5 : 1,
     transition: `all ${transitions.normal}`,
@@ -387,11 +395,11 @@ export function dangerButtonStyle(disabled = false): React.CSSProperties {
 export function inputStyle(hasError = false): React.CSSProperties {
   return {
     width: '100%',
-    padding: '10px 14px',
-    fontSize: '15px',
+    padding: '12px 16px',
+    fontSize: '14px',
     fontFamily: 'inherit',
     color: colors.text,
-    background: colors.surface,
+    background: colors.backgroundSubtle,
     border: `1px solid ${hasError ? colors.danger : colors.border}`,
     borderRadius: radius.md,
     outline: 'none',
@@ -400,13 +408,13 @@ export function inputStyle(hasError = false): React.CSSProperties {
 }
 
 /**
- * Generate glass morphism styles
+ * Generate glass morphism styles (Nordic Aurora)
  */
 export function glassStyle(strong = false): React.CSSProperties {
   return {
-    background: strong ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.85)',
-    backdropFilter: strong ? 'blur(20px)' : 'blur(12px)',
-    WebkitBackdropFilter: strong ? 'blur(20px)' : 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.6)',
+    background: strong ? 'rgba(20, 26, 46, 0.8)' : 'rgba(20, 26, 46, 0.5)',
+    backdropFilter: strong ? 'blur(24px) saturate(180%)' : 'blur(12px)',
+    WebkitBackdropFilter: strong ? 'blur(24px) saturate(180%)' : 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
   }
 }

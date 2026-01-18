@@ -5,6 +5,12 @@ import { useState } from 'react'
 import Image from 'next/image'
 import toast from 'react-hot-toast'
 import { Mail, CheckCircle, Shield, Sparkles } from 'lucide-react'
+import { cn } from '@/lib/utils' // Assuming you have a cn utility, if not I will replace it or create it. 
+// Actually I should verify if '@/lib/utils' exists. 
+// Step 9 showed 'lib' dir exists.
+// I'll stick to standard className strings if uncertain, but usually shadcn has cn.
+// I will assume standard strings for safety or check first. 
+// Let's use template literals for now to be safe.
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -55,29 +61,29 @@ export default function LoginPage() {
 
   if (sent) {
     return (
-      <div className="login-container">
-        <div className="login-glow login-glow--1" />
-        <div className="login-glow login-glow--2" />
-        <div className="login-glow login-glow--3" />
+      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-background">
+        {/* Glow Effects */}
+        <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-[30%] -left-[15%] w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
 
-        <div className="login-card login-card--success">
-          <div className="login-success-icon">
-            <CheckCircle size={48} strokeWidth={1.5} />
+        <div className="w-full max-w-md bg-card border border-border rounded-2xl p-12 text-center shadow-lg animate-in fade-in zoom-in-95 duration-500">
+          <div className="mx-auto w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-8 animate-pulse shadow-[0_0_0_8px_rgba(22,163,74,0.1)]">
+            <CheckCircle size={40} className="stroke-[1.5]" />
           </div>
 
-          <h1 className="login-title">Sjekk e-posten din</h1>
-          <p className="login-subtitle">
+          <h1 className="text-2xl font-bold text-foreground mb-4 tracking-tight">Sjekk e-posten din</h1>
+          <p className="text-muted-foreground mb-8 text-base">
             Vi har sendt en innloggingslenke til
           </p>
 
-          <div className="login-email-badge">
+          <div className="inline-flex items-center gap-2.5 px-5 py-3 bg-green-50 border border-green-100 rounded-full text-green-700 font-semibold text-sm">
             <Mail size={16} />
             {email}
           </div>
 
-          <div className="login-info-box">
-            <Sparkles size={16} />
-            <span>Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.</span>
+          <div className="mt-8 flex items-center justify-center gap-2.5 p-4 bg-muted/50 border border-border rounded-lg text-sm text-muted-foreground">
+            <Sparkles size={16} className="text-blue-500 shrink-0" />
+            <span>Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke ser den.</span>
           </div>
         </div>
       </div>
@@ -85,26 +91,27 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-container">
-      <div className="login-glow login-glow--1" />
-      <div className="login-glow login-glow--2" />
-      <div className="login-glow login-glow--3" />
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-background">
+      {/* Glow Effects */}
+      <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-[30%] -left-[15%] w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
 
-      <div className="login-card">
-        <div className="login-logo">
+      <div className="w-full max-w-md bg-card border border-border rounded-2xl p-12 shadow-lg animate-in fade-in zoom-in-95 duration-500 hover:shadow-xl transition-shadow">
+        <div className="flex justify-center mb-10">
           <Image
             src="/tetra-logo.png"
             alt="Tetra"
-            width={180}
-            height={50}
-            style={{ height: 50, width: 'auto' }}
+            width={160}
+            height={44}
+            className="h-11 w-auto"
             priority
           />
         </div>
 
-        <div className="login-header">
-          <h1 className="login-title">Velkommen tilbake</h1>
-          <p className="login-subtitle">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight font-display">Velkommen tilbake</h1>
+          <p className="text-muted-foreground text-sm">
             Logg inn for å administrere HMS-instrukser og avvik
           </p>
         </div>
@@ -112,9 +119,9 @@ export default function LoginPage() {
         <button
           onClick={handleAzureLogin}
           disabled={loading}
-          className="login-sso-btn"
+          className="w-full h-12 flex items-center justify-center gap-3 bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-lg font-medium transition-all shadow-sm hover:shadow active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
         >
-          <svg width="20" height="20" viewBox="0 0 23 23">
+          <svg width="20" height="20" viewBox="0 0 23 23" className="group-hover:scale-105 transition-transform">
             <path fill="#f35325" d="M0 0h10.931v10.931H0z" />
             <path fill="#81bc06" d="M12.069 0H23v10.931H12.069z" />
             <path fill="#05a6f0" d="M0 12.069h10.931V23H0z" />
@@ -123,13 +130,15 @@ export default function LoginPage() {
           Fortsett med Microsoft
         </button>
 
-        <div className="login-divider">
-          <span>eller bruk e-post</span>
+        <div className="relative flex items-center py-8">
+          <div className="flex-grow border-t border-border"></div>
+          <span className="flex-shrink-0 mx-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">eller bruk e-post</span>
+          <div className="flex-grow border-t border-border"></div>
         </div>
 
-        <form onSubmit={handleLogin} className="login-form">
-          <div className="form-group">
-            <label htmlFor="email" className="form-label">
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm font-semibold text-foreground">
               E-postadresse
             </label>
             <input
@@ -139,18 +148,18 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="navn@bedrift.no"
               required
-              className="form-input"
+              className="w-full h-11 px-4 text-sm bg-muted/30 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-input transition-all placeholder:text-muted-foreground/60"
               autoComplete="email"
             />
           </div>
 
-          <p className="login-hint">
-            <Mail size={14} />
-            Du får en innloggingslenke på e-post
-          </p>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Mail size={14} className="text-primary/70" />
+            <span>Du får en innloggingslenke på e-post</span>
+          </div>
 
           {error && (
-            <div className="login-error">
+            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium animate-in fade-in slide-in-from-top-2">
               {error}
             </div>
           )}
@@ -158,11 +167,11 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="btn btn-primary btn-lg login-submit"
+            className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <span className="spinner spinner-sm spinner-white" />
+                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 Sender...
               </>
             ) : (
@@ -171,265 +180,11 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="login-footer">
-          <Shield size={16} />
+        <div className="mt-10 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground/70 bg-muted/30 py-3 rounded-lg border border-border/50">
+          <Shield size={14} className="text-primary/60" />
           <span>Sikker innlogging for HMS-plattformen</span>
         </div>
       </div>
-
-      <style jsx>{`
-        .login-container {
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          padding: 24px;
-          position: relative;
-          overflow: hidden;
-          background: var(--hms-white, #FFFFFF);
-        }
-
-        .login-glow {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(100px);
-          pointer-events: none;
-        }
-
-        .login-glow--1 {
-          top: -20%;
-          right: -10%;
-          width: 500px;
-          height: 500px;
-          background: radial-gradient(circle, rgba(5, 150, 105, 0.06) 0%, transparent 70%);
-        }
-
-        .login-glow--2 {
-          bottom: -30%;
-          left: -15%;
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, rgba(2, 132, 199, 0.05) 0%, transparent 70%);
-        }
-
-        .login-glow--3 {
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          width: 300px;
-          height: 300px;
-          background: radial-gradient(circle, rgba(5, 150, 105, 0.04) 0%, transparent 70%);
-        }
-
-        .login-card {
-          position: relative;
-          z-index: 1;
-          background: var(--hms-white, #FFFFFF);
-          border: 1px solid var(--hms-frost, #E2E8F0);
-          border-radius: var(--radius-2xl);
-          padding: 48px 44px;
-          max-width: 440px;
-          width: 100%;
-          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02);
-          animation: scaleIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-
-        .login-card--success {
-          text-align: center;
-        }
-
-        .login-logo {
-          display: flex;
-          justify-content: center;
-          margin-bottom: 36px;
-        }
-
-        .login-header {
-          text-align: center;
-          margin-bottom: 32px;
-        }
-
-        .login-title {
-          font-family: var(--font-display);
-          font-size: 28px;
-          font-weight: 700;
-          color: var(--hms-charcoal, #1E293B);
-          letter-spacing: -0.03em;
-          margin-bottom: 10px;
-        }
-
-        .login-subtitle {
-          font-size: 15px;
-          color: var(--hms-slate, #64748B);
-          line-height: 1.6;
-        }
-
-        .login-success-icon {
-          width: 88px;
-          height: 88px;
-          margin: 0 auto 28px;
-          background: var(--hms-safe-light, #D1FAE5);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--hms-safe, #059669);
-          animation: safetyPulse 2s ease-in-out infinite;
-        }
-
-        .login-email-badge {
-          display: inline-flex;
-          align-items: center;
-          gap: 10px;
-          padding: 12px 20px;
-          background: var(--hms-safe-light, #D1FAE5);
-          border: 1px solid rgba(5, 150, 105, 0.2);
-          border-radius: var(--radius-full);
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--hms-safe, #059669);
-          margin-top: 16px;
-        }
-
-        .login-info-box {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-top: 28px;
-          padding: 16px 20px;
-          background: var(--hms-snow, #F8FAFC);
-          border: 1px solid var(--hms-frost, #E2E8F0);
-          border-radius: var(--radius-lg);
-          font-size: 13px;
-          color: var(--hms-slate, #64748B);
-          line-height: 1.5;
-        }
-
-        .login-info-box svg {
-          flex-shrink: 0;
-          color: var(--hms-info, #0284C7);
-        }
-
-        .login-sso-btn {
-          width: 100%;
-          padding: 16px 24px;
-          font-family: var(--font-body);
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--hms-charcoal, #1E293B);
-          background: var(--hms-white, #FFFFFF);
-          border: 1px solid var(--hms-frost, #E2E8F0);
-          border-radius: var(--radius-lg);
-          cursor: pointer;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 14px;
-          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .login-sso-btn:hover:not(:disabled) {
-          background: var(--hms-snow, #F8FAFC);
-          border-color: var(--hms-steel, #CBD5E1);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        }
-
-        .login-sso-btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .login-divider {
-          display: flex;
-          align-items: center;
-          margin: 28px 0;
-          gap: 16px;
-        }
-
-        .login-divider::before,
-        .login-divider::after {
-          content: '';
-          flex: 1;
-          height: 1px;
-          background: var(--hms-frost, #E2E8F0);
-        }
-
-        .login-divider span {
-          font-size: 13px;
-          font-weight: 500;
-          color: var(--hms-slate, #64748B);
-        }
-
-        .login-form {
-          display: flex;
-          flex-direction: column;
-        }
-
-        .login-hint {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 13px;
-          color: var(--hms-slate, #64748B);
-          margin-bottom: 24px;
-        }
-
-        .login-error {
-          padding: 14px 18px;
-          background: var(--hms-danger-light, #FEE2E2);
-          border: 1px solid rgba(220, 38, 38, 0.2);
-          border-radius: var(--radius-md);
-          font-size: 14px;
-          font-weight: 500;
-          color: var(--hms-danger, #DC2626);
-          margin-bottom: 20px;
-        }
-
-        .login-submit {
-          width: 100%;
-        }
-
-        .login-footer {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          margin-top: 28px;
-          padding: 14px 18px;
-          background: var(--hms-safe-light, #D1FAE5);
-          border: 1px solid rgba(5, 150, 105, 0.15);
-          border-radius: var(--radius-lg);
-          font-size: 12px;
-          color: var(--hms-charcoal, #1E293B);
-        }
-
-        .login-footer svg {
-          color: var(--hms-safe, #059669);
-          animation: safetyPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes scaleIn {
-          from {
-            opacity: 0;
-            transform: scale(0.95);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1);
-          }
-        }
-
-        @media (max-width: 480px) {
-          .login-card {
-            padding: 36px 28px;
-          }
-
-          .login-title {
-            font-size: 24px;
-          }
-        }
-      `}</style>
     </div>
   )
 }

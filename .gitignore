@@ -43,3 +43,6 @@ next-env.d.ts
 
 # generated reports
 spellcheck-report.md
+
+.tools/
+supabase/.temp/

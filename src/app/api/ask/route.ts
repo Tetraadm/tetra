@@ -116,7 +116,16 @@ export async function POST(request: NextRequest) {
     // This prevents IP-based bypass when multiple users share same IP (e.g., behind proxy)
     const ip = getClientIp(request)
     const rateLimitKey = `user:${user.id}`
-    const { success, limit, remaining, reset } = await aiRatelimit.limit(rateLimitKey)
+    const { success, limit, remaining, reset, isMisconfigured } = await aiRatelimit.limit(rateLimitKey)
+
+    // Fail-closed: if rate limiter is misconfigured in prod, return 503
+    if (isMisconfigured) {
+      console.error('ASK_FATAL: Rate limiter misconfigured (Upstash not configured in production)')
+      return NextResponse.json(
+        { error: 'Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.' },
+        { status: 503 }
+      )
+    }
 
     if (!success) {
       return NextResponse.json(

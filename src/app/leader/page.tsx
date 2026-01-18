@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function LeaderPage() {
   const supabase = await createClient()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -16,8 +16,16 @@ export default async function LeaderPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'teamleader') {
-    redirect('/login')
+  if (!profile) {
+    redirect('/login?error=Profil ikke funnet')
+  }
+
+  // Role-based redirect: non-teamleaders go to their correct dashboard
+  if (profile.role !== 'teamleader') {
+    if (profile.role === 'admin') {
+      redirect('/admin')
+    }
+    redirect('/employee')
   }
 
   // Fetch team members

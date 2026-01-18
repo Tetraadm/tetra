@@ -1,7 +1,6 @@
-import { FolderOpen, Paperclip, Plus, X } from 'lucide-react'
+import { FolderOpen, Paperclip, Plus, X, FileText } from 'lucide-react'
 import type { Instruction, Folder } from '@/lib/types'
 import { severityLabel, severityColor, statusColor } from '@/lib/ui-helpers'
-import type { createAdminStyles } from '../styles'
 
 type Props = {
   instructions: Instruction[]
@@ -9,7 +8,6 @@ type Props = {
   filteredInstructions: Instruction[]
   selectedFolder: string
   statusFilter: string
-  styles: ReturnType<typeof createAdminStyles>
   setSelectedFolder: (folder: string) => void
   setStatusFilter: (status: string) => void
   toggleInstructionStatus: (instruction: Instruction) => void
@@ -25,7 +23,6 @@ export default function InstructionsTab({
   filteredInstructions,
   selectedFolder,
   statusFilter,
-  styles,
   setSelectedFolder,
   setStatusFilter,
   toggleInstructionStatus,
@@ -37,28 +34,77 @@ export default function InstructionsTab({
 }: Props) {
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 32,
+        flexWrap: 'wrap',
+        gap: 16
+      }}>
         <div>
-          <h1 style={styles.pageTitle}>Instrukser</h1>
-          <p style={styles.pageSubtitle}>Kun publiserte instrukser er synlige for ansatte og AI</p>
+          <h1 style={{
+            fontSize: '1.875rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginBottom: 8,
+            letterSpacing: '-0.02em'
+          }}>
+            Instrukser
+          </h1>
+          <p style={{
+            fontSize: '1rem',
+            color: 'var(--text-secondary)'
+          }}>
+            Kun publiserte instrukser er synlige for ansatte og AI
+          </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button style={styles.btnSecondary} onClick={() => setShowCreateFolder(true)}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          <button className="nt-btn nt-btn-secondary" onClick={() => setShowCreateFolder(true)}>
             <FolderOpen size={16} />
-            Ny mappe
+            <span>Ny mappe</span>
           </button>
-          <button style={styles.btn} onClick={() => setShowCreateInstruction(true)}>
+          <button className="nt-btn nt-btn-primary" onClick={() => setShowCreateInstruction(true)}>
             <Plus size={16} />
-            Opprett instruks
+            <span>Opprett instruks</span>
           </button>
         </div>
       </div>
 
-      <div style={styles.filterBar}>
-        <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Filter:</span>
+      {/* Filter Bar */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        marginBottom: 'var(--space-6)',
+        padding: 'var(--space-4)',
+        background: 'var(--bg-elevated)',
+        borderRadius: 'var(--radius-lg)',
+        border: '1px solid var(--border-subtle)',
+        flexWrap: 'wrap'
+      }}>
+        <span style={{
+          fontSize: '0.8125rem',
+          fontWeight: 600,
+          color: 'var(--text-tertiary)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }}>
+          Filter:
+        </span>
 
         <select
-          style={{ ...styles.select, width: 'auto', marginBottom: 0, marginRight: 16 }}
+          style={{
+            padding: 'var(--space-2) var(--space-3)',
+            fontSize: '0.875rem',
+            color: 'var(--text-primary)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            outline: 'none',
+            cursor: 'pointer',
+            fontWeight: 500
+          }}
           value={statusFilter}
           onChange={e => setStatusFilter(e.target.value)}
         >
@@ -67,21 +113,75 @@ export default function InstructionsTab({
           <option value="draft">Utkast</option>
         </select>
 
-        <button style={styles.folderChip(selectedFolder === 'all')} onClick={() => setSelectedFolder('all')}>
+        <div style={{
+          width: '1px',
+          height: '24px',
+          background: 'var(--border-default)'
+        }} />
+
+        {/* Folder Chips */}
+        <button
+          style={{
+            padding: 'var(--space-2) var(--space-3)',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            color: selectedFolder === 'all' ? 'var(--color-primary-700)' : 'var(--text-secondary)',
+            background: selectedFolder === 'all' ? 'var(--color-primary-100)' : 'var(--bg-secondary)',
+            border: selectedFolder === 'all' ? '1.5px solid var(--color-primary-300)' : '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            transition: 'all var(--transition-fast)'
+          }}
+          onClick={() => setSelectedFolder('all')}
+        >
           Alle mapper
         </button>
-        <button style={styles.folderChip(selectedFolder === 'none')} onClick={() => setSelectedFolder('none')}>
+        <button
+          style={{
+            padding: 'var(--space-2) var(--space-3)',
+            fontSize: '0.875rem',
+            fontWeight: 500,
+            color: selectedFolder === 'none' ? 'var(--color-primary-700)' : 'var(--text-secondary)',
+            background: selectedFolder === 'none' ? 'var(--color-primary-100)' : 'var(--bg-secondary)',
+            border: selectedFolder === 'none' ? '1.5px solid var(--color-primary-300)' : '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            cursor: 'pointer',
+            transition: 'all var(--transition-fast)'
+          }}
+          onClick={() => setSelectedFolder('none')}
+        >
           Uten mappe
         </button>
         {folders.map(folder => (
           <div key={folder.id} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-            <button style={styles.folderChip(selectedFolder === folder.id)} onClick={() => setSelectedFolder(folder.id)}>
-              <FolderOpen size={14} style={{ marginRight: 4 }} />{folder.name}
+            <button
+              style={{
+                padding: 'var(--space-2) var(--space-3)',
+                fontSize: '0.875rem',
+                fontWeight: 500,
+                color: selectedFolder === folder.id ? 'var(--color-primary-700)' : 'var(--text-secondary)',
+                background: selectedFolder === folder.id ? 'var(--color-primary-100)' : 'var(--bg-secondary)',
+                border: selectedFolder === folder.id ? '1.5px solid var(--color-primary-300)' : '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                cursor: 'pointer',
+                transition: 'all var(--transition-fast)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6
+              }}
+              onClick={() => setSelectedFolder(folder.id)}
+            >
+              <FolderOpen size={14} />
+              {folder.name}
             </button>
             <button
-              style={{ ...styles.btnDanger, padding: '4px 8px', fontSize: 10 }}
+              className="nt-btn nt-btn-danger"
+              style={{
+                padding: '4px 8px',
+                minWidth: 'auto'
+              }}
               onClick={() => deleteFolder(folder.id)}
-              aria-label="Slett mappe"
+              aria-label={`Slett mappe ${folder.name}`}
             >
               <X size={12} aria-hidden="true" />
             </button>
@@ -89,55 +189,118 @@ export default function InstructionsTab({
         ))}
       </div>
 
-      <div style={styles.card}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Tittel</th>
-              <th style={styles.th}>Mappe</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Alvorlighet</th>
-              <th style={styles.th}>Handlinger</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredInstructions.map(inst => (
-              <tr key={inst.id}>
-                <td style={styles.td}>
-                  {inst.title}
-                  {inst.file_path && <Paperclip size={14} style={{ marginLeft: 8, color: '#64748B', verticalAlign: 'middle' }} />}
-                </td>
-                <td style={styles.td}>{inst.folders?.name || 'Ingen mappe'}</td>
-                <td style={styles.td}>
-                  <span style={styles.badge(statusColor(inst.status).bg, statusColor(inst.status).color)}>
-                    {inst.status === 'published' ? 'Publisert' : 'Utkast'}
-                  </span>
-                </td>
-                <td style={styles.td}>
-                  <span style={styles.badge(severityColor(inst.severity).bg, severityColor(inst.severity).color)}>
-                    {severityLabel(inst.severity)}
-                  </span>
-                </td>
-                <td style={styles.td}>
-                  <div style={styles.actionBtns}>
-                    <button
-                      style={inst.status === 'published' ? styles.btnSmall : styles.btnSuccess}
-                      onClick={() => toggleInstructionStatus(inst)}
-                    >
-                      {inst.status === 'published' ? 'Avpubliser' : 'Publiser'}
-                    </button>
-                    <button style={styles.btnSmall} onClick={() => openEditInstruction(inst)}>Rediger</button>
-                    <button style={styles.btnDanger} onClick={() => deleteInstruction(inst.id)}>Slett</button>
-                  </div>
-                </td>
+      {/* Instructions Table */}
+      {filteredInstructions.length === 0 ? (
+        <div className="nt-empty-state">
+          <FileText className="nt-empty-state__icon" />
+          <h3 className="nt-empty-state__title">Ingen instrukser funnet</h3>
+          <p className="nt-empty-state__description">
+            {statusFilter !== 'all' || selectedFolder !== 'all'
+              ? 'Prøv å endre filtrene for å se flere instrukser.'
+              : 'Kom i gang ved å opprette din første HMS-instruksjon. Instruksjoner kan inneholde tekst, bilder og PDF-dokumenter.'}
+          </p>
+          {(statusFilter !== 'all' || selectedFolder !== 'all') ? (
+            <button
+              className="nt-btn nt-btn-secondary"
+              onClick={() => {
+                setStatusFilter('all')
+                setSelectedFolder('all')
+              }}
+            >
+              Nullstill filtre
+            </button>
+          ) : (
+            <button className="nt-btn nt-btn-primary" onClick={() => setShowCreateInstruction(true)}>
+              <Plus size={16} />
+              <span>Opprett instruksjon</span>
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="nt-table-container">
+          <table className="nt-table">
+            <thead>
+              <tr>
+                <th>Tittel</th>
+                <th>Mappe</th>
+                <th>Status</th>
+                <th>Alvorlighet</th>
+                <th>Handlinger</th>
               </tr>
-            ))}
-            {filteredInstructions.length === 0 && (
-              <tr><td colSpan={5} style={{ ...styles.td, color: '#64748B' }}>Ingen instrukser funnet</td></tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {filteredInstructions.map(inst => (
+                <tr key={inst.id}>
+                  <td>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      fontWeight: 500
+                    }}>
+                      {inst.title}
+                      {inst.file_path && (
+                        <Paperclip
+                          size={14}
+                          style={{ color: 'var(--text-tertiary)', flexShrink: 0 }}
+                          aria-label="Har vedlegg"
+                        />
+                      )}
+                    </div>
+                  </td>
+                  <td style={{ color: 'var(--text-secondary)' }}>
+                    {inst.folders?.name || 'Ingen mappe'}
+                  </td>
+                  <td>
+                    <span
+                      className="nt-badge"
+                      style={{
+                        background: statusColor(inst.status).bg,
+                        color: statusColor(inst.status).color
+                      }}
+                    >
+                      {inst.status === 'published' ? 'Publisert' : 'Utkast'}
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      className="nt-badge"
+                      style={{
+                        background: severityColor(inst.severity).bg,
+                        color: severityColor(inst.severity).color
+                      }}
+                    >
+                      {severityLabel(inst.severity)}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        className={inst.status === 'published' ? 'nt-btn nt-btn-secondary nt-btn-sm' : 'nt-btn nt-btn-primary nt-btn-sm'}
+                        onClick={() => toggleInstructionStatus(inst)}
+                      >
+                        {inst.status === 'published' ? 'Avpubliser' : 'Publiser'}
+                      </button>
+                      <button
+                        className="nt-btn nt-btn-secondary nt-btn-sm"
+                        onClick={() => openEditInstruction(inst)}
+                      >
+                        Rediger
+                      </button>
+                      <button
+                        className="nt-btn nt-btn-danger nt-btn-sm"
+                        onClick={() => deleteInstruction(inst.id)}
+                      >
+                        Slett
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </>
   )
 }

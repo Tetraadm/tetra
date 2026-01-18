@@ -134,35 +134,29 @@ export function useAdminUsers({
     const teamToLog = inviteTeam || null
 
     try {
-      const { data, error } = await supabase
-        .from('invites')
-        .insert({
+      const response = await fetch('/api/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: emailToLog,
           role: roleToLog,
-          team_id: teamToLog,
-          org_id: profile.org_id
+          team_id: teamToLog
         })
-        .select()
-        .single()
-
-      if (error) throw error
-
-      const inviteUrl = `${window.location.origin}/invite/${data.token}`
-      await navigator.clipboard.writeText(inviteUrl)
-
-      await logAuditEventClient(supabase, {
-        orgId: profile.org_id,
-        userId: profile.id,
-        actionType: 'invite_user',
-        entityType: 'invite',
-        entityId: data.id,
-        details: {
-          invited_email: emailToLog,
-          invited_role: roleToLog,
-          invited_team_id: teamToLog
-        }
       })
 
-      toast.success('Invitasjonslenke kopiert!')
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Kunne ikke opprette invitasjon')
+      }
+
+      if (result.emailSent) {
+        toast.success(`Invitasjon sendt til ${emailToLog}`)
+      } else {
+        await navigator.clipboard.writeText(result.inviteUrl)
+        toast.success('Invitasjon opprettet (E-post feilet, lenke kopiert)')
+      }
+
       setInviteEmail('')
       setInviteRole('employee')
       setInviteTeam('')

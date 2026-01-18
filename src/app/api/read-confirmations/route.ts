@@ -1,7 +1,29 @@
 import { createClient } from '@/lib/supabase/server'
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 
-export async function GET() {
+// Types for RPC responses
+type InstructionReadStats = {
+  instruction_id: string
+  instruction_title: string
+  instruction_created_at: string
+  total_users: number
+  read_count: number
+  confirmed_count: number
+  read_percentage: number
+  confirmed_percentage: number
+}
+
+type UserReadStatus = {
+  user_id: string
+  user_name: string
+  user_email: string
+  has_read: boolean
+  confirmed: boolean
+  read_at: string | null
+  confirmed_at: string | null
+}
+
+export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient()
 
@@ -21,73 +43,62 @@ export async function GET() {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get all instructions and their read confirmations
-    const { data: instructions, error: instError } = await supabase
-      .from('instructions')
-      .select(`
-        id,
-        title,
-        status,
-        created_at
-      `)
-      .eq('org_id', profile.org_id)
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
+    // Parse query parameters
+    const searchParams = request.nextUrl.searchParams
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100)
+    const offset = parseInt(searchParams.get('offset') || '0')
+    const instructionId = searchParams.get('instruction_id')
 
-    if (instError) throw instError
+    // If instruction_id is provided, return user-level read status for that instruction
+    if (instructionId) {
+      const { data: userReads, error: userReadsError } = await supabase
+        .rpc('get_instruction_user_reads', {
+          p_instruction_id: instructionId,
+          p_org_id: profile.org_id,
+          p_limit: limit,
+          p_offset: offset
+        }) as { data: UserReadStatus[] | null, error: unknown }
 
-    // Get all users in org
-    const { data: users, error: usersError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, role')
-      .eq('org_id', profile.org_id)
-      .neq('role', 'admin') // Exclude admins from read tracking
+      if (userReadsError) {
+        console.error('get_instruction_user_reads error:', userReadsError)
+        return NextResponse.json({ error: 'Kunne ikke hente brukerdata' }, { status: 500 })
+      }
 
-    if (usersError) throw usersError
-
-    // Get all read confirmations
-    const { data: reads, error: readsError } = await supabase
-      .from('instruction_reads')
-      .select('*')
-      .eq('org_id', profile.org_id)
-
-    if (readsError) throw readsError
-
-    // Build response with read status for each user-instruction pair
-    const report = instructions?.map(instruction => {
-      const instructionReads = reads?.filter(r => r.instruction_id === instruction.id) || []
-
-      const userReadStatus = users?.map(user => {
-        const userRead = instructionReads.find(r => r.user_id === user.id)
-        return {
-          user_id: user.id,
-          user_name: user.full_name || '',
-          user_email: user.email || '',
-          read: !!userRead,
-          confirmed: userRead?.confirmed || false,
-          read_at: userRead?.read_at || null,
-          confirmed_at: userRead?.confirmed_at || null
-        }
+      return NextResponse.json({
+        user_reads: userReads || [],
+        pagination: { limit, offset }
       })
+    }
 
-      const totalUsers = users?.length || 0
-      const readCount = instructionReads.length
-      const confirmedCount = instructionReads.filter(r => r.confirmed).length
+    // Otherwise, return aggregated instruction stats
+    const { data: stats, error: statsError } = await supabase
+      .rpc('get_instruction_read_stats', {
+        p_org_id: profile.org_id,
+        p_limit: limit,
+        p_offset: offset
+      }) as { data: InstructionReadStats[] | null, error: unknown }
 
-      return {
-        instruction_id: instruction.id,
-        instruction_title: instruction.title,
-        created_at: instruction.created_at,
-        total_users: totalUsers,
-        read_count: readCount,
-        confirmed_count: confirmedCount,
-        read_percentage: totalUsers > 0 ? (readCount / totalUsers * 100).toFixed(1) : 0,
-        confirmed_percentage: totalUsers > 0 ? (confirmedCount / totalUsers * 100).toFixed(1) : 0,
-        user_statuses: userReadStatus || []
+    if (statsError) {
+      console.error('get_instruction_read_stats error:', statsError)
+      return NextResponse.json({ error: 'Kunne ikke hente statistikk' }, { status: 500 })
+    }
+
+    // Get total count for pagination
+    const { data: totalCount, error: countError } = await supabase
+      .rpc('count_org_instructions', { p_org_id: profile.org_id })
+
+    if (countError) {
+      console.error('count_org_instructions error:', countError)
+    }
+
+    return NextResponse.json({
+      report: stats || [],
+      pagination: {
+        total: totalCount || 0,
+        limit,
+        offset
       }
     })
-
-    return NextResponse.json({ report })
   } catch (error) {
     console.error('Read confirmations API error:', error)
     return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })

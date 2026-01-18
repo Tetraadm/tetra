@@ -30,7 +30,7 @@ import type {
   Alert,
   AiLog
 } from '@/lib/types'
-import { createAdminStyles } from './styles'
+// Nordic Technical styles via CSS variables (no need for createAdminStyles)
 import {
   OverviewTab,
   UsersTab,
@@ -219,8 +219,13 @@ export default function AdminDashboard({
     readReport,
     readReportLoading,
     expandedInstructions,
+    userReads,
+    userReadsLoading,
     loadReadReport,
-    toggleInstructionExpansion
+    toggleInstructionExpansion,
+    goToPage,
+    currentPage,
+    totalPages
   } = useReadReport()
 
   useEffect(() => {
@@ -240,195 +245,226 @@ export default function AdminDashboard({
     router.push('/login')
   }
 
-  const styles = createAdminStyles(isMobile)
+  const handleTabChange = (newTab: typeof tab) => {
+    setTab(newTab)
+    setShowMobileMenu(false)
+  }
 
   return (
     <>
       <AuthWatcher />
-      <div style={styles.container}>
-        <header style={styles.header}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {isMobile && (
-            <button
-              style={styles.mobileMenuBtn}
-              onClick={() => setShowMobileMenu(!showMobileMenu)}
-              aria-label={showMobileMenu ? 'Lukk meny' : 'Åpne meny'}
-            >
-              {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
+      <div className="nt-app-container">
+        <header className="nt-app-header">
+          <div className="nt-app-header__brand">
+            {isMobile && (
+              <button
+                className="nt-mobile-menu-btn"
+                onClick={() => setShowMobileMenu(!showMobileMenu)}
+                aria-label={showMobileMenu ? 'Lukk meny' : 'Åpne meny'}
+              >
+                {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            )}
+            <Image
+              src="/tetra-logo.png"
+              alt="Tetra"
+              width={120}
+              height={32}
+              style={{ height: 32, width: 'auto' }}
+            />
+            {!isMobile && (
+              <span className="nt-app-org-badge">{organization.name}</span>
+            )}
+          </div>
+          <div className="nt-app-header__actions">
+            {!isMobile && (
+              <button
+                className="nt-btn nt-btn-secondary nt-btn-sm"
+                onClick={() => setShowDisclaimer(true)}
+                title="Om AI-assistenten"
+              >
+                <Info size={14} />
+                AI-info
+              </button>
+            )}
+            {!isMobile && (
+              <span className="nt-app-user-name">{profile.full_name}</span>
+            )}
+            <button className="nt-btn nt-btn-secondary nt-btn-sm" onClick={handleLogout}>
+              {isMobile ? <LogOut size={18} /> : <><LogOut size={16} /> Logg ut</>}
             </button>
-          )}
-          <Image
-            src="/tetra-logo.png"
-            alt="Tetra"
-            width={120}
-            height={32}
-            style={{ height: 32, width: 'auto' }}
-          />
-          {!isMobile && <span style={styles.orgName}>{organization.name}</span>}
+          </div>
+        </header>
+
+        <div className="nt-app-layout">
+          <aside className={`nt-app-sidebar ${showMobileMenu ? 'nt-app-sidebar--open' : ''}`}>
+            <nav className="nt-app-nav">
+              <button
+                className={`nt-nav-item ${tab === 'oversikt' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('oversikt')}
+              >
+                <Home size={18} aria-hidden="true" />
+                Oversikt
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'brukere' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('brukere')}
+              >
+                <Users size={18} aria-hidden="true" />
+                Brukere
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'team' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('team')}
+              >
+                <UsersRound size={18} aria-hidden="true" />
+                Team
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'instrukser' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('instrukser')}
+              >
+                <FileText size={18} aria-hidden="true" />
+                Instrukser
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'avvik' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('avvik')}
+              >
+                <AlertTriangle size={18} aria-hidden="true" />
+                Avvik & Varsler
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'ailogg' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('ailogg')}
+              >
+                <Bot size={18} aria-hidden="true" />
+                AI-logg
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'innsikt' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('innsikt')}
+              >
+                <BarChart3 size={18} aria-hidden="true" />
+                Innsikt
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'auditlog' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('auditlog')}
+              >
+                <ClipboardList size={18} aria-hidden="true" />
+                Aktivitetslogg
+              </button>
+              <button
+                className={`nt-nav-item ${tab === 'lesebekreftelser' ? 'nt-nav-item--active' : ''}`}
+                onClick={() => handleTabChange('lesebekreftelser')}
+              >
+                <CheckSquare size={18} aria-hidden="true" />
+                Lesebekreftelser
+              </button>
+            </nav>
+          </aside>
+
+          <main className="nt-app-content">
+            {tab === 'oversikt' && (
+              <OverviewTab
+                profile={profile}
+                users={users}
+                instructions={instructions}
+                alerts={alerts}
+                setTab={setTab}
+              />
+            )}
+
+            {tab === 'brukere' && (
+              <UsersTab
+                profile={profile}
+                users={users}
+                teams={teams}
+                openEditUser={openEditUser}
+                deleteUser={deleteUser}
+                setShowInviteUser={setShowInviteUser}
+              />
+            )}
+
+            {tab === 'team' && (
+              <TeamsTab
+                teams={teams}
+                users={users}
+                deleteTeam={deleteTeam}
+                setShowCreateTeam={setShowCreateTeam}
+              />
+            )}
+
+            {tab === 'instrukser' && (
+              <InstructionsTab
+                instructions={instructions}
+                folders={folders}
+                filteredInstructions={filteredInstructions}
+                selectedFolder={selectedFolder}
+                statusFilter={statusFilter}
+                setSelectedFolder={setSelectedFolder}
+                setStatusFilter={setStatusFilter}
+                toggleInstructionStatus={toggleInstructionStatus}
+                openEditInstruction={openEditInstruction}
+                deleteInstruction={deleteInstruction}
+                deleteFolder={deleteFolder}
+                setShowCreateInstruction={setShowCreateInstruction}
+                setShowCreateFolder={setShowCreateFolder}
+              />
+            )}
+
+            {tab === 'avvik' && (
+              <AlertsTab
+                alerts={alerts}
+                toggleAlert={toggleAlert}
+                deleteAlert={deleteAlert}
+                setShowCreateAlert={setShowCreateAlert}
+              />
+            )}
+
+            {tab === 'ailogg' && (
+              <AiLogTab
+                aiLogs={aiLogs}
+              />
+            )}
+
+            {tab === 'innsikt' && (
+              <InsightsTab
+                aiLogs={aiLogs}
+                instructions={instructions}
+              />
+            )}
+
+            {tab === 'auditlog' && (
+              <AuditLogTab
+                auditLogs={auditLogs}
+                auditLogsLoading={auditLogsLoading}
+                auditFilter={auditFilter}
+                setAuditFilter={setAuditFilter}
+                loadAuditLogs={loadAuditLogs}
+              />
+            )}
+
+            {tab === 'lesebekreftelser' && (
+              <ReadConfirmationsTab
+                readReport={readReport}
+                readReportLoading={readReportLoading}
+                expandedInstructions={expandedInstructions}
+                userReads={userReads}
+                userReadsLoading={userReadsLoading}
+                toggleInstructionExpansion={toggleInstructionExpansion}
+                currentPage={currentPage}
+                totalPages={totalPages}
+                goToPage={goToPage}
+              />
+            )}
+          </main>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {!isMobile && (
-            <button
-              style={styles.btnSmall}
-              onClick={() => setShowDisclaimer(true)}
-              title="Om AI-assistenten"
-            >
-              <Info size={14} style={{ marginRight: 4 }} />
-              AI-info
-            </button>
-          )}
-          {!isMobile && <span style={{ fontSize: 14, color: '#64748B' }}>{profile.full_name}</span>}
-          <button style={styles.logoutBtn} onClick={handleLogout}>
-            {isMobile ? <LogOut size={18} /> : <><LogOut size={16} style={{ marginRight: 6 }} />Logg ut</>}
-          </button>
-        </div>
-      </header>
-
-      <div style={styles.main}>
-        <aside style={styles.sidebar(showMobileMenu)}>
-          <button style={styles.navItem(tab === 'oversikt')} onClick={() => { setTab('oversikt'); setShowMobileMenu(false); }}>
-            <Home size={18} style={styles.navIcon(tab === 'oversikt')} />
-            Oversikt
-          </button>
-          <button style={styles.navItem(tab === 'brukere')} onClick={() => { setTab('brukere'); setShowMobileMenu(false); }}>
-            <Users size={18} style={styles.navIcon(tab === 'brukere')} />
-            Brukere
-          </button>
-          <button style={styles.navItem(tab === 'team')} onClick={() => { setTab('team'); setShowMobileMenu(false); }}>
-            <UsersRound size={18} style={styles.navIcon(tab === 'team')} />
-            Team
-          </button>
-          <button style={styles.navItem(tab === 'instrukser')} onClick={() => { setTab('instrukser'); setShowMobileMenu(false); }}>
-            <FileText size={18} style={styles.navIcon(tab === 'instrukser')} />
-            Instrukser
-          </button>
-          <button style={styles.navItem(tab === 'avvik')} onClick={() => { setTab('avvik'); setShowMobileMenu(false); }}>
-            <AlertTriangle size={18} style={styles.navIcon(tab === 'avvik')} />
-            Avvik & Varsler
-          </button>
-          <button style={styles.navItem(tab === 'ailogg')} onClick={() => { setTab('ailogg'); setShowMobileMenu(false); }}>
-            <Bot size={18} style={styles.navIcon(tab === 'ailogg')} />
-            AI-logg
-          </button>
-          <button style={styles.navItem(tab === 'innsikt')} onClick={() => { setTab('innsikt'); setShowMobileMenu(false); }}>
-            <BarChart3 size={18} style={styles.navIcon(tab === 'innsikt')} />
-            Innsikt
-          </button>
-          <button style={styles.navItem(tab === 'auditlog')} onClick={() => { setTab('auditlog'); setShowMobileMenu(false); }}>
-            <ClipboardList size={18} style={styles.navIcon(tab === 'auditlog')} />
-            Aktivitetslogg
-          </button>
-          <button style={styles.navItem(tab === 'lesebekreftelser')} onClick={() => { setTab('lesebekreftelser'); setShowMobileMenu(false); }}>
-            <CheckSquare size={18} style={styles.navIcon(tab === 'lesebekreftelser')} />
-            Lesebekreftelser
-          </button>
-        </aside>
-
-        <main style={styles.content}>
-          {tab === 'oversikt' && (
-            <OverviewTab
-              profile={profile}
-              users={users}
-              instructions={instructions}
-              alerts={alerts}
-              styles={styles}
-              setTab={setTab}
-            />
-          )}
-
-          {tab === 'brukere' && (
-            <UsersTab
-              profile={profile}
-              users={users}
-              teams={teams}
-              styles={styles}
-              openEditUser={openEditUser}
-              deleteUser={deleteUser}
-              setShowInviteUser={setShowInviteUser}
-            />
-          )}
-
-          {tab === 'team' && (
-            <TeamsTab
-              teams={teams}
-              users={users}
-              styles={styles}
-              deleteTeam={deleteTeam}
-              setShowCreateTeam={setShowCreateTeam}
-            />
-          )}
-
-          {tab === 'instrukser' && (
-            <InstructionsTab
-              instructions={instructions}
-              folders={folders}
-              filteredInstructions={filteredInstructions}
-              selectedFolder={selectedFolder}
-              statusFilter={statusFilter}
-              styles={styles}
-              setSelectedFolder={setSelectedFolder}
-              setStatusFilter={setStatusFilter}
-              toggleInstructionStatus={toggleInstructionStatus}
-              openEditInstruction={openEditInstruction}
-              deleteInstruction={deleteInstruction}
-              deleteFolder={deleteFolder}
-              setShowCreateInstruction={setShowCreateInstruction}
-              setShowCreateFolder={setShowCreateFolder}
-            />
-          )}
-
-          {tab === 'avvik' && (
-            <AlertsTab
-              alerts={alerts}
-              styles={styles}
-              toggleAlert={toggleAlert}
-              deleteAlert={deleteAlert}
-              setShowCreateAlert={setShowCreateAlert}
-            />
-          )}
-
-          {tab === 'ailogg' && (
-            <AiLogTab
-              aiLogs={aiLogs}
-              styles={styles}
-            />
-          )}
-
-          {tab === 'innsikt' && (
-            <InsightsTab
-              aiLogs={aiLogs}
-              instructions={instructions}
-              styles={styles}
-            />
-          )}
-
-          {tab === 'auditlog' && (
-            <AuditLogTab
-              auditLogs={auditLogs}
-              auditLogsLoading={auditLogsLoading}
-              auditFilter={auditFilter}
-              styles={styles}
-              setAuditFilter={setAuditFilter}
-              loadAuditLogs={loadAuditLogs}
-            />
-          )}
-
-          {tab === 'lesebekreftelser' && (
-            <ReadConfirmationsTab
-              readReport={readReport}
-              readReportLoading={readReportLoading}
-              expandedInstructions={expandedInstructions}
-              styles={styles}
-              toggleInstructionExpansion={toggleInstructionExpansion}
-            />
-          )}
-        </main>
-      </div>
       </div>
 
       <CreateTeamModal
         open={showCreateTeam}
-        styles={styles}
         newTeamName={newTeamName}
         setNewTeamName={setNewTeamName}
         onClose={() => setShowCreateTeam(false)}
@@ -438,7 +474,6 @@ export default function AdminDashboard({
 
       <CreateFolderModal
         open={showCreateFolder}
-        styles={styles}
         newFolderName={newFolderName}
         setNewFolderName={setNewFolderName}
         onClose={() => setShowCreateFolder(false)}
@@ -448,7 +483,6 @@ export default function AdminDashboard({
 
       <CreateInstructionModal
         open={showCreateInstruction}
-        styles={styles}
         folders={folders}
         teams={teams}
         newInstruction={newInstruction}
@@ -462,7 +496,6 @@ export default function AdminDashboard({
 
       <EditInstructionModal
         open={showEditInstruction}
-        styles={styles}
         folders={folders}
         editingInstruction={editingInstruction}
         editInstructionTitle={editInstructionTitle}
@@ -482,7 +515,6 @@ export default function AdminDashboard({
 
       <InviteUserModal
         open={showInviteUser}
-        styles={styles}
         inviteEmail={inviteEmail}
         setInviteEmail={setInviteEmail}
         inviteRole={inviteRole}
@@ -497,7 +529,6 @@ export default function AdminDashboard({
 
       <EditUserModal
         open={showEditUser}
-        styles={styles}
         editingUser={editingUser}
         editUserRole={editUserRole}
         setEditUserRole={setEditUserRole}
@@ -511,7 +542,6 @@ export default function AdminDashboard({
 
       <CreateAlertModal
         open={showCreateAlert}
-        styles={styles}
         newAlert={newAlert}
         setNewAlert={setNewAlert}
         teams={teams}
@@ -522,7 +552,6 @@ export default function AdminDashboard({
 
       <DisclaimerModal
         open={showDisclaimer}
-        styles={styles}
         onClose={() => setShowDisclaimer(false)}
       />
     </>

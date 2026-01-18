@@ -21,20 +21,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    // Get query parameters for filtering
+    // Get query parameters for filtering and pagination
     const searchParams = request.nextUrl.searchParams
     const actionType = searchParams.get('action_type')
     const startDate = searchParams.get('start_date')
     const endDate = searchParams.get('end_date')
-    const limit = parseInt(searchParams.get('limit') || '100')
+    const limit = Math.min(parseInt(searchParams.get('limit') || '100'), 500)
+    const offset = parseInt(searchParams.get('offset') || '0')
 
-    // Build query
+    // Build query with count for pagination
     let query = supabase
       .from('audit_logs')
-      .select('*, profiles(full_name, email)')
+      .select('*, profiles(full_name, email)', { count: 'exact' })
       .eq('org_id', profile.org_id)
       .order('created_at', { ascending: false })
-      .limit(limit)
+      .range(offset, offset + limit - 1)
 
     // Apply filters
     if (actionType && actionType !== 'all') {
@@ -47,11 +48,18 @@ export async function GET(request: NextRequest) {
       query = query.lte('created_at', endDate)
     }
 
-    const { data, error } = await query
+    const { data, count, error } = await query
 
     if (error) throw error
 
-    return NextResponse.json({ logs: data })
+    return NextResponse.json({
+      logs: data,
+      pagination: {
+        total: count || 0,
+        limit,
+        offset
+      }
+    })
   } catch (error) {
     console.error('Audit logs API error:', error)
     return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })

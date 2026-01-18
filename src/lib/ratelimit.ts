@@ -18,6 +18,8 @@ const AI_RATE_LIMIT = parseEnvInt('AI_RATE_LIMIT', 20)
 const AI_RATE_WINDOW_SECONDS = parseEnvInt('AI_RATE_WINDOW_SECONDS', 60)
 const UPLOAD_RATE_LIMIT = parseEnvInt('UPLOAD_RATE_LIMIT', 10)
 const UPLOAD_RATE_WINDOW_SECONDS = parseEnvInt('UPLOAD_RATE_WINDOW_SECONDS', 60)
+const INVITE_RATE_LIMIT = parseEnvInt('INVITE_RATE_LIMIT', 10)
+const INVITE_RATE_WINDOW_SECONDS = parseEnvInt('INVITE_RATE_WINDOW_SECONDS', 3600) // 1 hour default
 
 // Check if Upstash is configured
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL
@@ -32,8 +34,15 @@ interface RateLimitResult {
   reset: number // Unix timestamp in milliseconds
 }
 
+// Extended result that includes misconfiguration status
+export interface RateLimitCheckResult extends RateLimitResult {
+  /** True if rate limiter is misconfigured (e.g., Upstash not set up in prod) */
+  isMisconfigured: boolean
+}
+
 // In-memory fallback for development
 class InMemoryRatelimit {
+  readonly isMisconfigured = false
   private requests: Map<string, number[]> = new Map()
   private maxRequests: number
   private window: number
@@ -43,7 +52,7 @@ class InMemoryRatelimit {
     this.window = windowSeconds * 1000 // Convert to ms
   }
 
-  async limit(identifier: string): Promise<RateLimitResult> {
+  async limit(identifier: string): Promise<RateLimitCheckResult> {
     const now = Date.now()
     const timestamps = this.requests.get(identifier) || []
 
@@ -58,6 +67,7 @@ class InMemoryRatelimit {
         limit: this.maxRequests,
         remaining: 0,
         reset: resetTime,
+        isMisconfigured: false,
       }
     }
 
@@ -69,12 +79,14 @@ class InMemoryRatelimit {
       limit: this.maxRequests,
       remaining: this.maxRequests - validTimestamps.length,
       reset: now + this.window,
+      isMisconfigured: false,
     }
   }
 }
 
 // Upstash wrapper to normalize response shape
 class UpstashRatelimitWrapper {
+  readonly isMisconfigured = false
   private ratelimit: Ratelimit
   private maxRequests: number
 
@@ -88,16 +100,38 @@ class UpstashRatelimitWrapper {
     })
   }
 
-  async limit(identifier: string): Promise<RateLimitResult> {
+  async limit(identifier: string): Promise<RateLimitCheckResult> {
     const result = await this.ratelimit.limit(identifier)
     return {
       success: result.success,
       limit: this.maxRequests,
       remaining: result.remaining,
       reset: result.reset, // Upstash returns Unix timestamp in ms
+      isMisconfigured: false,
     }
   }
 }
+
+/**
+ * Fail-closed rate limiter for production when Upstash is not configured.
+ * Always returns isMisconfigured=true so API routes can return 503.
+ */
+class MisconfiguredRatelimit {
+  readonly isMisconfigured = true
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  async limit(_identifier: string): Promise<RateLimitCheckResult> {
+    return {
+      success: false,
+      limit: 0,
+      remaining: 0,
+      reset: Date.now(),
+      isMisconfigured: true,
+    }
+  }
+}
+
+const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
 // Create rate limiters based on environment
 function createRateLimiters() {
@@ -120,19 +154,32 @@ function createRateLimiters() {
         UPLOAD_RATE_WINDOW_SECONDS,
         'ratelimit:upload'
       ),
+      inviteRatelimit: new UpstashRatelimitWrapper(
+        redis,
+        INVITE_RATE_LIMIT,
+        INVITE_RATE_WINDOW_SECONDS,
+        'ratelimit:invite'
+      ),
     }
   }
 
-  // Fallback when Upstash is not configured
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('[ratelimit] Upstash not configured; falling back to in-memory rate limiter.')
-  } else {
-    console.log('[ratelimit] Using in-memory rate limiter (Upstash not configured)')
+  // Production without Upstash: FAIL CLOSED
+  if (IS_PRODUCTION) {
+    console.error('[ratelimit] CRITICAL: Upstash not configured in production! Rate limiting will reject all requests with 503.')
+    const misconfigured = new MisconfiguredRatelimit()
+    return {
+      aiRatelimit: misconfigured,
+      uploadRatelimit: misconfigured,
+      inviteRatelimit: misconfigured,
+    }
   }
 
+  // Development: in-memory fallback is acceptable
+  console.log('[ratelimit] Using in-memory rate limiter (dev mode)')
   return {
     aiRatelimit: new InMemoryRatelimit(AI_RATE_LIMIT, AI_RATE_WINDOW_SECONDS),
     uploadRatelimit: new InMemoryRatelimit(UPLOAD_RATE_LIMIT, UPLOAD_RATE_WINDOW_SECONDS),
+    inviteRatelimit: new InMemoryRatelimit(INVITE_RATE_LIMIT, INVITE_RATE_WINDOW_SECONDS),
   }
 }
 
@@ -140,6 +187,7 @@ const limiters = createRateLimiters()
 
 export const aiRatelimit = limiters.aiRatelimit
 export const uploadRatelimit = limiters.uploadRatelimit
+export const inviteRatelimit = limiters.inviteRatelimit
 
 // Helper to get client IP with improved robustness
 export function getClientIp(request: Request): string {

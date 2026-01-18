@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tetra Design System Examples</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Colors */
+      --color-slate-50: #F8FAFB;
+      --color-slate-100: #F1F4F6;
+      --color-slate-200: #E4E9ED;
+      --color-slate-300: #CBD5DD;
+      --color-slate-400: #9AA8B5;
+      --color-slate-500: #6B7A8A;
+      --color-slate-600: #4A5A6A;
+      --color-slate-700: #2F3D4A;
+      --color-slate-800: #1E2932;
+      --color-slate-900: #0F1419;
+
+      --color-primary-50: #E6F5F5;
+      --color-primary-100: #CCE8E8;
+      --color-primary-500: #0A6D6D;
+      --color-primary-600: #085858;
+      --color-primary-700: #064343;
+
+      --color-accent-500: #FFB300;
+      --color-accent-600: #CC8F00;
+
+      --color-success-500: #10B981;
+      --color-danger-500: #EF4444;
+      --color-danger-600: #DC2626;
+
+      /* Typography */
+      --font-sans: 'Sora', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'DM Mono', 'Courier New', monospace;
+
+      /* Spacing */
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+
+      /* Radius */
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+
+      /* Shadows */
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--color-slate-50);
+      color: var(--color-slate-900);
+      line-height: 1.5;
+      padding: 2rem;
+    }
+
+    .demo-section {
+      background: white;
+      border-radius: var(--radius-xl);
+      padding: var(--space-8);
+      margin-bottom: var(--space-8);
+      box-shadow: var(--shadow-md);
+    }
+
+    .demo-section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-slate-900);
+      margin-bottom: var(--space-6);
+      padding-bottom: var(--space-4);
+      border-bottom: 2px solid var(--color-slate-200);
+    }
+
+    .demo-section h3 {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-slate-700);
+      margin: var(--space-6) 0 var(--space-4);
+    }
+
+    .component-grid {
+      display: grid;
+      gap: var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+
+    /* ========================================
+       APP SHELL
+       ======================================== */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+      background: var(--color-slate-50);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .app-header {
+      height: 64px;
+      background: white;
+      border-bottom: 1px solid var(--color-slate-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-6);
+      position: relative;
+    }
+
+    .app-header::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg,
+        transparent,
+        var(--color-primary-500) 20%,
+        var(--color-primary-500) 80%,
+        transparent
+      );
+      opacity: 0.3;
+    }
+
+    .app-header__brand {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .app-logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-primary-600);
+      letter-spacing: -0.02em;
+    }
+
+    .app-org-badge {
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-slate-100);
+      border-radius: var(--radius-md);
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-slate-700);
+    }
+
+    .app-header__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .app-user-name {
+      font-size: 0.875rem;
+      color: var(--color-slate-600);
+      font-weight: 500;
+    }
+
+    .app-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .app-sidebar {
+      width: 280px;
+      background: white;
+      border-right: 1px solid var(--color-slate-200);
+      padding: var(--space-6);
+      overflow-y: auto;
+    }
+
+    .app-nav {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-radius: var(--radius-md);
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--color-slate-600);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: left;
+      width: 100%;
+    }
+
+    .nav-item:hover {
+      background: var(--color-slate-100);
+      color: var(--color-slate-900);
+    }
+
+    .nav-item.active {
+      background: linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100));
+      color: var(--color-primary-700);
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      opacity: 0.8;
+    }
+
+    .nav-item.active svg {
+      opacity: 1;
+    }
+
+    .app-content {
+      flex: 1;
+      padding: var(--space-8);
+      overflow-y: auto;
+      background: var(--color-slate-50);
+    }
+
+    /* ========================================
+       CARDS
+       ======================================== */
+    .card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--color-slate-200);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-primary-500), var(--color-accent-500));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+
+    .card:hover::before {
+      opacity: 1;
+    }
+
+    .card__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+
+    .card__title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-slate-700);
+    }
+
+    .card__badge {
+      padding: 0.25rem 0.625rem;
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.025em;
+    }
+
+    .card__badge--primary {
+      background: var(--color-primary-100);
+      color: var(--color-primary-700);
+    }
+
+    .card__badge--accent {
+      background: var(--color-accent-100);
+      color: var(--color-accent-700);
+    }
+
+    .card__body {
+      color: var(--color-slate-600);
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    .stat-card {
+      background: linear-gradient(135deg, white, var(--color-slate-50));
+      border: 1px solid var(--color-slate-200);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: -50%;
+      right: -20%;
+      width: 200px;
+      height: 200px;
+      background: radial-gradient(circle, var(--color-primary-100) 0%, transparent 70%);
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    .stat-card__value {
+      font-size: 2.25rem;
+      font-weight: 700;
+      color: var(--color-slate-900);
+      line-height: 1;
+      margin-bottom: var(--space-2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .stat-card__label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-slate-600);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ========================================
+       BUTTONS
+       ======================================== */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius-md);
+      font-family: var(--font-sans);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translate(-50%, -50%);
+      transition: width 0.6s, height 0.6s;
+    }
+
+    .btn:hover::before {
+      width: 300px;
+      height: 300px;
+    }
+
+    .btn svg {
+      width: 16px;
+      height: 16px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500));
+      color: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover {
+      background: linear-gradient(135deg, var(--color-primary-700), var(--color-primary-600));
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: white;
+      color: var(--color-slate-700);
+      border: 1.5px solid var(--color-slate-300);
+    }
+
+    .btn-secondary:hover {
+      background: var(--color-slate-50);
+      border-color: var(--color-slate-400);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, var(--color-danger-600), var(--color-danger-500));
+      color: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #B91C1C, var(--color-danger-600));
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .btn-accent {
+      background: linear-gradient(135deg, var(--color-accent-600), var(--color-accent-500));
+      color: white;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-accent:hover {
+      background: linear-gradient(135deg, var(--color-accent-700), var(--color-accent-600));
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ========================================
+       TABLES
+       ======================================== */
+    .table-container {
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--color-slate-200);
+      overflow: hidden;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .table thead {
+      background: linear-gradient(180deg, var(--color-slate-50), var(--color-slate-100));
+      border-bottom: 2px solid var(--color-slate-200);
+    }
+
+    .table th {
+      padding: var(--space-4);
+      text-align: left;
+      font-size: 0.8125rem;
+      font-weight: 700;
+      color: var(--color-slate-700);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .table td {
+      padding: var(--space-4);
+      border-bottom: 1px solid var(--color-slate-200);
+      font-size: 0.9375rem;
+      color: var(--color-slate-700);
+    }
+
+    .table tbody tr {
+      transition: background 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+      background: var(--color-slate-50);
+    }
+
+    .table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--radius-md);
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .table-badge--active {
+      background: #D1FAE5;
+      color: #065F46;
+    }
+
+    .table-badge--inactive {
+      background: var(--color-slate-200);
+      color: var(--color-slate-600);
+    }
+
+    /* ========================================
+       EMPTY STATES
+       ======================================== */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--space-8);
+      text-align: center;
+      background: white;
+      border-radius: var(--radius-lg);
+      border: 2px dashed var(--color-slate-300);
+      min-height: 320px;
+    }
+
+    .empty-state__icon {
+      width: 80px;
+      height: 80px;
+      margin-bottom: var(--space-6);
+      opacity: 0.3;
+      color: var(--color-slate-400);
+      animation: float 3s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .empty-state__title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: var(--color-slate-900);
+      margin-bottom: var(--space-3);
+    }
+
+    .empty-state__description {
+      font-size: 0.9375rem;
+      color: var(--color-slate-600);
+      margin-bottom: var(--space-6);
+      max-width: 400px;
+    }
+
+    /* ========================================
+       LOADING STATES
+       ======================================== */
+    .skeleton {
+      background: linear-gradient(90deg, var(--color-slate-200) 25%, var(--color-slate-100) 50%, var(--color-slate-200) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-md);
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    .skeleton-text {
+      height: 1rem;
+      margin-bottom: var(--space-3);
+    }
+
+    .skeleton-title {
+      height: 1.5rem;
+      width: 60%;
+      margin-bottom: var(--space-4);
+    }
+
+    .skeleton-card {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      border: 1px solid var(--color-slate-200);
+    }
+
+    .skeleton-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+    }
+
+    /* ========================================
+       ERROR STATES
+       ======================================== */
+    .error-state {
+      background: linear-gradient(135deg, #FEF2F2, #FEE2E2);
+      border: 2px solid #FCA5A5;
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      display: flex;
+      align-items: start;
+      gap: var(--space-4);
+    }
+
+    .error-state__icon {
+      width: 24px;
+      height: 24px;
+      color: var(--color-danger-600);
+      flex-shrink: 0;
+    }
+
+    .error-state__content {
+      flex: 1;
+    }
+
+    .error-state__title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #991B1B;
+      margin-bottom: var(--space-2);
+    }
+
+    .error-state__message {
+      font-size: 0.9375rem;
+      color: #7F1D1D;
+      line-height: 1.5;
+    }
+
+    /* ========================================
+       UTILITIES
+       ======================================== */
+    .button-group {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: var(--space-6);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- APP SHELL EXAMPLE -->
+  <div class="demo-section">
+    <h2>App Shell - Desktop Layout</h2>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="app-header__brand">
+          <div class="app-logo">TETRA</div>
+          <span class="app-org-badge">Acme Bedrift AS</span>
+        </div>
+        <div class="app-header__actions">
+          <span class="app-user-name">Kari Nordmann</span>
+          <button class="btn btn-secondary btn-sm">
+            <span>Logg ut</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="app-layout">
+        <aside class="app-sidebar">
+          <nav class="app-nav">
+            <button class="nav-item active">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+              </svg>
+              Oversikt
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+              </svg>
+              Brukere
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+              </svg>
+              Team
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+              </svg>
+              Instrukser
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+              </svg>
+              Avvik & Varsler
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+              </svg>
+              AI-logg
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+              </svg>
+              Innsikt
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+              </svg>
+              Aktivitetslogg
+            </button>
+            <button class="nav-item">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+              </svg>
+              Lesebekreftelser
+            </button>
+          </nav>
+        </aside>
+
+        <main class="app-content">
+          <div class="grid-2">
+            <div class="stat-card">
+              <div class="stat-card__value">142</div>
+              <div class="stat-card__label">Totale brukere</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-card__value">89%</div>
+              <div class="stat-card__label">Lesegrad</div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARDS -->
+  <div class="demo-section">
+    <h2>Cards</h2>
+
+    <h3>Standard Cards</h3>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title">HMS-instruksjoner</h3>
+          <span class="card__badge card__badge--primary">Aktiv</span>
+        </div>
+        <div class="card__body">
+          <p>Totalt 24 aktive instruksjoner som krever lesebekreftelse fra ansatte. 3 nye instruksjoner de siste 7 dagene.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card__header">
+          <h3 class="card__title">Avviksmeldinger</h3>
+          <span class="card__badge card__badge--accent">7 nye</span>
+        </div>
+        <div class="card__body">
+          <p>7 nye avviksmeldinger venter på gjennomgang. 12 avvik er under behandling, 45 er lukket.</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>Stat Cards</h3>
+    <div class="grid-2">
+      <div class="stat-card">
+        <div class="stat-card__value">1,247</div>
+        <div class="stat-card__label">Totale dokument-visninger</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card__value">92%</div>
+        <div class="stat-card__label">Gjennomsnittlig lesegrad</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BUTTONS -->
+  <div class="demo-section">
+    <h2>Buttons</h2>
+
+    <h3>Primary Actions</h3>
+    <div class="button-group">
+      <button class="btn btn-primary">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span>Opprett ny</span>
+      </button>
+      <button class="btn btn-accent">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+        </svg>
+        <span>Last ned rapport</span>
+      </button>
+    </div>
+
+    <h3>Secondary Actions</h3>
+    <div class="button-group">
+      <button class="btn btn-secondary">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        <span>Rediger</span>
+      </button>
+      <button class="btn btn-secondary btn-sm">
+        <span>Avbryt</span>
+      </button>
+    </div>
+
+    <h3>Danger Actions</h3>
+    <div class="button-group">
+      <button class="btn btn-danger">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+        </svg>
+        <span>Slett</span>
+      </button>
+      <button class="btn btn-danger" disabled>
+        <span>Slett (deaktivert)</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TABLES -->
+  <div class="demo-section">
+    <h2>Tables</h2>
+
+    <div class="table-container">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Navn</th>
+            <th>Rolle</th>
+            <th>Team</th>
+            <th>Status</th>
+            <th>Sist aktiv</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Kari Nordmann</strong></td>
+            <td>Admin</td>
+            <td>Ledelse</td>
+            <td><span class="table-badge table-badge--active">Aktiv</span></td>
+            <td>2 timer siden</td>
+          </tr>
+          <tr>
+            <td><strong>Ola Hansen</strong></td>
+            <td>Leder</td>
+            <td>Produksjon</td>
+            <td><span class="table-badge table-badge--active">Aktiv</span></td>
+            <td>5 timer siden</td>
+          </tr>
+          <tr>
+            <td><strong>Emma Johansen</strong></td>
+            <td>Ansatt</td>
+            <td>HMS</td>
+            <td><span class="table-badge table-badge--active">Aktiv</span></td>
+            <td>1 dag siden</td>
+          </tr>
+          <tr>
+            <td><strong>Per Olsen</strong></td>
+            <td>Ansatt</td>
+            <td>Vedlikehold</td>
+            <td><span class="table-badge table-badge--inactive">Inaktiv</span></td>
+            <td>14 dager siden</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- EMPTY STATES -->
+  <div class="demo-section">
+    <h2>Empty States</h2>
+
+    <div class="empty-state">
+      <svg class="empty-state__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/>
+      </svg>
+      <h3 class="empty-state__title">Ingen instruksjoner ennå</h3>
+      <p class="empty-state__description">
+        Kom i gang ved å opprette din første HMS-instruksjon. Instruksjoner kan inneholde tekst, bilder og PDF-dokumenter.
+      </p>
+      <button class="btn btn-primary">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        <span>Opprett instruksjon</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- LOADING STATES -->
+  <div class="demo-section">
+    <h2>Loading States (Skeleton Loaders)</h2>
+
+    <div class="grid-2">
+      <div class="skeleton-card">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text" style="width: 80%;"></div>
+        <div class="skeleton skeleton-text" style="width: 60%;"></div>
+      </div>
+
+      <div class="skeleton-card">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+          <div class="skeleton skeleton-avatar"></div>
+          <div style="flex: 1;">
+            <div class="skeleton skeleton-text" style="width: 120px; margin-bottom: 0.5rem;"></div>
+            <div class="skeleton skeleton-text" style="width: 80px;"></div>
+          </div>
+        </div>
+        <div class="skeleton skeleton-text"></div>
+        <div class="skeleton skeleton-text" style="width: 90%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ERROR STATES -->
+  <div class="demo-section">
+    <h2>Error States</h2>
+
+    <div class="error-state">
+      <svg class="error-state__icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <div class="error-state__content">
+        <h4 class="error-state__title">Kunne ikke laste data</h4>
+        <p class="error-state__message">
+          En feil oppstod under lasting av instruksjoner. Vennligst prøv igjen om noen øyeblikk. Hvis problemet vedvarer, kontakt support.
+        </p>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>

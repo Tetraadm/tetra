@@ -10,20 +10,64 @@ import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mj
 
 GlobalWorkerOptions.workerSrc = ''
 
+// PDF processing limits - configurable via env vars
+const PDF_MAX_PAGES = parseInt(process.env.PDF_MAX_PAGES || '50', 10)
+const PDF_TIMEOUT_MS = parseInt(process.env.PDF_TIMEOUT_MS || '30000', 10)
+const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
+
+/**
+ * Extract text from PDF with resource limits to prevent DoS attacks.
+ * - Max pages: PDF_MAX_PAGES (default 50)
+ * - Timeout: PDF_TIMEOUT_MS (default 30s)
+ * - Max chars: PDF_MAX_CHARS (default 500k)
+ */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
-  const pdf = await getDocument({ data: pdfBytes, useSystemFonts: true }).promise
-  const textParts: string[] = []
+  const loadingTask = getDocument({ data: pdfBytes, useSystemFonts: true })
 
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const textContent = await page.getTextContent()
-    const pageText = textContent.items
-      .map((item) => ('str' in item ? item.str : ''))
-      .join(' ')
-    textParts.push(pageText)
+  // Create timeout promise that properly cleans up the loading task
+  const timeoutPromise = new Promise<never>((_, reject) => {
+    setTimeout(() => {
+      loadingTask.destroy()
+      reject(new Error(`PDF parsing timed out after ${PDF_TIMEOUT_MS}ms`))
+    }, PDF_TIMEOUT_MS)
+  })
+
+  try {
+    // Race between PDF loading and timeout
+    const pdf = await Promise.race([loadingTask.promise, timeoutPromise])
+
+    const pagesToProcess = Math.min(pdf.numPages, PDF_MAX_PAGES)
+    if (pdf.numPages > PDF_MAX_PAGES) {
+      console.warn(`[PDF] Truncating: ${pdf.numPages} pages -> ${PDF_MAX_PAGES}`)
+    }
+
+    const textParts: string[] = []
+    let totalChars = 0
+
+    for (let i = 1; i <= pagesToProcess; i++) {
+      const page = await pdf.getPage(i)
+      const textContent = await page.getTextContent()
+      const pageText = textContent.items
+        .map((item) => ('str' in item ? item.str : ''))
+        .join(' ')
+
+      // Check character limit
+      if (totalChars + pageText.length > PDF_MAX_CHARS) {
+        console.warn(`[PDF] Character limit reached at page ${i} (${totalChars} chars)`)
+        textParts.push(pageText.slice(0, PDF_MAX_CHARS - totalChars))
+        break
+      }
+
+      textParts.push(pageText)
+      totalChars += pageText.length
+    }
+
+    return textParts.join('\n\n').trim()
+  } catch (error) {
+    // Ensure loading task is destroyed on any error
+    loadingTask.destroy()
+    throw error
   }
-
-  return textParts.join('\n\n').trim()
 }
 
 const DEFAULT_MAX_UPLOAD_MB = 10
@@ -68,8 +112,8 @@ function createServiceClient() {
     {
       cookies: {
         get() { return undefined },
-        set() {},
-        remove() {}
+        set() { },
+        remove() { }
       }
     }
   )
@@ -125,7 +169,16 @@ export async function POST(request: NextRequest) {
 
     // Rate limiting AFTER auth - use user.id for accurate per-user limits
     const rateLimitKey = `user:${user.id}`
-    const { success, limit, remaining, reset } = await uploadRatelimit.limit(rateLimitKey)
+    const { success, limit, remaining, reset, isMisconfigured } = await uploadRatelimit.limit(rateLimitKey)
+
+    // Fail-closed: if rate limiter is misconfigured in prod, return 503
+    if (isMisconfigured) {
+      console.error('UPLOAD_FATAL: Rate limiter misconfigured (Upstash not configured in production)')
+      return NextResponse.json(
+        { error: 'Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.' },
+        { status: 503 }
+      )
+    }
 
     if (!success) {
       return NextResponse.json(
@@ -252,10 +305,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       instruction,
-      textExtracted: !!extractedText 
+      textExtracted: !!extractedText
     })
 
   } catch (error) {

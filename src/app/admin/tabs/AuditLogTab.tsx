@@ -1,6 +1,5 @@
 import { BarChart3, Download } from 'lucide-react'
 import EmptyState from '@/components/EmptyState'
-import type { createAdminStyles } from '../styles'
 import {
   formatActionType as formatActionTypeFn,
   exportAuditLogsCSV as exportAuditCSV,
@@ -17,7 +16,6 @@ type Props = {
   auditLogs: AuditLogRow[]
   auditLogsLoading: boolean
   auditFilter: AuditFilter
-  styles: ReturnType<typeof createAdminStyles>
   setAuditFilter: (filter: AuditFilter) => void
   loadAuditLogs: () => void
 }
@@ -26,90 +24,184 @@ export default function AuditLogTab({
   auditLogs,
   auditLogsLoading,
   auditFilter,
-  styles,
   setAuditFilter,
   loadAuditLogs
 }: Props) {
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 32,
+        flexWrap: 'wrap',
+        gap: 16
+      }}>
         <div>
-          <h1 style={styles.pageTitle}>Aktivitetslogg</h1>
-          <p style={styles.pageSubtitle}>Sporbar logg over kritiske admin-handlinger</p>
+          <h1 style={{
+            fontSize: '1.875rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginBottom: 8,
+            letterSpacing: '-0.02em'
+          }}>
+            Aktivitetslogg
+          </h1>
+          <p style={{
+            fontSize: '1rem',
+            color: 'var(--text-secondary)'
+          }}>
+            Sporbar logg over kritiske admin-handlinger
+          </p>
         </div>
-        <button style={styles.btn} onClick={() => exportAuditCSV(auditLogs, formatActionTypeFn)}>
+        <button
+          className="nt-btn nt-btn-primary"
+          onClick={() => exportAuditCSV(auditLogs, formatActionTypeFn)}
+        >
           <Download size={16} />
-          Eksporter CSV
+          <span>Eksporter CSV</span>
         </button>
       </div>
 
-      <div style={styles.card}>
-        <div style={styles.cardHeader}>Filtrer aktivitetslogg</div>
-        <div style={styles.cardBody}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', gap: 12, marginBottom: 16 }}>
-            <div>
-              <label style={styles.label}>Handlingstype</label>
-              <select
-                style={styles.select}
-                value={auditFilter.actionType}
-                onChange={(e) => setAuditFilter({ ...auditFilter, actionType: e.target.value })}
-              >
-                <option value="all">Alle handlinger</option>
-                <option value="create_instruction">Opprett instruks</option>
-                <option value="publish_instruction">Publiser instruks</option>
-                <option value="unpublish_instruction">Avpubliser instruks</option>
-                <option value="delete_instruction">Slett instruks</option>
-                <option value="create_user">Opprett bruker</option>
-                <option value="edit_user">Rediger bruker</option>
-                <option value="delete_user">Slett bruker</option>
-                <option value="invite_user">Inviter bruker</option>
-                <option value="change_role">Endre rolle</option>
-              </select>
-            </div>
-            <div>
-              <label style={styles.label}>Fra dato</label>
-              <input
-                type="date"
-                style={styles.input}
-                value={auditFilter.startDate}
-                onChange={(e) => setAuditFilter({ ...auditFilter, startDate: e.target.value })}
-              />
-            </div>
-            <div>
-              <label style={styles.label}>Til dato</label>
-              <input
-                type="date"
-                style={styles.input}
-                value={auditFilter.endDate}
-                onChange={(e) => setAuditFilter({ ...auditFilter, endDate: e.target.value })}
-              />
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-end' }}>
-              <button style={styles.btn} onClick={loadAuditLogs} disabled={auditLogsLoading}>
-                {auditLogsLoading ? 'Laster...' : 'Filtrer'}
-              </button>
-            </div>
+      <div className="nt-card" style={{ marginBottom: 'var(--space-6)' }}>
+        <h3 style={{
+          fontSize: '1.0625rem',
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          marginBottom: 'var(--space-5)'
+        }}>
+          Filtrer aktivitetslogg
+        </h3>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: 'var(--space-4)',
+          alignItems: 'end'
+        }}>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              marginBottom: 'var(--space-2)'
+            }}>
+              Handlingstype
+            </label>
+            <select
+              style={{
+                width: '100%',
+                padding: 'var(--space-3) var(--space-4)',
+                fontSize: '0.875rem',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                outline: 'none'
+              }}
+              value={auditFilter.actionType}
+              onChange={(e) => setAuditFilter({ ...auditFilter, actionType: e.target.value })}
+            >
+              <option value="all">Alle handlinger</option>
+              <option value="create_instruction">Opprett instruks</option>
+              <option value="publish_instruction">Publiser instruks</option>
+              <option value="unpublish_instruction">Avpubliser instruks</option>
+              <option value="delete_instruction">Slett instruks</option>
+              <option value="create_user">Opprett bruker</option>
+              <option value="edit_user">Rediger bruker</option>
+              <option value="delete_user">Slett bruker</option>
+              <option value="invite_user">Inviter bruker</option>
+              <option value="change_role">Endre rolle</option>
+            </select>
           </div>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              marginBottom: 'var(--space-2)'
+            }}>
+              Fra dato
+            </label>
+            <input
+              type="date"
+              style={{
+                width: '100%',
+                padding: 'var(--space-3) var(--space-4)',
+                fontSize: '0.875rem',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                outline: 'none'
+              }}
+              value={auditFilter.startDate}
+              onChange={(e) => setAuditFilter({ ...auditFilter, startDate: e.target.value })}
+            />
+          </div>
+          <div>
+            <label style={{
+              display: 'block',
+              fontSize: '0.875rem',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              marginBottom: 'var(--space-2)'
+            }}>
+              Til dato
+            </label>
+            <input
+              type="date"
+              style={{
+                width: '100%',
+                padding: 'var(--space-3) var(--space-4)',
+                fontSize: '0.875rem',
+                color: 'var(--text-primary)',
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-md)',
+                outline: 'none'
+              }}
+              value={auditFilter.endDate}
+              onChange={(e) => setAuditFilter({ ...auditFilter, endDate: e.target.value })}
+            />
+          </div>
+          <button
+            className="nt-btn nt-btn-primary"
+            onClick={loadAuditLogs}
+            disabled={auditLogsLoading}
+          >
+            {auditLogsLoading ? 'Laster...' : 'Filtrer'}
+          </button>
         </div>
       </div>
 
-      <div style={styles.card}>
-        <div style={styles.cardHeader}>Aktivitetslogg ({auditLogs.length} hendelser)</div>
+      <div className="nt-card">
+        <h3 style={{
+          fontSize: '1.0625rem',
+          fontWeight: 600,
+          color: 'var(--text-primary)',
+          marginBottom: 'var(--space-5)'
+        }}>
+          Aktivitetslogg ({auditLogs.length} hendelser)
+        </h3>
+
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <table className="nt-table">
             <thead>
-              <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
-                <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Tidspunkt</th>
-                <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Bruker</th>
-                <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Handling</th>
-                <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Detaljer</th>
+              <tr>
+                <th>Tidspunkt</th>
+                <th>Bruker</th>
+                <th>Handling</th>
+                <th>Detaljer</th>
               </tr>
             </thead>
             <tbody>
               {auditLogsLoading ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: '#64748B' }}>
-                    Laster aktivitetslogg...
+                  <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
+                    <div className="nt-skeleton" style={{ height: 20, width: '60%', margin: '0 auto' }}></div>
                   </td>
                 </tr>
               ) : auditLogs.length === 0 ? (
@@ -129,8 +221,8 @@ export default function AuditLogTab({
                 </tr>
               ) : (
                 auditLogs.map((log) => (
-                  <tr key={log.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                    <td style={{ padding: 12, fontSize: 13 }}>
+                  <tr key={log.id}>
+                    <td style={{ fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>
                       {new Date(log.created_at).toLocaleString('no-NO', {
                         year: 'numeric',
                         month: '2-digit',
@@ -139,25 +231,34 @@ export default function AuditLogTab({
                         minute: '2-digit'
                       })}
                     </td>
-                    <td style={{ padding: 12, fontSize: 13 }}>
+                    <td>
                       <div style={{ fontWeight: 500 }}>{log.profiles?.full_name || 'Ukjent'}</div>
-                      <div style={{ fontSize: 12, color: '#64748B' }}>{log.profiles?.email || ''}</div>
+                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
+                        {log.profiles?.email || ''}
+                      </div>
                     </td>
-                    <td style={{ padding: 12, fontSize: 13 }}>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: 4,
-                        fontSize: 12,
-                        fontWeight: 500,
-                        backgroundColor: log.action_type.includes('delete') ? '#FEE2E2' : log.action_type.includes('publish') ? '#D1FAE5' : '#DBEAFE',
-                        color: log.action_type.includes('delete') ? '#DC2626' : log.action_type.includes('publish') ? '#10B981' : '#3B82F6'
-                      }}>
+                    <td>
+                      <span
+                        className="nt-badge"
+                        style={{
+                          background: log.action_type.includes('delete')
+                            ? 'var(--color-danger-50)'
+                            : log.action_type.includes('publish')
+                            ? 'var(--color-success-50)'
+                            : 'var(--color-primary-50)',
+                          color: log.action_type.includes('delete')
+                            ? '#991B1B'
+                            : log.action_type.includes('publish')
+                            ? '#065F46'
+                            : 'var(--color-primary-700)'
+                        }}
+                      >
                         {formatActionTypeFn(log.action_type)}
                       </span>
                     </td>
-                    <td style={{ padding: 12, fontSize: 13 }}>
+                    <td>
                       {log.details && typeof log.details === 'object' && (
-                        <div style={{ fontSize: 12, color: '#64748B' }}>
+                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
                           {Object.entries(log.details).map(([key, value]) => (
                             <div key={key}>
                               <strong>{key}:</strong> {String(value)}

@@ -1,77 +1,105 @@
-import { Users, FileText, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
 import type { Profile, Alert, Instruction } from '@/lib/types'
 import { severityLabel, severityColor } from '@/lib/ui-helpers'
-import type { createAdminStyles } from '../styles'
 
 type Props = {
   profile: Profile
   users: Profile[]
   instructions: Instruction[]
   alerts: Alert[]
-  styles: ReturnType<typeof createAdminStyles>
   setTab: (tab: 'avvik') => void
 }
 
-export default function OverviewTab({ profile, users, instructions, alerts, styles, setTab }: Props) {
+export default function OverviewTab({ profile, users, instructions, alerts, setTab }: Props) {
+  const activeAlerts = alerts.filter(a => a.active)
+  const publishedInstructions = instructions.filter(i => i.status === 'published')
+  const draftInstructions = instructions.filter(i => i.status === 'draft')
+
   return (
     <>
-      <h1 style={styles.pageTitle}>Oversikt</h1>
-      <p style={styles.pageSubtitle}>Velkommen, {profile.full_name}</p>
+      <div style={{ marginBottom: 32 }}>
+        <h1 style={{
+          fontSize: '1.875rem',
+          fontWeight: 700,
+          color: 'var(--text-primary)',
+          marginBottom: 8,
+          letterSpacing: '-0.02em'
+        }}>
+          Oversikt
+        </h1>
+        <p style={{
+          fontSize: '1rem',
+          color: 'var(--text-secondary)'
+        }}>
+          Velkommen, {profile.full_name}
+        </p>
+      </div>
 
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard}>
-          <div style={styles.statIconBox('default')}>
-            <Users size={20} />
-          </div>
-          <div style={styles.statValue}>{users.length}</div>
-          <div style={styles.statLabel}>Brukere</div>
+      <div className="nt-grid-2 nt-mb-8">
+        <div className="nt-stat-card">
+          <div className="nt-stat-card__value">{users.length}</div>
+          <div className="nt-stat-card__label">Totale brukere</div>
         </div>
-        <div style={styles.statCard}>
-          <div style={styles.statIconBox('default')}>
-            <FileText size={20} />
-          </div>
-          <div style={styles.statValue}>{instructions.filter(i => i.status === 'published').length}</div>
-          <div style={styles.statLabel}>Publiserte instrukser</div>
+        <div className="nt-stat-card">
+          <div className="nt-stat-card__value">{publishedInstructions.length}</div>
+          <div className="nt-stat-card__label">Publiserte instrukser</div>
         </div>
-        <div style={styles.statCard}>
-          <div style={styles.statIconBox('default')}>
-            <FileText size={20} />
-          </div>
-          <div style={styles.statValue}>{instructions.filter(i => i.status === 'draft').length}</div>
-          <div style={styles.statLabel}>Utkast</div>
+        <div className="nt-stat-card">
+          <div className="nt-stat-card__value">{draftInstructions.length}</div>
+          <div className="nt-stat-card__label">Utkast</div>
         </div>
-        <div style={styles.statCard}>
-          <div style={styles.statIconBox('danger')}>
-            <AlertTriangle size={20} />
+        <div className="nt-stat-card">
+          <div className="nt-stat-card__value" style={{
+            color: activeAlerts.length > 0 ? 'var(--color-danger-600)' : 'var(--text-primary)'
+          }}>
+            {activeAlerts.length}
           </div>
-          <div style={{ ...styles.statValue, color: alerts.filter(a => a.active).length > 0 ? '#DC2626' : '#0F172A' }}>
-            {alerts.filter(a => a.active).length}
-          </div>
-          <div style={styles.statLabel}>Aktive avvik</div>
+          <div className="nt-stat-card__label">Aktive avvik</div>
         </div>
       </div>
 
-      {alerts.filter(a => a.active).length > 0 && (
-        <div style={styles.alertCallout}>
-          <AlertTriangle size={20} style={{ color: '#DC2626', flexShrink: 0, marginTop: 2 }} />
+      {activeAlerts.length > 0 && (
+        <div className="nt-card" style={{
+          background: 'linear-gradient(135deg, var(--color-danger-50), #FEE2E2)',
+          border: '2px solid #FCA5A5',
+          padding: 'var(--space-6)',
+          display: 'flex',
+          alignItems: 'start',
+          gap: 'var(--space-4)'
+        }}>
+          <AlertTriangle size={20} style={{ color: 'var(--color-danger-600)', flexShrink: 0, marginTop: 2 }} />
           <div style={{ flex: 1 }}>
-            <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 8, color: '#0F172A' }}>
-              {alerts.filter(a => a.active).length} aktive avvik
+            <h3 style={{
+              fontSize: '1rem',
+              fontWeight: 600,
+              marginBottom: 12,
+              color: '#991B1B'
+            }}>
+              {activeAlerts.length} aktive avvik krever oppmerksomhet
             </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {alerts.filter(a => a.active).slice(0, 3).map(alert => (
-                <div key={alert.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={styles.badge(severityColor(alert.severity).bg, severityColor(alert.severity).color)}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {activeAlerts.slice(0, 3).map(alert => (
+                <div key={alert.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span
+                    className="nt-badge"
+                    style={{
+                      background: severityColor(alert.severity).bg,
+                      color: severityColor(alert.severity).color
+                    }}
+                  >
                     {severityLabel(alert.severity)}
                   </span>
-                  <span style={{ fontSize: 14, color: '#334155' }}>{alert.title}</span>
+                  <span style={{ fontSize: '0.9375rem', color: '#7F1D1D', fontWeight: 500 }}>
+                    {alert.title}
+                  </span>
                 </div>
               ))}
             </div>
           </div>
           <button
-            style={{ ...styles.btnSmall, flexShrink: 0 }}
+            className="nt-btn nt-btn-secondary nt-btn-sm"
             onClick={() => setTab('avvik')}
+            style={{ flexShrink: 0 }}
           >
             Se alle
           </button>

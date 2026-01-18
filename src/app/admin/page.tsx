@@ -4,7 +4,7 @@ import AdminDashboard from './AdminDashboard'
 
 export default async function AdminPage() {
   const supabase = await createClient()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -14,8 +14,16 @@ export default async function AdminPage() {
     .eq('id', user.id)
     .single()
 
-  if (!profile || profile.role !== 'admin') {
-    redirect('/login')
+  if (!profile) {
+    redirect('/login?error=Profil ikke funnet')
+  }
+
+  // Role-based redirect: non-admins go to their correct dashboard
+  if (profile.role !== 'admin') {
+    if (profile.role === 'teamleader') {
+      redirect('/leader')
+    }
+    redirect('/employee')
   }
 
   const { data: teams } = await supabase

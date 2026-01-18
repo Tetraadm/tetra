@@ -1,42 +1,68 @@
-import { Check, ChevronDown, ChevronRight, ClipboardList, Download, X } from 'lucide-react'
+import { Check, ChevronDown, ChevronRight, ChevronLeft, ClipboardList, X, Loader } from 'lucide-react'
 import EmptyState from '@/components/EmptyState'
-import type { createAdminStyles } from '../styles'
-import { exportReadReportCSV as exportReadCSV, type ReadReportItem } from '../utils'
+import type { ReadReportItem, UserReadStatus } from '../hooks/useReadReport'
 
 type Props = {
   readReport: ReadReportItem[]
   readReportLoading: boolean
   expandedInstructions: Set<string>
-  styles: ReturnType<typeof createAdminStyles>
+  userReads: Map<string, UserReadStatus[]>
+  userReadsLoading: Set<string>
   toggleInstructionExpansion: (id: string) => void
+  // Pagination
+  currentPage: number
+  totalPages: number
+  goToPage: (page: number) => void
 }
 
 export default function ReadConfirmationsTab({
   readReport,
   readReportLoading,
   expandedInstructions,
-  styles,
-  toggleInstructionExpansion
+  userReads,
+  userReadsLoading,
+  toggleInstructionExpansion,
+  currentPage,
+  totalPages,
+  goToPage
 }: Props) {
   return (
     <>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 32,
+        flexWrap: 'wrap',
+        gap: 16
+      }}>
         <div>
-          <h1 style={styles.pageTitle}>Lesebekreftelser</h1>
-          <p style={styles.pageSubtitle}>Oversikt over hvem som har lest og bekreftet instrukser</p>
+          <h1 style={{
+            fontSize: '1.875rem',
+            fontWeight: 700,
+            color: 'var(--text-primary)',
+            marginBottom: 8,
+            letterSpacing: '-0.02em'
+          }}>
+            Lesebekreftelser
+          </h1>
+          <p style={{
+            fontSize: '1rem',
+            color: 'var(--text-secondary)'
+          }}>
+            Oversikt over hvem som har lest og bekreftet instrukser
+          </p>
         </div>
-        <button style={styles.btn} onClick={() => exportReadCSV(readReport)}>
-          <Download size={16} />
-          Eksporter CSV
-        </button>
+        {/* CSV export disabled for new paginated structure - would need separate endpoint */}
       </div>
 
       {readReportLoading ? (
-        <div style={{ ...styles.card, padding: 48, textAlign: 'center', color: '#64748B' }}>
-          Laster lesebekreftelser...
+        <div className="nt-card" style={{ padding: 48, textAlign: 'center' }}>
+          <div className="nt-skeleton nt-skeleton-title" style={{ margin: '0 auto' }}></div>
+          <div className="nt-skeleton nt-skeleton-text" style={{ margin: '16px auto 0' }}></div>
         </div>
       ) : readReport.length === 0 ? (
-        <div style={styles.card}>
+        <div className="nt-card">
           <EmptyState
             icon={<ClipboardList size={48} aria-hidden="true" />}
             title="Ingen lesebekreftelser ennå"
@@ -44,105 +70,184 @@ export default function ReadConfirmationsTab({
           />
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {readReport.map((instruction) => {
-            const isExpanded = expandedInstructions.has(instruction.instruction_id)
-            return (
-              <div key={instruction.instruction_id} style={styles.card}>
-                <div
-                  style={{
-                    ...styles.cardHeader,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
-                  onClick={() => toggleInstructionExpansion(instruction.instruction_id)}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {isExpanded ? <ChevronDown size={18} /> : <ChevronRight size={18} />}
-                    <span style={{ fontWeight: 600 }}>{instruction.instruction_title}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 16, fontSize: 13 }}>
-                    <div>
-                      <span style={{ color: '#64748B' }}>Lest: </span>
-                      <span style={{ fontWeight: 600, color: '#3B82F6' }}>
-                        {instruction.read_count}/{instruction.total_users} ({instruction.read_percentage}%)
-                      </span>
-                    </div>
-                    <div>
-                      <span style={{ color: '#64748B' }}>Bekreftet: </span>
-                      <span style={{ fontWeight: 600, color: '#10B981' }}>
-                        {instruction.confirmed_count}/{instruction.total_users} ({instruction.confirmed_percentage}%)
-                      </span>
-                    </div>
-                  </div>
-                </div>
+        <>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+            {readReport.map((instruction) => {
+              const isExpanded = expandedInstructions.has(instruction.instruction_id)
+              const isLoadingUsers = userReadsLoading.has(instruction.instruction_id)
+              const users = userReads.get(instruction.instruction_id) || []
 
-                {isExpanded && (
-                  <div style={styles.cardBody}>
-                    <div style={{ overflowX: 'auto' }}>
-                      <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                          <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
-                            <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Ansatt</th>
-                            <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>E-post</th>
-                            <th style={{ padding: 12, textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Lest</th>
-                            <th style={{ padding: 12, textAlign: 'center', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Bekreftet</th>
-                            <th style={{ padding: 12, textAlign: 'left', fontSize: 13, fontWeight: 600, color: '#64748B' }}>Dato</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {instruction.user_statuses.map((user) => (
-                            <tr key={user.user_id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                              <td style={{ padding: 12, fontSize: 13, fontWeight: 500 }}>{user.user_name}</td>
-                              <td style={{ padding: 12, fontSize: 13, color: '#64748B' }}>{user.user_email}</td>
-                              <td style={{ padding: 12, textAlign: 'center' }}>
-                                {user.read ? (
-                                  <Check size={16} style={{ color: '#3B82F6' }} aria-hidden="true" />
-                                ) : (
-                                  <X size={16} style={{ color: '#CBD5E1' }} aria-hidden="true" />
-                                )}
-                              </td>
-                              <td style={{ padding: 12, textAlign: 'center' }}>
-                                {user.confirmed ? (
-                                  <Check size={16} style={{ color: '#10B981' }} aria-hidden="true" />
-                                ) : (
-                                  <X size={16} style={{ color: '#CBD5E1' }} aria-hidden="true" />
-                                )}
-                              </td>
-                              <td style={{ padding: 12, fontSize: 13, color: '#64748B' }}>
-                                {user.confirmed_at ? (
-                                  new Date(user.confirmed_at).toLocaleString('no-NO', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
-                                ) : user.read_at ? (
-                                  new Date(user.read_at).toLocaleString('no-NO', {
-                                    year: 'numeric',
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit'
-                                  })
-                                ) : (
-                                  '-'
-                                )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+              return (
+                <div key={instruction.instruction_id} className="nt-card" style={{ padding: 0, overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      cursor: 'pointer',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: 'var(--space-5) var(--space-6)',
+                      background: isExpanded ? 'var(--bg-secondary)' : 'transparent',
+                      borderBottom: isExpanded ? '1px solid var(--border-subtle)' : 'none',
+                      transition: 'background var(--transition-fast)'
+                    }}
+                    onClick={() => toggleInstructionExpansion(instruction.instruction_id)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {isExpanded ? (
+                        <ChevronDown size={20} style={{ color: 'var(--text-secondary)' }} />
+                      ) : (
+                        <ChevronRight size={20} style={{ color: 'var(--text-secondary)' }} />
+                      )}
+                      <span style={{
+                        fontWeight: 600,
+                        fontSize: '1.0625rem',
+                        color: 'var(--text-primary)'
+                      }}>
+                        {instruction.instruction_title}
+                      </span>
+                    </div>
+                    <div style={{
+                      display: 'flex',
+                      gap: 24,
+                      fontSize: '0.875rem',
+                      flexWrap: 'wrap'
+                    }}>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)' }}>Lest: </span>
+                        <span style={{
+                          fontWeight: 600,
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--color-primary-600)'
+                        }}>
+                          {instruction.read_count}/{instruction.total_users} ({instruction.read_percentage}%)
+                        </span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--text-secondary)' }}>Bekreftet: </span>
+                        <span style={{
+                          fontWeight: 600,
+                          fontFamily: 'var(--font-mono)',
+                          color: 'var(--color-success-600)'
+                        }}>
+                          {instruction.confirmed_count}/{instruction.total_users} ({instruction.confirmed_percentage}%)
+                        </span>
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
+
+                  {isExpanded && (
+                    <div style={{ padding: 'var(--space-6)' }}>
+                      {isLoadingUsers ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
+                          <Loader size={16} className="animate-spin" />
+                          <span>Laster brukerdata...</span>
+                        </div>
+                      ) : users.length === 0 ? (
+                        <p style={{ color: 'var(--text-tertiary)' }}>Ingen brukere funnet</p>
+                      ) : (
+                        <div style={{ overflowX: 'auto' }}>
+                          <table className="nt-table">
+                            <thead>
+                              <tr>
+                                <th>Ansatt</th>
+                                <th>E-post</th>
+                                <th style={{ textAlign: 'center' }}>Lest</th>
+                                <th style={{ textAlign: 'center' }}>Bekreftet</th>
+                                <th>Dato</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {users.map((user) => (
+                                <tr key={user.user_id}>
+                                  <td style={{ fontWeight: 500 }}>{user.user_name}</td>
+                                  <td style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem' }}>
+                                    {user.user_email}
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    {user.has_read ? (
+                                      <Check size={18} style={{ color: 'var(--color-primary-600)' }} aria-hidden="true" />
+                                    ) : (
+                                      <X size={18} style={{ color: 'var(--border-emphasis)' }} aria-hidden="true" />
+                                    )}
+                                  </td>
+                                  <td style={{ textAlign: 'center' }}>
+                                    {user.confirmed ? (
+                                      <Check size={18} style={{ color: 'var(--color-success-600)' }} aria-hidden="true" />
+                                    ) : (
+                                      <X size={18} style={{ color: 'var(--border-emphasis)' }} aria-hidden="true" />
+                                    )}
+                                  </td>
+                                  <td style={{
+                                    color: 'var(--text-secondary)',
+                                    fontSize: '0.8125rem',
+                                    fontFamily: 'var(--font-mono)'
+                                  }}>
+                                    {user.confirmed_at ? (
+                                      new Date(user.confirmed_at).toLocaleString('no-NO', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })
+                                    ) : user.read_at ? (
+                                      new Date(user.read_at).toLocaleString('no-NO', {
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              gap: 16,
+              marginTop: 24
+            }}>
+              <button
+                className="nt-btn nt-btn-secondary"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 0}
+                style={{ opacity: currentPage === 0 ? 0.5 : 1 }}
+              >
+                <ChevronLeft size={16} />
+                Forrige
+              </button>
+              <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+                Side {currentPage + 1} av {totalPages}
+              </span>
+              <button
+                className="nt-btn nt-btn-secondary"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+                style={{ opacity: currentPage >= totalPages - 1 ? 0.5 : 1 }}
+              >
+                Neste
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </>
   )
