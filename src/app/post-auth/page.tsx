@@ -6,11 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 export default async function PostAuthPage() {
   const supabase = await createClient();
 
-  // Tving session til å lastes før DB-kall
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session?.user) redirect("/login?error=NO_SESSION");
-
-  const user = session.user;
+  // getUser() gjør en sikker server-side JWT-verifisering
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?error=NO_SESSION");
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")

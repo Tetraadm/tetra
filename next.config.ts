@@ -43,11 +43,27 @@ const nextConfig: NextConfig = {
               // Additional restrictions (tightened from default)
               "object-src 'none'",           // Block plugins (Flash, Java, etc.)
               "base-uri 'self'",             // Prevent base tag injection
-              "form-action 'self'",          // Restrict form submissions
+              "form-action 'self' https://*.supabase.co https://login.microsoftonline.com",          // Allow OAuth redirects
               "upgrade-insecure-requests",   // Force HTTPS
             ].join('; ')
           },
         ],
+      },
+    ];
+  },
+
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'www.tetra.onl',
+          },
+        ],
+        destination: 'https://tetra.onl/:path*',
+        permanent: true,
       },
     ];
   },

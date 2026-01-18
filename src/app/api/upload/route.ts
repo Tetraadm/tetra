@@ -7,8 +7,22 @@ import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
+import { z } from 'zod'
 
 GlobalWorkerOptions.workerSrc = ''
+
+// Zod schema for upload form validation
+const UploadFormSchema = z.object({
+  file: z.instanceof(File, { message: 'File is required' }),
+  title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
+  content: z.string().max(50000, 'Content too long').optional().default(''),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+  status: z.enum(['draft', 'published', 'archived']).default('draft'),
+  orgId: z.string().uuid('Invalid organization ID'),
+  folderId: z.string().uuid().nullable().optional(),
+  teamIds: z.array(z.string().uuid()).default([]),
+  allTeams: z.boolean().default(false),
+})
 
 // PDF processing limits - configurable via env vars
 const PDF_MAX_PAGES = parseInt(process.env.PDF_MAX_PAGES || '50', 10)
@@ -122,21 +136,36 @@ function createServiceClient() {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    const file = formData.get('file') as File
-    const title = formData.get('title') as string
-    const content = formData.get('content') as string
-    const severity = formData.get('severity') as string
-    const status = formData.get('status') as string || 'draft'
-    const orgId = formData.get('orgId') as string
-    const folderId = formData.get('folderId') as string || null
-    const teamIds = JSON.parse(formData.get('teamIds') as string || '[]')
-    const allTeams = formData.get('allTeams') === 'true'
-
-    if (!file || !title || !orgId) {
-      return NextResponse.json({ error: 'Mangler påkrevde felt' }, { status: 400 })
+    
+    // Parse and validate form data with Zod
+    const rawData = {
+      file: formData.get('file'),
+      title: formData.get('title'),
+      content: formData.get('content') || '',
+      severity: formData.get('severity') || 'medium',
+      status: formData.get('status') || 'draft',
+      orgId: formData.get('orgId'),
+      folderId: formData.get('folderId') || null,
+      teamIds: (() => {
+        try {
+          return JSON.parse(formData.get('teamIds') as string || '[]')
+        } catch {
+          return []
+        }
+      })(),
+      allTeams: formData.get('allTeams') === 'true',
     }
+    
+    const parseResult = UploadFormSchema.safeParse(rawData)
+    
+    if (!parseResult.success) {
+      const errors = parseResult.error.issues.map(i => i.message).join(', ')
+      return NextResponse.json({ error: `Valideringsfeil: ${errors}` }, { status: 400 })
+    }
+    
+    const { file, title, content, severity, status, orgId, folderId, teamIds, allTeams } = parseResult.data
 
-    if (!allTeams && (!Array.isArray(teamIds) || teamIds.length === 0)) {
+    if (!allTeams && teamIds.length === 0) {
       return NextResponse.json(
         { error: 'Velg minst ett team eller bruk Alle team' },
         { status: 400 }

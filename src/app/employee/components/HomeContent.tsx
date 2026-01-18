@@ -9,8 +9,8 @@ import {
   Inbox
 } from 'lucide-react'
 import type { Alert, Instruction } from '@/lib/types'
-import { severityLabel, severityColor } from '@/lib/ui-helpers'
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { severityLabel } from '@/lib/ui-helpers'
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 
@@ -43,7 +43,6 @@ export default function HomeContent({
           </h2>
           <div className="space-y-3">
             {alerts.map(alert => {
-              const sev = severityColor(alert.severity)
               const isCritical = alert.severity === 'critical'
               return (
                 <div

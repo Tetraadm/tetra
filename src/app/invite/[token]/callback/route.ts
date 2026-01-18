@@ -41,9 +41,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
     }
 
-    // Get session directly (more stable than getUser in same request)
-    const { data: { session } } = await supabase.auth.getSession()
-    const user = session?.user
+    // getUser() gjør en sikker server-side JWT-verifisering
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    if (userError) console.error('INVITE: getUser failed', userError.message)
 
     if (!user) {
       console.error('INVITE_FATAL: No user after session exchange')

@@ -9,11 +9,9 @@ import {
   PenLine
 } from 'lucide-react'
 import type { ChatMessage } from '@/lib/types'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-import { cn } from '@/lib/utils'
 
 type Props = {
   messages: ChatMessage[]
@@ -24,7 +22,6 @@ type Props = {
   onAsk: () => void
   onSuggestion: (suggestion: string) => void
   onOpenSource: (instructionId: string) => void
-  isMobile: boolean
 }
 
 export default function AskTetraTab({
@@ -35,8 +32,7 @@ export default function AskTetraTab({
   chatRef,
   onAsk,
   onSuggestion,
-  onOpenSource,
-  isMobile
+  onOpenSource
 }: Props) {
   return (
     <Card className="h-[calc(100vh-140px)] md:h-[700px] flex flex-col overflow-hidden border-border bg-card shadow-sm">

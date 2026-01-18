@@ -81,7 +81,7 @@ export default function LeaderDashboard({
           <AppSidebar
             tabs={leaderTabs}
             activeTab={tab}
-            onTabChange={(t) => handleTabChange(t as any)}
+            onTabChange={(t) => handleTabChange(t as typeof tab)}
             open={showMobileMenu}
             onClose={() => setShowMobileMenu(false)}
           />

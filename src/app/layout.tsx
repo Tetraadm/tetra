@@ -1,12 +1,10 @@
 import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import OfflineBanner from '@/components/OfflineBanner'
-import { ThemeProvider } from '@/components/ThemeProvider'
-import { Inter, Geist_Mono } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
+import { ThemeProvider } from '@/components/theme-provider'
+import { Inter } from "next/font/google"
 
 const inter = Inter({ subsets: ["latin"] })
-const geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata = {
   title: 'Tetra',

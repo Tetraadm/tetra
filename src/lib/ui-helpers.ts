@@ -9,10 +9,6 @@
 // TYPE DEFINITIONS
 // ============================================
 
-export type SeverityType = 'critical' | 'high' | 'medium' | 'low'
-export type RoleType = 'admin' | 'teamleader' | 'employee'
-export type StatusType = 'published' | 'draft' | 'archived'
-
 export interface ColorSet {
   bg: string
   color: string
@@ -176,19 +172,6 @@ export function severityColor(severity: string): ColorSet {
   }
 }
 
-/**
- * Get severity icon indicator style (for dots/bullets)
- */
-export function severityIndicator(severity: string): string {
-  switch (severity) {
-    case 'critical': return colors.danger
-    case 'high': return colors.high
-    case 'medium': return colors.warning
-    case 'low':
-    default: return colors.success
-  }
-}
-
 // ============================================
 // ROLE HELPERS
 // ============================================
@@ -205,48 +188,9 @@ export function roleLabel(role: string): string {
   }
 }
 
-/**
- * Get styling for role badge
- */
-export function roleColor(role: string): ColorSet {
-  switch (role) {
-    case 'admin':
-      return {
-        bg: colors.primarySubtle,
-        color: colors.primary,
-        border: colors.primaryMuted
-      }
-    case 'teamleader':
-      return {
-        bg: colors.infoLight,
-        color: colors.info,
-        border: colors.infoBorder
-      }
-    case 'employee':
-    default:
-      return {
-        bg: colors.backgroundSubtle,
-        color: colors.textSecondary,
-        border: colors.border
-      }
-  }
-}
-
 // ============================================
 // STATUS HELPERS
 // ============================================
-
-/**
- * Convert status value to Norwegian label
- */
-export function statusLabel(status: string): string {
-  switch (status) {
-    case 'published': return 'Publisert'
-    case 'draft': return 'Utkast'
-    case 'archived': return 'Arkivert'
-    default: return 'Ukjent'
-  }
-}
 
 /**
  * Get styling for status badge
@@ -277,144 +221,5 @@ export function statusColor(status: string): ColorSet {
         color: colors.textSecondary,
         border: colors.border
       }
-  }
-}
-
-// ============================================
-// COMMON STYLE GENERATORS
-// ============================================
-
-/**
- * Generate card styles with optional hover effect
- */
-export function cardStyle(elevated = false): React.CSSProperties {
-  return {
-    background: colors.surface,
-    border: `1px solid ${colors.border}`,
-    borderRadius: radius.xl,
-    boxShadow: elevated ? shadows.lg : shadows.md,
-    transition: `all ${transitions.normal}`,
-  }
-}
-
-/**
- * Generate badge styles for a given color set
- */
-export function badgeStyle(colorSet: ColorSet): React.CSSProperties {
-  return {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '3px 8px',
-    fontSize: '10px',
-    fontWeight: 600,
-    lineHeight: 1,
-    borderRadius: radius.sm,
-    whiteSpace: 'nowrap',
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase' as const,
-    background: colorSet.bg,
-    color: colorSet.color,
-    border: colorSet.border ? `1px solid ${colorSet.border}` : 'none',
-  }
-}
-
-/**
- * Generate primary button styles
- */
-export function primaryButtonStyle(disabled = false): React.CSSProperties {
-  return {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    lineHeight: 1,
-    borderRadius: radius.md,
-    border: 'none',
-    background: disabled ? colors.textMuted : colors.primary,
-    color: colors.textInverse,
-    boxShadow: disabled ? 'none' : shadows.glow,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-    transition: `all ${transitions.normal}`,
-  }
-}
-
-/**
- * Generate secondary button styles
- */
-export function secondaryButtonStyle(disabled = false): React.CSSProperties {
-  return {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    lineHeight: 1,
-    borderRadius: radius.md,
-    border: `1px solid ${colors.border}`,
-    background: colors.surface,
-    color: colors.text,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-    transition: `all ${transitions.normal}`,
-  }
-}
-
-/**
- * Generate danger button styles
- */
-export function dangerButtonStyle(disabled = false): React.CSSProperties {
-  return {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '8px',
-    padding: '12px 20px',
-    fontSize: '14px',
-    fontWeight: 600,
-    lineHeight: 1,
-    borderRadius: radius.md,
-    border: `1px solid ${colors.dangerBorder}`,
-    background: colors.dangerLight,
-    color: colors.danger,
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    opacity: disabled ? 0.5 : 1,
-    transition: `all ${transitions.normal}`,
-  }
-}
-
-/**
- * Generate input field styles
- */
-export function inputStyle(hasError = false): React.CSSProperties {
-  return {
-    width: '100%',
-    padding: '12px 16px',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    color: colors.text,
-    background: colors.backgroundSubtle,
-    border: `1px solid ${hasError ? colors.danger : colors.border}`,
-    borderRadius: radius.md,
-    outline: 'none',
-    transition: `border-color ${transitions.fast}, box-shadow ${transitions.fast}`,
-  }
-}
-
-/**
- * Generate glass morphism styles (Nordic Aurora)
- */
-export function glassStyle(strong = false): React.CSSProperties {
-  return {
-    background: strong ? 'rgba(20, 26, 46, 0.8)' : 'rgba(20, 26, 46, 0.5)',
-    backdropFilter: strong ? 'blur(24px) saturate(180%)' : 'blur(12px)',
-    WebkitBackdropFilter: strong ? 'blur(24px) saturate(180%)' : 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
   }
 }

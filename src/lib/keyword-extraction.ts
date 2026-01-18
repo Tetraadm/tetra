@@ -85,7 +85,7 @@ export function calculateRelevanceScore(
 }
 
 /**
- * Filter and rank instructions based on query
+ * Type for instructions with keywords for relevance scoring
  */
 export type InstructionWithKeywords = {
   id: string
@@ -93,34 +93,4 @@ export type InstructionWithKeywords = {
   content: string | null
   keywords: string[]
   [key: string]: unknown
-}
-
-export function filterAndRankInstructions(
-  query: string,
-  instructions: InstructionWithKeywords[],
-  maxResults: number = 10
-): InstructionWithKeywords[] {
-  const queryKeywords = extractKeywords(query, 5)
-
-  if (queryKeywords.length === 0) {
-    // If no keywords extracted, return first N instructions
-    return instructions.slice(0, maxResults)
-  }
-
-  // Calculate relevance score for each instruction
-  const scored = instructions.map(instruction => ({
-    instruction,
-    score: calculateRelevanceScore(
-      queryKeywords,
-      instruction.keywords || [],
-      instruction.title
-    )
-  }))
-
-  // Sort by score (descending) and return top results
-  return scored
-    .filter(item => item.score > 0) // Only include relevant results
-    .sort((a, b) => b.score - a.score)
-    .slice(0, maxResults)
-    .map(item => item.instruction)
 }

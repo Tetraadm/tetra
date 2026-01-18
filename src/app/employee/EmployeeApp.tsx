@@ -100,7 +100,7 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
   ]
 
   const handleTabChange = (t: string) => {
-    setTab(t as any)
+    setTab(t as 'home' | 'instructions' | 'ask')
     setShowMobileMenu(false)
   }
 
@@ -159,7 +159,6 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
                 onAsk={handleAsk}
                 onSuggestion={handleSuggestion}
                 onOpenSource={handleChatOpenSource}
-                isMobile={isMobile}
               />
             )}
           </main>

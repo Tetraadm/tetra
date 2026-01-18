@@ -1,4 +1,4 @@
-import { AlertTriangle, Users, FileText, File, Bell } from 'lucide-react'
+import { AlertTriangle, Users, FileText, File } from 'lucide-react'
 import type { Profile, Alert, Instruction } from '@/lib/types'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"

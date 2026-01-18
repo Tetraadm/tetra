@@ -2,7 +2,7 @@
 
 import { Search, FileText } from 'lucide-react'
 import type { Instruction } from '@/lib/types'
-import { severityLabel, severityColor } from '@/lib/ui-helpers'
+import { severityLabel } from '@/lib/ui-helpers'
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"

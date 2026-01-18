@@ -3,7 +3,7 @@
 import { X, CheckCircle } from 'lucide-react'
 import type { Instruction } from '@/lib/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { severityLabel, severityColor } from '@/lib/ui-helpers'
+import { severityLabel } from '@/lib/ui-helpers'
 import FileLink from '@/components/FileLink'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
