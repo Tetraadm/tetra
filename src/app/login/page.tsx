@@ -2,10 +2,9 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
-import Image from 'next/image'
 import toast from 'react-hot-toast'
-import { Mail, CheckCircle, Shield, Sparkles } from 'lucide-react'
-// Using standard className strings for styling
+import { Mail, CheckCircle, Shield } from 'lucide-react'
+import { colors, radius, shadows, transitions } from '@/lib/ui-helpers'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -54,31 +53,246 @@ export default function LoginPage() {
     }
   }
 
+  const styles = {
+    container: {
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: '#FFFFFF',
+      padding: 24,
+      fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+      position: 'relative' as const,
+      overflow: 'hidden',
+    },
+    decorShape1: {
+      position: 'absolute' as const,
+      top: '-15%',
+      right: '-10%',
+      width: '50%',
+      height: '60%',
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(5, 150, 105, 0.05) 0%, transparent 70%)',
+      pointerEvents: 'none' as const,
+    },
+    decorShape2: {
+      position: 'absolute' as const,
+      bottom: '-20%',
+      left: '-15%',
+      width: '60%',
+      height: '70%',
+      borderRadius: '50%',
+      background: 'radial-gradient(circle, rgba(2, 132, 199, 0.04) 0%, transparent 70%)',
+      pointerEvents: 'none' as const,
+    },
+    card: {
+      position: 'relative' as const,
+      zIndex: 1,
+      background: '#FFFFFF',
+      padding: '44px 40px',
+      borderRadius: radius.xl,
+      boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)',
+      border: '1px solid #E2E8F0',
+      maxWidth: 440,
+      width: '100%',
+    },
+    logo: {
+      width: 56,
+      height: 56,
+      background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+      borderRadius: radius.lg,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 28px',
+      color: 'white',
+      fontWeight: 800,
+      fontSize: 24,
+      boxShadow: '0 8px 20px -4px rgba(5, 150, 105, 0.3)',
+    },
+    title: {
+      fontSize: 26,
+      fontWeight: 700,
+      textAlign: 'center' as const,
+      marginBottom: 10,
+      color: '#1E293B',
+      letterSpacing: '-0.02em',
+    },
+    subtitle: {
+      color: '#64748B',
+      textAlign: 'center' as const,
+      marginBottom: 28,
+      fontSize: 15,
+      lineHeight: 1.6,
+    },
+    label: {
+      display: 'block',
+      fontSize: 14,
+      fontWeight: 600,
+      marginBottom: 10,
+      color: '#1E293B',
+      letterSpacing: '-0.01em',
+    },
+    input: {
+      width: '100%',
+      padding: '14px 18px',
+      fontSize: 15,
+      border: '1px solid #E2E8F0',
+      borderRadius: radius.md,
+      marginBottom: 16,
+      outline: 'none',
+      boxSizing: 'border-box' as const,
+      transition: `border-color ${transitions.fast}, box-shadow ${transitions.fast}`,
+      fontFamily: 'inherit',
+      color: '#1E293B',
+      background: '#FFFFFF',
+    },
+    btn: {
+      width: '100%',
+      padding: '15px 22px',
+      fontSize: 15,
+      fontWeight: 600,
+      color: 'white',
+      background: 'linear-gradient(135deg, #059669 0%, #047857 100%)',
+      border: 'none',
+      borderRadius: radius.md,
+      cursor: 'pointer',
+      transition: `all ${transitions.normal}`,
+      boxShadow: '0 4px 12px -2px rgba(5, 150, 105, 0.35)',
+      fontFamily: 'inherit',
+    },
+    btnDisabled: {
+      background: '#94A3B8',
+      cursor: 'not-allowed',
+      boxShadow: 'none',
+    },
+    msBtn: {
+      width: '100%',
+      padding: '15px 22px',
+      fontSize: 15,
+      fontWeight: 600,
+      color: '#1E293B',
+      background: '#FFFFFF',
+      border: '1px solid #E2E8F0',
+      borderRadius: radius.md,
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 12,
+      marginBottom: 8,
+      transition: `all ${transitions.normal}`,
+      boxShadow: shadows.xs,
+      fontFamily: 'inherit',
+    },
+    divider: {
+      display: 'flex',
+      alignItems: 'center',
+      margin: '24px 0',
+      gap: 16,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      background: '#E2E8F0',
+    },
+    dividerText: {
+      fontSize: 13,
+      color: '#94A3B8',
+      fontWeight: 500,
+    },
+    errorBox: {
+      padding: '14px 16px',
+      background: '#FEF2F2',
+      border: '1px solid #FECACA',
+      borderRadius: radius.md,
+      color: '#DC2626',
+      fontSize: 14,
+      marginBottom: 16,
+    },
+    hintBox: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      marginBottom: 20,
+      fontSize: 13,
+      color: '#64748B',
+    },
+    footer: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 8,
+      marginTop: 28,
+      padding: '14px 18px',
+      background: '#F0FDF4',
+      borderRadius: radius.md,
+      border: '1px solid #BBF7D0',
+    },
+    footerText: {
+      color: '#64748B',
+      fontSize: 12,
+      margin: 0,
+      lineHeight: 1.5,
+    },
+    checkIcon: {
+      width: 80,
+      height: 80,
+      background: '#D1FAE5',
+      borderRadius: '50%',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto 24px',
+      color: '#059669',
+      boxShadow: '0 8px 20px -4px rgba(5, 150, 105, 0.25)',
+    },
+    emailBadge: {
+      color: '#1E293B',
+      textAlign: 'center' as const,
+      fontSize: 16,
+      fontWeight: 600,
+      padding: '10px 18px',
+      background: '#F0FDF4',
+      borderRadius: radius.md,
+      border: '1px solid #BBF7D0',
+      marginBottom: 20,
+    },
+    infoBox: {
+      padding: '16px 20px',
+      background: '#F8FAFC',
+      borderRadius: radius.md,
+      border: '1px solid #E2E8F0',
+    },
+    infoText: {
+      color: '#64748B',
+      textAlign: 'center' as const,
+      fontSize: 13,
+      lineHeight: 1.6,
+      margin: 0,
+    },
+  }
+
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-background">
-        {/* Glow Effects */}
-        <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-[30%] -left-[15%] w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
-
-        <div className="w-full max-w-md bg-card border border-border rounded-2xl p-12 text-center shadow-lg animate-in fade-in zoom-in-95 duration-500">
-          <div className="mx-auto w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-8 animate-pulse shadow-[0_0_0_8px_rgba(22,163,74,0.1)]">
-            <CheckCircle size={40} className="stroke-[1.5]" />
+      <div style={styles.container}>
+        <div style={styles.decorShape1} />
+        <div style={styles.decorShape2} />
+        <div style={styles.card}>
+          <div style={styles.checkIcon}>
+            <CheckCircle size={40} strokeWidth={2} />
           </div>
-
-          <h1 className="text-2xl font-bold text-foreground mb-4 tracking-tight">Sjekk e-posten din</h1>
-          <p className="text-muted-foreground mb-8 text-base">
+          <h1 style={styles.title}>Sjekk e-posten din</h1>
+          <p style={styles.subtitle}>
             Vi har sendt en innloggingslenke til
           </p>
-
-          <div className="inline-flex items-center gap-2.5 px-5 py-3 bg-green-50 border border-green-100 rounded-full text-green-700 font-semibold text-sm">
-            <Mail size={16} />
+          <p style={styles.emailBadge}>
             {email}
-          </div>
-
-          <div className="mt-8 flex items-center justify-center gap-2.5 p-4 bg-muted/50 border border-border rounded-lg text-sm text-muted-foreground">
-            <Sparkles size={16} className="text-blue-500 shrink-0" />
-            <span>Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke ser den.</span>
+          </p>
+          <div style={styles.infoBox}>
+            <p style={styles.infoText}>
+              Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.
+            </p>
           </div>
         </div>
       </div>
@@ -86,37 +300,37 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden bg-background">
-      {/* Glow Effects */}
-      <div className="absolute -top-[20%] -right-[10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-[30%] -left-[15%] w-[600px] h-[600px] rounded-full bg-blue-500/5 blur-3xl pointer-events-none" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-primary/5 blur-3xl pointer-events-none" />
-
-      <div className="w-full max-w-md bg-card border border-border rounded-2xl p-12 shadow-lg animate-in fade-in zoom-in-95 duration-500 hover:shadow-xl transition-shadow">
-        <div className="flex justify-center mb-10">
-          <Image
-            src="/tetra-logo.png"
-            alt="Tetra"
-            width={160}
-            height={44}
-            className="h-11 w-auto"
-            priority
-          />
-        </div>
-
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-foreground mb-2 tracking-tight font-display">Velkommen tilbake</h1>
-          <p className="text-muted-foreground text-sm">
-            Logg inn for å administrere HMS-instrukser og avvik
-          </p>
-        </div>
+    <div style={styles.container}>
+      <div style={styles.decorShape1} />
+      <div style={styles.decorShape2} />
+      <div style={styles.card}>
+        <div style={styles.logo}>T</div>
+        <h1 style={styles.title}>Logg inn på Tetra</h1>
+        <p style={styles.subtitle}>
+          HMS-plattformen for sikker arbeidsplass
+        </p>
 
         <button
           onClick={handleAzureLogin}
           disabled={loading}
-          className="w-full h-12 flex items-center justify-center gap-3 bg-white text-slate-800 border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-lg font-medium transition-all shadow-sm hover:shadow active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed group"
+          style={{
+            ...styles.msBtn,
+            ...(loading ? { opacity: 0.6, cursor: 'not-allowed' } : {}),
+          }}
+          onMouseEnter={(e) => {
+            if (!loading) {
+              e.currentTarget.style.background = '#F8FAFC'
+              e.currentTarget.style.borderColor = '#CBD5E1'
+              e.currentTarget.style.boxShadow = shadows.sm
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#FFFFFF'
+            e.currentTarget.style.borderColor = '#E2E8F0'
+            e.currentTarget.style.boxShadow = shadows.xs
+          }}
         >
-          <svg width="20" height="20" viewBox="0 0 23 23" className="group-hover:scale-105 transition-transform">
+          <svg width="20" height="20" viewBox="0 0 23 23">
             <path fill="#f35325" d="M0 0h10.931v10.931H0z" />
             <path fill="#81bc06" d="M12.069 0H23v10.931H12.069z" />
             <path fill="#05a6f0" d="M0 12.069h10.931V23H0z" />
@@ -125,59 +339,71 @@ export default function LoginPage() {
           Fortsett med Microsoft
         </button>
 
-        <div className="relative flex items-center py-8">
-          <div className="flex-grow border-t border-border"></div>
-          <span className="flex-shrink-0 mx-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">eller bruk e-post</span>
-          <div className="flex-grow border-t border-border"></div>
+        <div style={styles.divider}>
+          <div style={styles.dividerLine} />
+          <span style={styles.dividerText}>eller</span>
+          <div style={styles.dividerLine} />
         </div>
 
-        <form onSubmit={handleLogin} className="space-y-6">
-          <div className="space-y-2">
-            <label htmlFor="email" className="block text-sm font-semibold text-foreground">
-              E-postadresse
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="navn@bedrift.no"
-              required
-              className="w-full h-11 px-4 text-sm bg-muted/30 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-input transition-all placeholder:text-muted-foreground/60"
-              autoComplete="email"
-            />
-          </div>
+        <form onSubmit={handleLogin}>
+          <label style={styles.label}>E-postadresse</label>
+          <input
+            style={styles.input}
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="navn@bedrift.no"
+            required
+            onFocus={(e) => {
+              e.currentTarget.style.borderColor = '#059669'
+              e.currentTarget.style.boxShadow = shadows.focus
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.borderColor = '#E2E8F0'
+              e.currentTarget.style.boxShadow = 'none'
+            }}
+          />
 
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Mail size={14} className="text-primary/70" />
+          <div style={styles.hintBox}>
+            <Mail size={14} style={{ color: '#059669', flexShrink: 0 }} />
             <span>Du får en innloggingslenke på e-post</span>
           </div>
 
           {error && (
-            <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium animate-in fade-in slide-in-from-top-2">
+            <div style={styles.errorBox}>
               {error}
             </div>
           )}
 
           <button
             type="submit"
+            style={{
+              ...styles.btn,
+              ...(loading ? styles.btnDisabled : {}),
+            }}
             disabled={loading}
-            className="w-full h-11 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg font-semibold shadow-lg shadow-primary/20 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2"
+            onMouseEnter={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = 'translateY(-2px)'
+                e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(5, 150, 105, 0.45)'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!loading) {
+                e.currentTarget.style.transform = 'translateY(0)'
+                e.currentTarget.style.boxShadow = '0 4px 12px -2px rgba(5, 150, 105, 0.35)'
+              }
+            }}
           >
-            {loading ? (
-              <>
-                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                Sender...
-              </>
-            ) : (
-              'Send innloggingslenke'
-            )}
+            {loading ? 'Sender...' : 'Send innloggingslenke'}
           </button>
         </form>
 
-        <div className="mt-10 flex items-center justify-center gap-2 text-xs font-medium text-muted-foreground/70 bg-muted/30 py-3 rounded-lg border border-border/50">
-          <Shield size={14} className="text-primary/60" />
-          <span>Sikker innlogging for HMS-plattformen</span>
+        <div style={styles.footer}>
+          <Shield size={16} style={{ color: '#059669' }} />
+          <p style={styles.footerText}>
+            Sikker innlogging til HMS-plattformen
+          </p>
         </div>
       </div>
     </div>
