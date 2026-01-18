@@ -5,6 +5,8 @@ import type { Instruction } from '@/lib/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { severityLabel, severityColor } from '@/lib/ui-helpers'
 import FileLink from '@/components/FileLink'
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 type Props = {
   instruction: Instruction | null
@@ -27,155 +29,70 @@ export default function InstructionModal({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.6)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 'var(--space-4)',
-        zIndex: 1000,
-        backdropFilter: 'blur(4px)'
-      }}
+      className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50 backdrop-blur-[2px]"
       onClick={onClose}
     >
       <div
-        style={{
-          width: '100%',
-          maxWidth: '700px',
-          maxHeight: '90vh',
-          background: 'var(--bg-elevated)',
-          borderRadius: 'var(--radius-lg)',
-          boxShadow: 'var(--shadow-xl)',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}
+        className="w-full max-w-[700px] max-h-[90vh] bg-card rounded-lg shadow-xl flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div style={{
-          padding: 'var(--space-6)',
-          borderBottom: '1px solid var(--border-subtle)',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'flex-start'
-        }}>
-          <div style={{ flex: 1, paddingRight: 'var(--space-4)' }}>
-            <span
-              className="nt-badge"
-              style={{
-                background: severityColor(instruction.severity).bg,
-                color: severityColor(instruction.severity).color
-              }}
-            >
+        <div className="p-6 border-b flex justify-between items-start bg-card">
+          <div className="flex-1 pr-4">
+            <Badge variant={instruction.severity === 'critical' || instruction.severity === 'high' ? 'destructive' : 'secondary'}>
               {severityLabel(instruction.severity)}
-            </span>
-            <h2 style={{
-              fontSize: '1.25rem',
-              fontWeight: 700,
-              marginTop: 'var(--space-3)',
-              letterSpacing: '-0.02em',
-              color: 'var(--text-primary)',
-              lineHeight: 1.3
-            }}>
+            </Badge>
+            <h2 className="text-xl font-bold mt-3 tracking-tight text-foreground leading-tight">
               {instruction.title}
             </h2>
           </div>
-          <button
-            style={{
-              width: 36,
-              height: 36,
-              border: 'none',
-              background: 'var(--bg-secondary)',
-              borderRadius: 'var(--radius-md)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--text-secondary)',
-              flexShrink: 0,
-              transition: 'all var(--transition-fast)'
-            }}
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
             aria-label="Lukk"
-            onMouseEnter={e => {
-              e.currentTarget.style.background = 'var(--color-danger-100)'
-              e.currentTarget.style.color = 'var(--color-danger-700)'
-            }}
-            onMouseLeave={e => {
-              e.currentTarget.style.background = 'var(--bg-secondary)'
-              e.currentTarget.style.color = 'var(--text-secondary)'
-            }}
+            className="shrink-0"
           >
-            <X size={20} aria-hidden="true" />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        <div style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 'var(--space-6)'
-        }}>
-          {instruction.content && (
-            <div style={{
-              fontSize: '0.9375rem',
-              lineHeight: 1.75,
-              whiteSpace: 'pre-wrap',
-              marginBottom: 'var(--space-5)',
-              color: 'var(--text-secondary)'
-            }}>
+
+        <div className="flex-1 overflow-y-auto p-6">
+          {instruction.content ? (
+            <div className="text-[0.9375rem] leading-relaxed whitespace-pre-wrap mb-5 text-card-foreground/90">
               {instruction.content}
             </div>
-          )}
-          {instruction.file_path && <FileLink fileUrl={instruction.file_path} supabase={supabase} />}
-          {!instruction.content && !instruction.file_path && (
-            <p style={{ fontStyle: 'italic', color: 'var(--text-tertiary)' }}>
+          ) : !instruction.file_path && (
+            <p className="italic text-muted-foreground">
               Ingen beskrivelse tilgjengelig.
             </p>
           )}
-          <div style={{
-            marginTop: 'var(--space-7)',
-            paddingTop: 'var(--space-5)',
-            borderTop: '1px solid var(--border-subtle)'
-          }}>
+
+          {instruction.file_path && <FileLink fileUrl={instruction.file_path} supabase={supabase} />}
+
+          <div className="mt-8 pt-5 border-t">
             {isConfirmed ? (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-3)',
-                padding: 'var(--space-4)',
-                background: 'linear-gradient(135deg, var(--color-success-50), var(--color-success-100))',
-                border: '2px solid var(--color-success-200)',
-                borderRadius: 'var(--radius-md)',
-                color: 'var(--color-success-800)',
-                fontSize: '0.875rem',
-                fontWeight: 500
-              }}>
-                <CheckCircle size={20} aria-hidden="true" />
+              <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-md text-green-700 dark:text-green-400 text-sm font-medium">
+                <CheckCircle size={20} className="text-green-600 dark:text-green-500" />
                 Du har bekreftet at du har lest og forstått denne instruksen
               </div>
             ) : (
-              <button
-                className="nt-btn nt-btn-primary"
-                style={{ width: '100%', justifyContent: 'center' }}
+              <Button
+                className="w-full justify-center gap-2"
                 onClick={() => onConfirmRead(instruction.id)}
                 disabled={isConfirming}
               >
                 {isConfirming ? (
                   <>
-                    <div className="spinner spinner-sm spinner-white" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
                     Bekrefter...
                   </>
                 ) : (
                   <>
-                    <CheckCircle size={20} aria-hidden="true" />
+                    <CheckCircle size={20} />
                     Jeg har lest og forstått
                   </>
                 )}
-              </button>
+              </Button>
             )}
           </div>
         </div>

@@ -9,6 +9,11 @@ import {
   PenLine
 } from 'lucide-react'
 import type { ChatMessage } from '@/lib/types'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { cn } from '@/lib/utils'
 
 type Props = {
   messages: ChatMessage[]
@@ -34,155 +39,54 @@ export default function AskTetraTab({
   isMobile
 }: Props) {
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: isMobile ? 'calc(100vh - 140px)' : '700px',
-      background: 'var(--bg-elevated)',
-      borderRadius: 'var(--radius-lg)',
-      border: '1px solid var(--border-default)',
-      boxShadow: 'var(--shadow-md)',
-      overflow: 'hidden'
-    }}>
-      <div style={{
-        padding: 'var(--space-5)',
-        borderBottom: '1px solid var(--border-subtle)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-3)',
-        background: 'var(--bg-elevated)'
-      }}>
-        <MessageCircle size={22} style={{ color: 'var(--color-primary-600)' }} aria-hidden="true" />
-        <span style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--text-primary)' }}>Spør Tetra</span>
-      </div>
+    <Card className="h-[calc(100vh-140px)] md:h-[700px] flex flex-col overflow-hidden border-border bg-card shadow-sm">
+      <CardHeader className="border-b px-6 py-4 bg-card">
+        <CardTitle className="flex items-center gap-3 text-lg">
+          <MessageCircle className="h-5 w-5 text-primary" />
+          Spør Tetra
+        </CardTitle>
+      </CardHeader>
+
       <div
         ref={chatRef}
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: 'var(--space-5)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 'var(--space-4)'
-        }}
+        className="flex-1 overflow-y-auto p-6 space-y-4"
       >
         {messages.length === 0 ? (
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            height: '100%',
-            textAlign: 'center',
-            padding: 'var(--space-6)'
-          }}>
-            <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: '50%',
-              background: 'linear-gradient(135deg, var(--color-primary-100), var(--color-primary-200))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--color-primary-700)',
-              marginBottom: 'var(--space-4)'
-            }}>
-              <MessageCircle size={32} aria-hidden="true" />
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-6">
+              <MessageCircle size={32} />
             </div>
-            <h3 style={{ fontSize: '1.0625rem', fontWeight: 600, marginBottom: 'var(--space-2)', color: 'var(--text-primary)' }}>
+            <h3 className="font-semibold text-lg mb-2 text-foreground">
               Still et spørsmål
             </h3>
-            <p style={{ fontSize: '0.875rem', marginBottom: 'var(--space-6)', lineHeight: 1.5, color: 'var(--text-secondary)', maxWidth: 320 }}>
+            <p className="text-sm text-muted-foreground mb-8 max-w-xs">
               Spør om rutiner, sikkerhet eller prosedyrer.
             </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)', width: '100%', maxWidth: 400 }}>
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-3) var(--space-4)',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  color: 'var(--text-primary)',
-                  textAlign: 'left',
-                  transition: 'all var(--transition-fast)'
-                }}
+            <div className="flex flex-col gap-3 w-full max-w-sm">
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-auto py-3 px-4 font-normal hover:bg-secondary/50"
                 onClick={() => onSuggestion('Hva gjør jeg ved brann?')}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'var(--bg-elevated)'
-                  e.currentTarget.style.borderColor = 'var(--border-strong)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'var(--bg-secondary)'
-                  e.currentTarget.style.borderColor = 'var(--border-default)'
-                }}
               >
-                <Flame size={18} style={{ color: '#EA580C', flexShrink: 0 }} aria-hidden="true" />
+                <Flame className="h-4 w-4 text-orange-600 shrink-0" />
                 Hva gjør jeg ved brann?
-              </button>
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-3) var(--space-4)',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  color: 'var(--text-primary)',
-                  textAlign: 'left',
-                  transition: 'all var(--transition-fast)'
-                }}
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-auto py-3 px-4 font-normal hover:bg-secondary/50"
                 onClick={() => onSuggestion('Hvilket verneutstyr trenger jeg?')}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'var(--bg-elevated)'
-                  e.currentTarget.style.borderColor = 'var(--border-strong)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'var(--bg-secondary)'
-                  e.currentTarget.style.borderColor = 'var(--border-default)'
-                }}
               >
-                <HardHat size={18} style={{ color: 'var(--color-primary-600)', flexShrink: 0 }} aria-hidden="true" />
+                <HardHat className="h-4 w-4 text-primary shrink-0" />
                 Hvilket verneutstyr trenger jeg?
-              </button>
-              <button
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-3) var(--space-4)',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: 'var(--radius-md)',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: 500,
-                  color: 'var(--text-primary)',
-                  textAlign: 'left',
-                  transition: 'all var(--transition-fast)'
-                }}
+              </Button>
+              <Button
+                variant="outline"
+                className="justify-start gap-3 h-auto py-3 px-4 font-normal hover:bg-secondary/50"
                 onClick={() => onSuggestion('Hvordan rapporterer jeg avvik?')}
-                onMouseEnter={e => {
-                  e.currentTarget.style.background = 'var(--bg-elevated)'
-                  e.currentTarget.style.borderColor = 'var(--border-strong)'
-                }}
-                onMouseLeave={e => {
-                  e.currentTarget.style.background = 'var(--bg-secondary)'
-                  e.currentTarget.style.borderColor = 'var(--border-default)'
-                }}
               >
-                <PenLine size={18} style={{ color: '#059669', flexShrink: 0 }} aria-hidden="true" />
+                <PenLine className="h-4 w-4 text-emerald-600 shrink-0" />
                 Hvordan rapporterer jeg avvik?
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -192,85 +96,44 @@ export default function AskTetraTab({
               return (
                 <div key={idx}>
                   {msg.type === 'user' && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <div style={{
-                        maxWidth: '75%',
-                        padding: 'var(--space-3) var(--space-4)',
-                        background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500))',
-                        color: 'white',
-                        borderRadius: 'var(--radius-lg)',
-                        fontSize: '0.9375rem',
-                        lineHeight: 1.5
-                      }}>
+                    <div className="flex justify-end">
+                      <div className="max-w-[85%] px-4 py-3 bg-primary text-primary-foreground rounded-2xl rounded-tr-sm text-sm leading-relaxed">
                         {msg.text}
                       </div>
                     </div>
                   )}
                   {msg.type === 'bot' && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                      <div style={{
-                        maxWidth: '75%',
-                        padding: 'var(--space-3) var(--space-4)',
-                        background: 'var(--bg-secondary)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-lg)',
-                        fontSize: '0.9375rem',
-                        lineHeight: 1.5,
-                        color: 'var(--text-primary)'
-                      }}>
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] px-4 py-3 bg-secondary text-secondary-foreground rounded-2xl rounded-tl-sm text-sm leading-relaxed border border-border/50">
                         {msg.text}
                         {msg.source && (
-                          <div style={{
-                            marginTop: 'var(--space-3)',
-                            paddingTop: 'var(--space-3)',
-                            borderTop: '1px solid var(--border-subtle)',
-                            fontSize: '0.8125rem'
-                          }}>
-                            <div style={{ marginBottom: 'var(--space-2)', color: 'var(--text-secondary)' }}>
-                              <strong style={{ color: 'var(--text-primary)' }}>Kilde:</strong> {msg.source.title}
+                          <div className="mt-3 pt-3 border-t border-border/50 text-xs">
+                            <div className="mb-2 text-muted-foreground">
+                              <span className="font-medium text-foreground">Kilde:</span> {msg.source.title}
                               {msg.source.updated_at && (
-                                <> (oppdatert {new Date(msg.source.updated_at).toLocaleDateString('nb-NO')})</>
+                                <span className="opacity-70"> (oppdatert {new Date(msg.source.updated_at).toLocaleDateString('nb-NO')})</span>
                               )}
                             </div>
-                            <div
-                              style={{
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 'var(--space-2)',
-                                fontWeight: 600,
-                                color: 'var(--color-primary-600)',
-                                transition: 'color var(--transition-fast)'
-                              }}
+                            <button
+                              className="flex items-center gap-1.5 font-medium text-primary hover:text-primary/80 transition-colors cursor-pointer"
                               onClick={() => onOpenSource(msg.source!.instruction_id)}
-                              onMouseEnter={e => e.currentTarget.style.color = 'var(--color-primary-700)'}
-                              onMouseLeave={e => e.currentTarget.style.color = 'var(--color-primary-600)'}
                             >
-                              <FileText size={14} aria-hidden="true" />
+                              <FileText size={14} />
                               Klikk for å åpne: {msg.source.title}
-                            </div>
+                            </button>
                           </div>
                         )}
                       </div>
                     </div>
                   )}
                   {msg.type === 'notfound' && (
-                    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                      <div style={{
-                        maxWidth: '75%',
-                        padding: 'var(--space-3) var(--space-4)',
-                        background: 'linear-gradient(135deg, var(--color-warning-50), var(--color-warning-100))',
-                        border: '2px solid var(--color-warning-200)',
-                        borderRadius: 'var(--radius-lg)',
-                        fontSize: '0.9375rem',
-                        lineHeight: 1.5,
-                        color: 'var(--color-warning-800)'
-                      }}>
-                        <strong>{notFoundMessage || 'Fant ikke relevant instruks.'}</strong>
+                    <div className="flex justify-start">
+                      <div className="max-w-[85%] px-4 py-3 bg-warning/10 text-warning-foreground border border-warning/20 rounded-2xl rounded-tl-sm text-sm leading-relaxed">
+                        <strong className="block mb-1">{notFoundMessage || 'Fant ikke relevant instruks.'}</strong>
                         {!notFoundMessage && (
-                          <div style={{ fontSize: '0.8125rem', marginTop: 'var(--space-2)' }}>
+                          <span className="text-xs opacity-90">
                             Kontakt din nærmeste leder hvis dette haster.
-                          </div>
+                          </span>
                         )}
                       </div>
                     </div>
@@ -279,20 +142,12 @@ export default function AskTetraTab({
               )
             })}
             {isTyping && (
-              <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                <div style={{
-                  padding: 'var(--space-3) var(--space-4)',
-                  background: 'var(--bg-secondary)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: 'var(--radius-lg)',
-                  display: 'flex',
-                  gap: 'var(--space-2)',
-                  alignItems: 'center'
-                }}>
+              <div className="flex justify-start">
+                <div className="px-4 py-3 bg-secondary border border-border/50 rounded-2xl rounded-tl-sm w-16 flex items-center justify-center">
                   <div className="typing-indicator">
-                    <div className="typing-dot"></div>
-                    <div className="typing-dot"></div>
-                    <div className="typing-dot"></div>
+                    <div className="typing-dot bg-muted-foreground/50"></div>
+                    <div className="typing-dot bg-muted-foreground/50"></div>
+                    <div className="typing-dot bg-muted-foreground/50"></div>
                   </div>
                 </div>
               </div>
@@ -300,54 +155,25 @@ export default function AskTetraTab({
           </>
         )}
       </div>
-      <div style={{
-        padding: 'var(--space-4)',
-        borderTop: '1px solid var(--border-subtle)',
-        background: 'var(--bg-elevated)',
-        display: 'flex',
-        gap: 'var(--space-3)'
-      }}>
-        <input
-          style={{
-            flex: 1,
-            padding: 'var(--space-3) var(--space-4)',
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-md)',
-            outline: 'none',
-            fontSize: '0.875rem',
-            color: 'var(--text-primary)',
-            fontFamily: 'var(--font-sans)',
-            transition: 'border-color var(--transition-fast)'
-          }}
+
+      <div className="p-4 border-t bg-card flex gap-3">
+        <Input
+          className="flex-1 bg-secondary/30"
           placeholder="Skriv et spørsmål..."
           value={chatInput}
           onChange={e => setChatInput(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && onAsk()}
-          onFocus={e => e.currentTarget.style.borderColor = 'var(--color-primary-400)'}
-          onBlur={e => e.currentTarget.style.borderColor = 'var(--border-default)'}
         />
-        <button
-          style={{
-            padding: 'var(--space-3)',
-            background: 'linear-gradient(135deg, var(--color-primary-600), var(--color-primary-500))',
-            border: 'none',
-            borderRadius: 'var(--radius-md)',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            transition: 'opacity var(--transition-fast)'
-          }}
+        <Button
           onClick={onAsk}
-          aria-label="Send melding"
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          size="icon"
+          className="shrink-0"
+          disabled={!chatInput.trim()}
         >
-          <Send size={22} aria-hidden="true" />
-        </button>
+          <Send className="h-4 w-4" />
+          <span className="sr-only">Send</span>
+        </Button>
       </div>
-    </div>
+    </Card>
   )
 }

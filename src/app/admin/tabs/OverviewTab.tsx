@@ -1,6 +1,8 @@
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Users, FileText, File, Bell } from 'lucide-react'
 import type { Profile, Alert, Instruction } from '@/lib/types'
-import { severityLabel, severityColor } from '@/lib/ui-helpers'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 type Props = {
   profile: Profile
@@ -15,96 +17,78 @@ export default function OverviewTab({ profile, users, instructions, alerts, setT
   const publishedInstructions = instructions.filter(i => i.status === 'published')
   const draftInstructions = instructions.filter(i => i.status === 'draft')
 
+  const stats = [
+    { label: "Totale brukere", value: users.length, icon: Users },
+    { label: "Publiserte instrukser", value: publishedInstructions.length, icon: FileText },
+    { label: "Utkast", value: draftInstructions.length, icon: File },
+    { label: "Aktive avvik", value: activeAlerts.length, icon: AlertTriangle, status: activeAlerts.length > 0 ? 'danger' : 'success' },
+  ]
+
   return (
-    <>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{
-          fontSize: '1.875rem',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          marginBottom: 8,
-          letterSpacing: '-0.02em'
-        }}>
-          Oversikt
-        </h1>
-        <p style={{
-          fontSize: '1rem',
-          color: 'var(--text-secondary)'
-        }}>
-          Velkommen, {profile.full_name}
-        </p>
+    <div className="space-y-6">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Velkommen, {profile.full_name}</h1>
+          <p className="text-muted-foreground mt-1">Her er oversikten over din organisasjon</p>
+        </div>
       </div>
 
-      <div className="nt-grid-2 nt-mb-8">
-        <div className="nt-stat-card">
-          <div className="nt-stat-card__value">{users.length}</div>
-          <div className="nt-stat-card__label">Totale brukere</div>
-        </div>
-        <div className="nt-stat-card">
-          <div className="nt-stat-card__value">{publishedInstructions.length}</div>
-          <div className="nt-stat-card__label">Publiserte instrukser</div>
-        </div>
-        <div className="nt-stat-card">
-          <div className="nt-stat-card__value">{draftInstructions.length}</div>
-          <div className="nt-stat-card__label">Utkast</div>
-        </div>
-        <div className="nt-stat-card">
-          <div className="nt-stat-card__value" style={{
-            color: activeAlerts.length > 0 ? 'var(--color-danger-600)' : 'var(--text-primary)'
-          }}>
-            {activeAlerts.length}
-          </div>
-          <div className="nt-stat-card__label">Aktive avvik</div>
-        </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon
+          return (
+            <Card key={stat.label} className="relative overflow-hidden">
+              <CardHeader className="pb-2">
+                <div className="flex items-center justify-between">
+                  <CardDescription className="text-sm font-medium">{stat.label}</CardDescription>
+                  <div className={`h-9 w-9 rounded-lg flex items-center justify-center ${stat.status === 'danger' ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'}`}>
+                    <Icon className="h-5 w-5" />
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end justify-between">
+                  <span className={`text-2xl lg:text-3xl font-bold ${stat.status === 'danger' ? 'text-destructive' : 'text-foreground'}`}>
+                    {stat.value}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )
+        })}
       </div>
 
       {activeAlerts.length > 0 && (
-        <div className="nt-card" style={{
-          background: 'linear-gradient(135deg, var(--color-danger-50), #FEE2E2)',
-          border: '2px solid #FCA5A5',
-          padding: 'var(--space-6)',
-          display: 'flex',
-          alignItems: 'start',
-          gap: 'var(--space-4)'
-        }}>
-          <AlertTriangle size={20} style={{ color: 'var(--color-danger-600)', flexShrink: 0, marginTop: 2 }} />
-          <div style={{ flex: 1 }}>
-            <h3 style={{
-              fontSize: '1rem',
-              fontWeight: 600,
-              marginBottom: 12,
-              color: '#991B1B'
-            }}>
-              {activeAlerts.length} aktive avvik krever oppmerksomhet
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Card className="border-destructive/50 bg-destructive/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Krever oppmerksomhet
+            </CardTitle>
+            <CardDescription>
+              {activeAlerts.length} aktive avvik som må håndteres.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
               {activeAlerts.slice(0, 3).map(alert => (
-                <div key={alert.id} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <span
-                    className="nt-badge"
-                    style={{
-                      background: severityColor(alert.severity).bg,
-                      color: severityColor(alert.severity).color
-                    }}
-                  >
-                    {severityLabel(alert.severity)}
-                  </span>
-                  <span style={{ fontSize: '0.9375rem', color: '#7F1D1D', fontWeight: 500 }}>
-                    {alert.title}
-                  </span>
+                <div key={alert.id} className="flex items-center justify-between p-3 rounded-lg bg-background border border-destructive/20">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className={`${alert.severity === 'high' ? 'border-destructive text-destructive' : 'border-tetra-warning text-foreground'}`}>
+                      {alert.severity}
+                    </Badge>
+                    <span className="font-medium">{alert.title}</span>
+                  </div>
                 </div>
               ))}
+              <Button variant="outline" onClick={() => setTab('avvik')} className="w-full mt-2 border-destructive/30 hover:bg-destructive/10 text-destructive">
+                Se alle avvik
+              </Button>
             </div>
-          </div>
-          <button
-            className="nt-btn nt-btn-secondary nt-btn-sm"
-            onClick={() => setTab('avvik')}
-            style={{ flexShrink: 0 }}
-          >
-            Se alle
-          </button>
-        </div>
+          </CardContent>
+        </Card>
       )}
-    </>
+    </div>
   )
 }
+

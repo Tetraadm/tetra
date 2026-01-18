@@ -2,9 +2,9 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState, useEffect } from 'react'
-import { AlertTriangle, Paperclip, ExternalLink } from 'lucide-react'
+import { AlertTriangle, Paperclip, ExternalLink, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { colors, shadows, radius, transitions } from '@/lib/ui-helpers'
+import { Button } from "@/components/ui/button"
 
 type FileLinkProps = {
   fileUrl: string
@@ -60,18 +60,7 @@ export default function FileLink({ fileUrl, supabase }: FileLinkProps) {
 
   if (error) {
     return (
-      <div style={{
-        padding: '14px 18px',
-        background: colors.dangerLight,
-        border: `1px solid ${colors.dangerBorder}`,
-        borderRadius: radius.md,
-        color: colors.danger,
-        fontSize: 14,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        fontWeight: 500,
-      }}>
+      <div className="flex items-center gap-2.5 p-3.5 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm font-medium">
         <AlertTriangle size={18} aria-hidden="true" />
         <span>{error}</span>
       </div>
@@ -80,71 +69,25 @@ export default function FileLink({ fileUrl, supabase }: FileLinkProps) {
 
   if (!signedUrl) {
     return (
-      <div style={{
-        padding: '14px 18px',
-        background: colors.backgroundSubtle,
-        border: `1px solid ${colors.border}`,
-        borderRadius: radius.md,
-        color: colors.textMuted,
-        fontSize: 14,
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-      }}>
-        <div style={{
-          width: 18,
-          height: 18,
-          border: `2px solid ${colors.border}`,
-          borderTopColor: colors.primary,
-          borderRadius: '50%',
-          animation: 'spin 0.8s linear infinite',
-        }} />
+      <div className="flex items-center gap-2.5 p-3.5 bg-muted border rounded-md text-muted-foreground text-sm">
+        <Loader2 className="h-4 w-4 animate-spin" />
         <span>Laster vedlegg...</span>
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     )
   }
 
   return (
-    <button
+    <Button
+      variant="outline"
+      className="w-full flex items-center justify-between gap-3 h-auto py-3.5 px-4 font-semibold text-primary/90 hover:text-primary hover:bg-primary/5 hover:border-primary/30 transition-all border-primary/20"
       onClick={handleOpenPdf}
       disabled={isOpening}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        padding: '14px 18px',
-        background: isOpening ? colors.primarySubtle : colors.primarySubtle,
-        border: `1px solid ${colors.primaryMuted}`,
-        borderRadius: radius.md,
-        color: colors.primary,
-        fontWeight: 600,
-        fontSize: 14,
-        width: '100%',
-        cursor: isOpening ? 'wait' : 'pointer',
-        boxSizing: 'border-box',
-        transition: `all ${transitions.normal}`,
-        fontFamily: 'inherit',
-      }}
-      onMouseEnter={(e) => {
-        if (!isOpening) {
-          e.currentTarget.style.background = colors.primary
-          e.currentTarget.style.color = '#FFFFFF'
-          e.currentTarget.style.boxShadow = shadows.md
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = colors.primarySubtle
-        e.currentTarget.style.color = colors.primary
-        e.currentTarget.style.boxShadow = 'none'
-      }}
     >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <Paperclip size={18} aria-hidden="true" />
-        {isOpening ? 'Apner...' : 'Apne vedlegg (PDF)'}
+      <div className="flex items-center gap-2.5">
+        <Paperclip size={18} />
+        {isOpening ? 'Åpner...' : 'Åpne vedlegg (PDF)'}
       </div>
       <ExternalLink size={16} />
-    </button>
+    </Button>
   )
 }

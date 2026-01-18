@@ -13,12 +13,13 @@ import type {
   Instruction
 } from '@/lib/types'
 import { useEmployeeChat, useEmployeeInstructions } from './hooks'
-import EmployeeHeader from './components/EmployeeHeader'
-import BottomNav from './components/BottomNav'
 import HomeContent from './components/HomeContent'
 import InstructionsTab from './components/InstructionsTab'
 import AskTetraTab from './components/AskTetraTab'
 import InstructionModal from './components/InstructionModal'
+import { AppHeader } from '@/components/layout/AppHeader'
+import { AppSidebar, type SidebarTab } from '@/components/layout/AppSidebar'
+import { Home, FileText, MessageSquare } from 'lucide-react'
 
 type Props = {
   profile: Profile
@@ -32,6 +33,7 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
   const supabase = useMemo(() => createClient(), [])
   const [tab, setTab] = useState<'home' | 'instructions' | 'ask'>('home')
   const [isMobile, setIsMobile] = useState(true)
+  const [showMobileMenu, setShowMobileMenu] = useState(false)
   const router = useRouter()
   void _team
 
@@ -54,7 +56,11 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
 
   const handleOpenSource = useCallback((sourceId: string) => {
     selectInstructionById(sourceId)
-    setTab('home')
+    setTab('home') // Or 'instructions' ? In old app it set tab to 'home' maybe because modal is global?
+    // Actually if we want to show the instruction, we probably just setting selectedInstruction is enough
+    // But if we want to show it in list context...
+    // The old code did setTab('home'). Let's stick to that or 'instructions' if it makes more sense.
+    // Given the modal is global, 'home' is fine.
   }, [selectInstructionById])
 
   const {
@@ -87,106 +93,77 @@ export default function EmployeeApp({ profile, organization, team: _team, instru
     router.push('/login')
   }
 
+  const employeeTabs: SidebarTab[] = [
+    { id: 'home', label: 'Hjem', icon: Home },
+    { id: 'instructions', label: 'Bibliotek', icon: FileText },
+    { id: 'ask', label: 'Spør Tetra', icon: MessageSquare },
+  ]
+
+  const handleTabChange = (t: string) => {
+    setTab(t as any)
+    setShowMobileMenu(false)
+  }
+
   return (
     <>
       <AuthWatcher />
-      <div style={{
-        minHeight: '100vh',
-        background: 'var(--bg-primary)',
-        paddingBottom: isMobile ? '80px' : 0
-      }}>
-        <EmployeeHeader
-          profile={profile}
-          organization={organization}
-          isMobile={isMobile}
+      <div className="min-h-screen bg-background">
+        <AppHeader
+          onMenuClick={() => setShowMobileMenu(true)}
+          user={{
+            name: profile.full_name || 'Bruker',
+            email: profile.email || '',
+            image: ''
+          }}
+          organizationName={organization.name}
           onLogout={handleLogout}
         />
+        <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+          <AppSidebar
+            tabs={employeeTabs}
+            activeTab={tab}
+            onTabChange={handleTabChange}
+            open={showMobileMenu}
+            onClose={() => setShowMobileMenu(false)}
+          />
 
-        <main style={{
-          maxWidth: '1400px',
-          margin: '0 auto',
-          padding: isMobile ? 'var(--space-5)' : 'var(--space-8) var(--space-5)'
-        }}>
-          {isMobile ? (
-            <>
-              {tab === 'home' && (
-                <HomeContent
-                  alerts={alerts}
-                  instructions={instructions}
-                  criticalInstructions={criticalInstructions}
-                  isMobile={isMobile}
-                  onTabChange={setTab}
-                  onSelectInstruction={setSelectedInstruction}
-                  setSearchQuery={setSearchQuery}
-                />
-              )}
-              {tab === 'instructions' && (
-                <InstructionsTab
-                  searchQuery={searchQuery}
-                  setSearchQuery={setSearchQuery}
-                  filteredInstructions={filteredInstructions}
-                  onSelectInstruction={setSelectedInstruction}
-                />
-              )}
-              {tab === 'ask' && (
-                <AskTetraTab
-                  messages={messages}
-                  isTyping={isTyping}
-                  chatInput={chatInput}
-                  setChatInput={setChatInput}
-                  chatRef={chatRef}
-                  onAsk={handleAsk}
-                  onSuggestion={handleSuggestion}
-                  onOpenSource={handleChatOpenSource}
-                  isMobile={isMobile}
-                />
-              )}
-            </>
-          ) : (
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: '1fr 400px',
-              gap: 'var(--space-8)'
-            }}>
-              <div>
-                <HomeContent
-                  alerts={alerts}
-                  instructions={instructions}
-                  criticalInstructions={criticalInstructions}
-                  isMobile={isMobile}
-                  onTabChange={setTab}
-                  onSelectInstruction={setSelectedInstruction}
-                  setSearchQuery={setSearchQuery}
-                />
-                <div style={{ marginTop: 'var(--space-8)' }}>
-                  <InstructionsTab
-                    searchQuery={searchQuery}
-                    setSearchQuery={setSearchQuery}
-                    filteredInstructions={filteredInstructions}
-                    onSelectInstruction={setSelectedInstruction}
-                  />
-                </div>
-              </div>
-              <div style={{ position: 'sticky', top: 90, alignSelf: 'flex-start' }}>
-                <AskTetraTab
-                  messages={messages}
-                  isTyping={isTyping}
-                  chatInput={chatInput}
-                  setChatInput={setChatInput}
-                  chatRef={chatRef}
-                  onAsk={handleAsk}
-                  onSuggestion={handleSuggestion}
-                  onOpenSource={handleChatOpenSource}
-                  isMobile={isMobile}
-                />
-              </div>
-            </div>
-          )}
-        </main>
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/10">
+            {tab === 'home' && (
+              <HomeContent
+                alerts={alerts}
+                instructions={instructions}
+                criticalInstructions={criticalInstructions}
+                isMobile={isMobile}
+                onTabChange={(t) => setTab(t)}
+                onSelectInstruction={setSelectedInstruction}
+                setSearchQuery={setSearchQuery}
+              />
+            )}
 
-        {isMobile && (
-          <BottomNav tab={tab} onTabChange={setTab} />
-        )}
+            {tab === 'instructions' && (
+              <InstructionsTab
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filteredInstructions={filteredInstructions}
+                onSelectInstruction={setSelectedInstruction}
+              />
+            )}
+
+            {tab === 'ask' && (
+              <AskTetraTab
+                messages={messages}
+                isTyping={isTyping}
+                chatInput={chatInput}
+                setChatInput={setChatInput}
+                chatRef={chatRef}
+                onAsk={handleAsk}
+                onSuggestion={handleSuggestion}
+                onOpenSource={handleChatOpenSource}
+                isMobile={isMobile}
+              />
+            )}
+          </main>
+        </div>
 
         <InstructionModal
           instruction={selectedInstruction}

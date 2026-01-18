@@ -10,6 +10,9 @@ import {
 } from 'lucide-react'
 import type { Alert, Instruction } from '@/lib/types'
 import { severityLabel, severityColor } from '@/lib/ui-helpers'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 
 type Props = {
   alerts: Alert[]
@@ -31,310 +34,169 @@ export default function HomeContent({
   setSearchQuery
 }: Props) {
   return (
-    <>
+    <div className="space-y-8">
       {alerts.length > 0 && (
-        <div style={{ marginBottom: 'var(--space-7)' }}>
-          <h2 style={{
-            fontSize: '1.125rem',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            marginBottom: 'var(--space-4)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            letterSpacing: '-0.01em'
-          }}>
-            <AlertTriangle size={18} style={{ color: 'var(--color-warning-600)' }} aria-hidden="true" />
+        <section>
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-5 w-5 text-warning-600" />
             Aktive varsler
           </h2>
-          {alerts.map(alert => {
-            const sev = severityColor(alert.severity)
-            return (
-              <div
-                key={alert.id}
-                style={{
-                  display: 'flex',
-                  gap: 'var(--space-4)',
-                  padding: 'var(--space-5)',
-                  marginBottom: 'var(--space-3)',
-                  background: alert.severity === 'critical'
-                    ? 'linear-gradient(135deg, var(--color-danger-50), var(--color-danger-100))'
-                    : 'linear-gradient(135deg, var(--color-warning-50), var(--color-warning-100))',
-                  border: `2px solid ${alert.severity === 'critical' ? 'var(--color-danger-200)' : 'var(--color-warning-200)'}`,
-                  borderRadius: 'var(--radius-lg)'
-                }}
-              >
-                <AlertTriangle size={20} style={{ color: sev.color, flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-                <div style={{ flex: 1 }}>
-                  <span
-                    className="nt-badge"
-                    style={{
-                      background: sev.bg,
-                      color: sev.color
-                    }}
-                  >
-                    {severityLabel(alert.severity)}
-                  </span>
-                  <div style={{ fontSize: '0.9375rem', fontWeight: 600, marginTop: 'var(--space-2)', color: 'var(--text-primary)' }}>
-                    {alert.title}
-                  </div>
-                  {alert.description && (
-                    <div style={{ fontSize: '0.8125rem', marginTop: 'var(--space-2)', lineHeight: 1.5, color: 'var(--text-secondary)' }}>
-                      {alert.description}
-                    </div>
+          <div className="space-y-3">
+            {alerts.map(alert => {
+              const sev = severityColor(alert.severity)
+              const isCritical = alert.severity === 'critical'
+              return (
+                <div
+                  key={alert.id}
+                  className={cn(
+                    "flex gap-4 p-5 rounded-lg border-2",
+                    isCritical
+                      ? "bg-gradient-to-br from-destructive/5 to-destructive/10 border-destructive/20"
+                      : "bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 dark:from-yellow-900/10 dark:to-yellow-900/20 dark:border-yellow-900/30"
                   )}
+                >
+                  <AlertTriangle
+                    className={cn(
+                      "h-5 w-5 mt-0.5 shrink-0",
+                      isCritical ? "text-destructive" : "text-yellow-600 dark:text-yellow-500"
+                    )}
+                  />
+                  <div className="flex-1">
+                    <Badge variant={isCritical ? "destructive" : "outline"} className={cn(!isCritical && "border-yellow-200 text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-900/50")}>
+                      {severityLabel(alert.severity)}
+                    </Badge>
+                    <div className="font-semibold mt-2 text-foreground">
+                      {alert.title}
+                    </div>
+                    {alert.description && (
+                      <div className="text-sm mt-2 text-muted-foreground leading-relaxed">
+                        {alert.description}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </section>
       )}
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-        gap: 'var(--space-4)',
-        marginBottom: 'var(--space-7)'
-      }}>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 'var(--space-3)',
-            padding: 'var(--space-6)',
-            background: 'var(--bg-elevated)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border-subtle)',
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-            boxShadow: 'var(--shadow-sm)'
-          }}
+      <div className={cn(
+        "grid gap-4",
+        isMobile ? "grid-cols-1" : "grid-cols-3"
+      )}>
+        <Card
+          className="cursor-pointer hover:bg-muted/50 transition-colors border-primary/20 bg-primary/5"
           onClick={() => onTabChange('instructions')}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
         >
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg, var(--color-primary-100), var(--color-primary-200))',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'var(--color-primary-700)'
-          }}>
-            <FileText size={26} aria-hidden="true" />
-          </div>
-          <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>Instrukser</span>
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 'var(--space-3)',
-            padding: 'var(--space-6)',
-            background: 'var(--bg-elevated)',
-            borderRadius: 'var(--radius-lg)',
-            border: '1px solid var(--border-subtle)',
-            cursor: 'pointer',
-            transition: 'all var(--transition-fast)',
-            boxShadow: 'var(--shadow-sm)'
-          }}
-          onClick={() => onTabChange('ask')}
-          onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-        >
-          <div style={{
-            width: 56,
-            height: 56,
-            borderRadius: 'var(--radius-md)',
-            background: 'linear-gradient(135deg, #E0E7FF, #C7D2FE)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#4F46E5'
-          }}>
-            <MessageCircle size={26} aria-hidden="true" />
-          </div>
-          <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>Spør Tetra</span>
-        </div>
-        {!isMobile && criticalInstructions.length > 0 && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: 'var(--space-3)',
-              padding: 'var(--space-6)',
-              background: 'var(--bg-elevated)',
-              borderRadius: 'var(--radius-lg)',
-              border: '1px solid var(--border-subtle)',
-              cursor: 'pointer',
-              transition: 'all var(--transition-fast)',
-              boxShadow: 'var(--shadow-sm)'
-            }}
-            onClick={() => { onTabChange('instructions'); setSearchQuery('') }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{
-              width: 56,
-              height: 56,
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, var(--color-accent-100), var(--color-accent-200))',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--color-accent-700)'
-            }}>
-              <Zap size={26} aria-hidden="true" />
+          <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
+            <div className="h-14 w-14 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+              <FileText size={28} />
             </div>
-            <span style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--text-primary)' }}>
-              {criticalInstructions.length} Kritiske
-            </span>
-          </div>
+            <span className="font-semibold text-primary">Instrukser</span>
+          </CardContent>
+        </Card>
+
+        <Card
+          className="cursor-pointer hover:bg-muted/50 transition-colors border-indigo-200 bg-indigo-50/50 dark:bg-indigo-900/10 dark:border-indigo-800"
+          onClick={() => onTabChange('ask')}
+        >
+          <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
+            <div className="h-14 w-14 rounded-md bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+              <MessageCircle size={28} />
+            </div>
+            <span className="font-semibold text-indigo-700 dark:text-indigo-300">Spør Tetra</span>
+          </CardContent>
+        </Card>
+
+        {!isMobile && criticalInstructions.length > 0 && (
+          <Card
+            className="cursor-pointer hover:bg-muted/50 transition-colors border-destructive/20 bg-destructive/5"
+            onClick={() => { onTabChange('instructions'); setSearchQuery('') }}
+          >
+            <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
+              <div className="h-14 w-14 rounded-md bg-destructive/10 flex items-center justify-center text-destructive">
+                <Zap size={28} />
+              </div>
+              <span className="font-semibold text-destructive">
+                {criticalInstructions.length} Kritiske
+              </span>
+            </CardContent>
+          </Card>
         )}
       </div>
 
       {criticalInstructions.length > 0 && (
-        <div style={{ marginBottom: 'var(--space-7)' }}>
-          <h2 style={{
-            fontSize: '1.125rem',
-            fontWeight: 600,
-            color: 'var(--text-primary)',
-            marginBottom: 'var(--space-4)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2)',
-            letterSpacing: '-0.01em'
-          }}>
-            <Zap size={18} style={{ color: 'var(--color-danger-600)' }} aria-hidden="true" />
+        <section>
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-destructive">
+            <Zap className="h-5 w-5" />
             Kritiske instrukser
           </h2>
-          <div className="nt-card">
-            {criticalInstructions.slice(0, 3).map(inst => (
-              <div
-                key={inst.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-4)',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  cursor: 'pointer',
-                  transition: 'background var(--transition-fast)'
-                }}
-                onClick={() => onSelectInstruction(inst)}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-danger-100)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--color-danger-700)',
-                  flexShrink: 0
-                }}>
-                  <FileText size={20} aria-hidden="true" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 500, fontSize: '0.9375rem', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {inst.title}
+          <Card>
+            <CardContent className="p-0 divide-y">
+              {criticalInstructions.slice(0, 3).map(inst => (
+                <div
+                  key={inst.id}
+                  className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => onSelectInstruction(inst)}
+                >
+                  <div className="h-10 w-10 rounded-md bg-destructive/10 flex items-center justify-center text-destructive shrink-0">
+                    <FileText size={20} />
                   </div>
-                  <span
-                    className="nt-badge"
-                    style={{
-                      background: severityColor(inst.severity).bg,
-                      color: severityColor(inst.severity).color
-                    }}
-                  >
-                    {severityLabel(inst.severity)}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium mb-1 truncate">
+                      {inst.title}
+                    </div>
+                    <Badge variant="destructive">
+                      {severityLabel(inst.severity)}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </CardContent>
+          </Card>
+        </section>
       )}
 
-      <div>
-        <h2 style={{
-          fontSize: '1.125rem',
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          marginBottom: 'var(--space-4)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-2)',
-          letterSpacing: '-0.01em'
-        }}>
-          <Clock size={18} style={{ color: 'var(--text-tertiary)' }} aria-hidden="true" />
+      <section>
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-muted-foreground">
+          <Clock className="h-5 w-5" />
           Siste instrukser
         </h2>
         {instructions.length === 0 ? (
-          <div className="nt-empty-state">
-            <Inbox className="nt-empty-state__icon" />
-            <h3 className="nt-empty-state__title">Ingen instrukser tilgjengelig</h3>
-            <p className="nt-empty-state__description">
+          <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg bg-muted/5">
+            <Inbox className="h-12 w-12 mb-4 opacity-50" />
+            <h3 className="font-semibold text-lg mb-2">Ingen instrukser tilgjengelig</h3>
+            <p className="max-w-sm text-sm">
               Det er ingen instrukser tildelt deg for øyeblikket. Instrukser vil vises her når de blir publisert.
             </p>
           </div>
         ) : (
-          <div className="nt-card">
-            {instructions.slice(0, 5).map(inst => (
-              <div
-                key={inst.id}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-3)',
-                  padding: 'var(--space-4)',
-                  borderBottom: '1px solid var(--border-subtle)',
-                  cursor: 'pointer',
-                  transition: 'background var(--transition-fast)'
-                }}
-                onClick={() => onSelectInstruction(inst)}
-                onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-              >
-                <div style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 'var(--radius-md)',
-                  background: 'var(--color-primary-100)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--color-primary-700)',
-                  flexShrink: 0
-                }}>
-                  <FileText size={20} aria-hidden="true" />
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 500, fontSize: '0.9375rem', color: 'var(--text-primary)', marginBottom: 'var(--space-1)' }}>
-                    {inst.title}
+          <Card>
+            <CardContent className="p-0 divide-y">
+              {instructions.slice(0, 5).map(inst => (
+                <div
+                  key={inst.id}
+                  className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={() => onSelectInstruction(inst)}
+                >
+                  <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <FileText size={20} />
                   </div>
-                  <span
-                    className="nt-badge"
-                    style={{
-                      background: severityColor(inst.severity).bg,
-                      color: severityColor(inst.severity).color
-                    }}
-                  >
-                    {severityLabel(inst.severity)}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium mb-1 truncate">
+                      {inst.title}
+                    </div>
+                    <Badge variant={inst.severity === 'critical' || inst.severity === 'high' ? 'destructive' : 'secondary'}>
+                      {severityLabel(inst.severity)}
+                    </Badge>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </CardContent>
+          </Card>
         )}
-      </div>
-    </>
+      </section>
+    </div>
   )
 }

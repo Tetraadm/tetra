@@ -60,6 +60,8 @@ import {
   useAuditLogs,
   useReadReport
 } from './hooks'
+import { AppHeader } from '@/components/layout/AppHeader'
+import { AppSidebar, type SidebarTab } from '@/components/layout/AppSidebar'
 
 type Props = {
   profile: Profile
@@ -250,122 +252,45 @@ export default function AdminDashboard({
     setShowMobileMenu(false)
   }
 
+  /* ... inside component ... */
+
+  const adminTabs: SidebarTab[] = [
+    { id: 'oversikt', label: 'Oversikt', icon: Home },
+    { id: 'brukere', label: 'Brukere', icon: Users },
+    { id: 'team', label: 'Team', icon: UsersRound },
+    { id: 'instrukser', label: 'Instrukser', icon: FileText },
+    { id: 'avvik', label: 'Avvik & Varsler', icon: AlertTriangle },
+    { id: 'ailogg', label: 'AI-logg', icon: Bot },
+    { id: 'innsikt', label: 'Innsikt', icon: BarChart3 },
+    { id: 'auditlog', label: 'Aktivitetslogg', icon: ClipboardList },
+    { id: 'lesebekreftelser', label: 'Lesebekreftelser', icon: CheckSquare },
+  ]
+
   return (
     <>
       <AuthWatcher />
-      <div className="nt-app-container">
-        <header className="nt-app-header">
-          <div className="nt-app-header__brand">
-            {isMobile && (
-              <button
-                className="nt-mobile-menu-btn"
-                onClick={() => setShowMobileMenu(!showMobileMenu)}
-                aria-label={showMobileMenu ? 'Lukk meny' : 'Åpne meny'}
-              >
-                {showMobileMenu ? <X size={20} /> : <Menu size={20} />}
-              </button>
-            )}
-            <Image
-              src="/tetra-logo.png"
-              alt="Tetra"
-              width={120}
-              height={32}
-              style={{ height: 32, width: 'auto' }}
-            />
-            {!isMobile && (
-              <span className="nt-app-org-badge">{organization.name}</span>
-            )}
-          </div>
-          <div className="nt-app-header__actions">
-            {!isMobile && (
-              <button
-                className="nt-btn nt-btn-secondary nt-btn-sm"
-                onClick={() => setShowDisclaimer(true)}
-                title="Om AI-assistenten"
-              >
-                <Info size={14} />
-                AI-info
-              </button>
-            )}
-            {!isMobile && (
-              <span className="nt-app-user-name">{profile.full_name}</span>
-            )}
-            <button className="nt-btn nt-btn-secondary nt-btn-sm" onClick={handleLogout}>
-              {isMobile ? <LogOut size={18} /> : <><LogOut size={16} /> Logg ut</>}
-            </button>
-          </div>
-        </header>
+      <div className="min-h-screen bg-background">
+        <AppHeader
+          onMenuClick={() => setShowMobileMenu(true)}
+          user={{
+            name: profile.full_name || 'Bruker',
+            email: profile.email || '',
+            image: ''
+          }}
+          organizationName={organization.name}
+          onLogout={handleLogout}
+          onDisclaimer={() => setShowDisclaimer(true)}
+        />
+        <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+          <AppSidebar
+            tabs={adminTabs}
+            activeTab={tab}
+            onTabChange={(t) => handleTabChange(t as any)}
+            open={showMobileMenu}
+            onClose={() => setShowMobileMenu(false)}
+          />
 
-        <div className="nt-app-layout">
-          <aside className={`nt-app-sidebar ${showMobileMenu ? 'nt-app-sidebar--open' : ''}`}>
-            <nav className="nt-app-nav">
-              <button
-                className={`nt-nav-item ${tab === 'oversikt' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('oversikt')}
-              >
-                <Home size={18} aria-hidden="true" />
-                Oversikt
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'brukere' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('brukere')}
-              >
-                <Users size={18} aria-hidden="true" />
-                Brukere
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'team' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('team')}
-              >
-                <UsersRound size={18} aria-hidden="true" />
-                Team
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'instrukser' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('instrukser')}
-              >
-                <FileText size={18} aria-hidden="true" />
-                Instrukser
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'avvik' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('avvik')}
-              >
-                <AlertTriangle size={18} aria-hidden="true" />
-                Avvik & Varsler
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'ailogg' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('ailogg')}
-              >
-                <Bot size={18} aria-hidden="true" />
-                AI-logg
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'innsikt' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('innsikt')}
-              >
-                <BarChart3 size={18} aria-hidden="true" />
-                Innsikt
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'auditlog' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('auditlog')}
-              >
-                <ClipboardList size={18} aria-hidden="true" />
-                Aktivitetslogg
-              </button>
-              <button
-                className={`nt-nav-item ${tab === 'lesebekreftelser' ? 'nt-nav-item--active' : ''}`}
-                onClick={() => handleTabChange('lesebekreftelser')}
-              >
-                <CheckSquare size={18} aria-hidden="true" />
-                Lesebekreftelser
-              </button>
-            </nav>
-          </aside>
-
-          <main className="nt-app-content">
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/10">
             {tab === 'oversikt' && (
               <OverviewTab
                 profile={profile}
