@@ -259,6 +259,16 @@ tetra/
 - **Soft delete** - `deleted_at` kolonne for GDPR-compliance
 - **Revisjonslogging** - alle mutasjoner logges
 
+### GDPR Compliance
+
+- **Data Retention** - Automatisk cleanup av logger eldre enn 90 dager
+- **Cleanup Funksjoner**:
+  - `cleanup_old_audit_logs(retention_days)` - Rydd audit logger
+  - `cleanup_old_ask_tetra_logs(retention_days)` - Rydd AI logger
+  - `cleanup_all_old_logs(retention_days)` - Kjør alle cleanup-tasks
+- **Audit Trail** - `gdpr_retention_runs` tabell sporer alle cleanup-kjøringer
+- **Manuell Kjøring**: `SELECT * FROM cleanup_all_old_logs(90);`
+
 ### Migrasjoner
 
 Migrasjoner ligger i `supabase/sql/` og skal kjøres i numerisk rekkefølge:
@@ -268,12 +278,11 @@ Migrasjoner ligger i `supabase/sql/` og skal kjøres i numerisk rekkefølge:
 | `00_migrations_table.sql` | Migrasjonssporing |
 | `01_schema.sql` | Hovedskjema |
 | `02_seed.sql` | Testdata |
-| `03_rpc_functions.sql` | RPC-funksjoner |
-| `04_security_helpers.sql` | Sikkerhetshjelpere |
-| `05-23_*.sql` | Diverse oppdateringer |
+| `03-23_*.sql` | Sikkerhet, policies, og forbedringer |
 | `24_block_direct_client_storage.sql` | Storage-sikkerhet |
 | `25_read_confirmations_rpc.sql` | Lesebekreftelser RPC |
-| `26_rpc_security_fix.sql` | RPC sikkerhetsfiks + profiles.deleted_at |
+| `26_rpc_security_fix.sql` | RPC sikkerhetsfiks |
+| `29_gdpr_retention.sql` | GDPR data retention policy |
 
 ---
 
