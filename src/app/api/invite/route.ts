@@ -55,9 +55,9 @@ export async function POST(request: Request) {
             .eq('id', user.id)
             .single()
 
-        if (!profile || !['admin', 'teamleader'].includes(profile.role)) {
+        if (!profile || profile.role !== 'admin') {
             return NextResponse.json(
-                { error: 'Ingen tilgang til å invitere brukere' },
+                { error: 'Kun administratorer kan invitere nye brukere' },
                 { status: 403 }
             )
         }

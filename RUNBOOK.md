@@ -141,16 +141,43 @@ git push origin main
 
 ## 9. Kontaktpunkter
 
-| Rolle | Kontakt |
-|-------|---------|
-| Teknisk lead | [Fyll inn] |
-| Supabase support | support@supabase.io |
-| Vercel support | support@vercel.com |
-| Resend support | support@resend.com |
+| Rolle | Kontakt | Ansvar |
+|-------|---------|--------|
+| Teknisk lead | dev@tetra.onl | Feilsøking, deploys, arkitektur |
+| Pilot-kontakt | pilot@tetra.onl | Brukerhenvendelser, feedback |
+| Supabase support | support@supabase.io | Database/auth issues |
+| Vercel support | support@vercel.com | Hosting/deploy issues |
+| Resend support | support@resend.com | E-post leveringsproblemer |
+| Anthropic status | status.anthropic.com | AI API status |
 
 ---
 
-## 10. Pilot SLA
+## 10. Health Endpoint
+
+**URL:** `GET /api/health`
+
+**Respons (healthy):**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2026-01-19T08:00:00.000Z",
+  "version": "0.1.0",
+  "checks": {
+    "database": { "status": "ok", "ms": 45 }
+  },
+  "responseTime": 50
+}
+```
+
+**Status koder:**
+- `200` - Alt fungerer
+- `503` - Degradert (noe feiler)
+
+**Bruk:** Konfigurer uptime-monitor til å polle denne hvert 1-5 min.
+
+---
+
+## 11. Pilot SLA
 
 | Kritikalitet | Responstid | Løsningstid |
 |--------------|------------|-------------|
@@ -158,3 +185,24 @@ git push origin main
 | Høy (funksjonsfeil) | 4 timer | 1 dag |
 | Medium | 1 dag | 3 dager |
 | Lav | 3 dager | 1 uke |
+
+---
+
+## 12. Monitorering (Anbefalt)
+
+### Sentry (Error Tracking)
+```bash
+npm install @sentry/nextjs
+npx @sentry/wizard@latest -i nextjs
+```
+
+Legg til i `.env.local`:
+```
+SENTRY_DSN=https://xxx@sentry.io/xxx
+```
+
+### UptimeRobot (Gratis uptime)
+1. Opprett konto på uptimerobot.com
+2. Legg til monitor: `https://tetra.onl/api/health`
+3. Sett intervall: 5 min
+4. Aktiver e-post/Slack alerts

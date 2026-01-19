@@ -12,6 +12,9 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
+/playwright/.cache/
 
 # next.js
 /.next/
@@ -43,6 +46,8 @@ next-env.d.ts
 
 # generated reports
 spellcheck-report.md
+*_log.txt
+*_errors.txt
 
 .tools/
 supabase/.temp/

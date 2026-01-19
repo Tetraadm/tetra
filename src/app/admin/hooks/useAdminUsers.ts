@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react'
 import toast from 'react-hot-toast'
 import { logAuditEventClient } from '@/lib/audit-log'
 import type { createClient } from '@/lib/supabase/client'
-import type { Profile } from '@/lib/types'
+import type { Profile, Role } from '@/lib/types'
 
 type SupabaseClient = ReturnType<typeof createClient>
 
@@ -29,10 +29,10 @@ export function useAdminUsers({
   const [usersHasMore, setUsersHasMore] = useState(initialUsers.length >= PAGE_SIZE)
   const [usersLoadingMore, setUsersLoadingMore] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState('employee')
+  const [inviteRole, setInviteRole] = useState<Role>('employee')
   const [inviteTeam, setInviteTeam] = useState('')
   const [editingUser, setEditingUser] = useState<Profile | null>(null)
-  const [editUserRole, setEditUserRole] = useState('')
+  const [editUserRole, setEditUserRole] = useState<Role>('employee')
   const [editUserTeam, setEditUserTeam] = useState('')
   const [userLoading, setUserLoading] = useState(false)
 
@@ -175,31 +175,31 @@ export function useAdminUsers({
 
 
 
-const loadMoreUsers = useCallback(async () => {
-  if (usersLoadingMore || !usersHasMore) return
-  setUsersLoadingMore(true)
+  const loadMoreUsers = useCallback(async () => {
+    if (usersLoadingMore || !usersHasMore) return
+    setUsersLoadingMore(true)
 
-  try {
-    const offset = users.length
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('org_id', profile.org_id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
+    try {
+      const offset = users.length
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('org_id', profile.org_id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1)
 
-    if (error) throw error
+      if (error) throw error
 
-    const nextUsers = data || []
-    setUsers(prev => [...prev, ...nextUsers])
-    setUsersHasMore(nextUsers.length >= PAGE_SIZE)
-  } catch (error) {
-    console.error('Load more users error:', error)
-    toast.error('Kunne ikke laste flere brukere. Prøv igjen.')
-  } finally {
-    setUsersLoadingMore(false)
-  }
-}, [profile.org_id, supabase, users.length, usersHasMore, usersLoadingMore])
+      const nextUsers = data || []
+      setUsers(prev => [...prev, ...nextUsers])
+      setUsersHasMore(nextUsers.length >= PAGE_SIZE)
+    } catch (error) {
+      console.error('Load more users error:', error)
+      toast.error('Kunne ikke laste flere brukere. Prøv igjen.')
+    } finally {
+      setUsersLoadingMore(false)
+    }
+  }, [profile.org_id, supabase, users.length, usersHasMore, usersLoadingMore])
 
   return {
     users,

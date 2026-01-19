@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, type Dispatch, type ReactNode, type SetStateAction } from 'react'
-import type { Folder, Instruction, Profile, Team } from '@/lib/types'
+import { Folder, Team, Instruction, type Profile, Role } from '@/lib/types'
 import type { NewInstructionState } from '../hooks/useAdminInstructions'
 import type { NewAlertState } from '../hooks/useAdminAlerts'
 
@@ -581,8 +581,8 @@ type InviteUserModalProps = {
   open: boolean
   inviteEmail: string
   setInviteEmail: Dispatch<SetStateAction<string>>
-  inviteRole: string
-  setInviteRole: Dispatch<SetStateAction<string>>
+  inviteRole: Role
+  setInviteRole: Dispatch<SetStateAction<Role>>
   inviteTeam: string
   setInviteTeam: Dispatch<SetStateAction<string>>
   teams: Team[]
@@ -642,7 +642,7 @@ export function InviteUserModal({
       <select
         className="nt-select"
         value={inviteRole}
-        onChange={(e) => setInviteRole(e.target.value)}
+        onChange={(e) => setInviteRole(e.target.value as Role)}
       >
         <option value="employee">Ansatt</option>
         <option value="teamleader">Teamleder</option>
@@ -687,8 +687,8 @@ export function InviteUserModal({
 type EditUserModalProps = {
   open: boolean
   editingUser: Profile | null
-  editUserRole: string
-  setEditUserRole: Dispatch<SetStateAction<string>>
+  editUserRole: Role
+  setEditUserRole: Dispatch<SetStateAction<Role>>
   editUserTeam: string
   setEditUserTeam: Dispatch<SetStateAction<string>>
   teams: Team[]
@@ -739,7 +739,7 @@ export function EditUserModal({
       <select
         className="nt-select"
         value={editUserRole}
-        onChange={(e) => setEditUserRole(e.target.value)}
+        onChange={(e) => setEditUserRole(e.target.value as Role)}
       >
         <option value="employee">Ansatt</option>
         <option value="teamleader">Teamleder</option>

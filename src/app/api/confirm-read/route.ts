@@ -35,6 +35,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Profil ikke funnet' }, { status: 404 })
     }
 
+    // Validate instruction belongs to user's org
+    const { data: instruction, error: instructionError } = await supabase
+      .from('instructions')
+      .select('id')
+      .eq('id', instructionId)
+      .eq('org_id', profile.org_id)
+      .single()
+
+    if (instructionError || !instruction) {
+      return NextResponse.json({ error: 'Instruks ikke funnet' }, { status: 404 })
+    }
+
     // Confirm the read
     const { error } = await supabase
       .from('instruction_reads')

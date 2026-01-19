@@ -136,7 +136,7 @@ function createServiceClient() {
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
-    
+
     // Parse and validate form data with Zod
     const rawData = {
       file: formData.get('file'),
@@ -155,14 +155,14 @@ export async function POST(request: NextRequest) {
       })(),
       allTeams: formData.get('allTeams') === 'true',
     }
-    
+
     const parseResult = UploadFormSchema.safeParse(rawData)
-    
+
     if (!parseResult.success) {
       const errors = parseResult.error.issues.map(i => i.message).join(', ')
       return NextResponse.json({ error: `Valideringsfeil: ${errors}` }, { status: 400 })
     }
-    
+
     const { file, title, content, severity, status, orgId, folderId, teamIds, allTeams } = parseResult.data
 
     if (!allTeams && teamIds.length === 0) {
@@ -324,8 +324,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kunne ikke opprette instruks' }, { status: 500 })
     }
 
-    // Koble til team
+    // Koble til team - men valider først at alle team tilhører riktig org
     if (instruction && teamIds.length > 0) {
+      // Validate that all teamIds belong to the user's org
+      const { data: validTeams, error: teamCheckError } = await supabase
+        .from('teams')
+        .select('id')
+        .eq('org_id', orgId)
+        .in('id', teamIds)
+
+      if (teamCheckError) {
+        console.error('TEAM_VALIDATION_ERROR', teamCheckError)
+        return NextResponse.json({ error: 'Kunne ikke validere team' }, { status: 500 })
+      }
+
+      const validTeamIds = validTeams?.map(t => t.id) || []
+      const invalidTeamIds = teamIds.filter((id: string) => !validTeamIds.includes(id))
+
+      if (invalidTeamIds.length > 0) {
+        console.warn('INVALID_TEAM_IDS', { invalidTeamIds, orgId })
+        return NextResponse.json(
+          { error: 'Ett eller flere team tilhører ikke din organisasjon' },
+          { status: 400 }
+        )
+      }
+
       await supabase.from('instruction_teams').insert(
         teamIds.map((teamId: string) => ({
           instruction_id: instruction.id,

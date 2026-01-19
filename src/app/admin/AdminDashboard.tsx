@@ -218,7 +218,7 @@ export default function AdminDashboard({
     auditFilter,
     setAuditFilter,
     loadAuditLogs,
-    pagination: auditPagination,
+    pagination,
     currentPage: auditCurrentPage,
     totalPages: auditTotalPages,
     goToPage: goToAuditPage
@@ -316,6 +316,9 @@ export default function AdminDashboard({
                 openEditUser={openEditUser}
                 deleteUser={deleteUser}
                 setShowInviteUser={setShowInviteUser}
+                usersHasMore={usersHasMore}
+                usersLoadingMore={usersLoadingMore}
+                loadMoreUsers={loadMoreUsers}
               />
             )}
 
@@ -325,6 +328,10 @@ export default function AdminDashboard({
                 users={users}
                 deleteTeam={deleteTeam}
                 setShowCreateTeam={setShowCreateTeam}
+                teamMemberCounts={teamMemberCounts}
+                teamsHasMore={teamsHasMore}
+                teamsLoadingMore={teamsLoadingMore}
+                loadMoreTeams={loadMoreTeams}
               />
             )}
 
@@ -343,6 +350,9 @@ export default function AdminDashboard({
                 deleteFolder={deleteFolder}
                 setShowCreateInstruction={setShowCreateInstruction}
                 setShowCreateFolder={setShowCreateFolder}
+                instructionsHasMore={instructionsHasMore}
+                instructionsLoadingMore={instructionsLoadingMore}
+                loadMoreInstructions={loadMoreInstructions}
               />
             )}
 
@@ -352,6 +362,9 @@ export default function AdminDashboard({
                 toggleAlert={toggleAlert}
                 deleteAlert={deleteAlert}
                 setShowCreateAlert={setShowCreateAlert}
+                alertsHasMore={alertsHasMore}
+                alertsLoadingMore={alertsLoadingMore}
+                loadMoreAlerts={loadMoreAlerts}
               />
             )}
 
@@ -375,6 +388,10 @@ export default function AdminDashboard({
                 auditFilter={auditFilter}
                 setAuditFilter={setAuditFilter}
                 loadAuditLogs={loadAuditLogs}
+                auditTotal={pagination.total}
+                currentPage={auditCurrentPage}
+                totalPages={auditTotalPages}
+                goToPage={goToAuditPage}
               />
             )}
 
