@@ -52,21 +52,22 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  async redirects() {
-    return [
-      {
-        source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'www.tetra.onl',
-          },
-        ],
-        destination: 'https://tetra.onl/:path*',
-        permanent: true,
-      },
-    ];
-  },
+  // NOTE: www redirect temporarily disabled to debug redirect loop
+  // async redirects() {
+  //   return [
+  //     {
+  //       source: '/:path*',
+  //       has: [
+  //         {
+  //           type: 'host',
+  //           value: 'www.tetra.onl',
+  //         },
+  //       ],
+  //       destination: 'https://tetra.onl/:path*',
+  //       permanent: true,
+  //     },
+  //   ];
+  // },
 
   images: {
     remotePatterns: [
