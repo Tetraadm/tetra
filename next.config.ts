@@ -52,22 +52,7 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // NOTE: www redirect temporarily disabled to debug redirect loop
-  // async redirects() {
-  //   return [
-  //     {
-  //       source: '/:path*',
-  //       has: [
-  //         {
-  //           type: 'host',
-  //           value: 'www.tetra.onl',
-  //         },
-  //       ],
-  //       destination: 'https://tetra.onl/:path*',
-  //       permanent: true,
-  //     },
-  //   ];
-  // },
+  // NOTE: www.tetra.onl → tetra.onl redirect is handled by Vercel Domains config
 
   images: {
     remotePatterns: [
