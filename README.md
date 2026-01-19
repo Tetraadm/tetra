@@ -278,7 +278,8 @@ Du må kjøre SQL-migrasjoner i Supabase SQL Editor:
    ├── 03_rls_initial.sql            
    ├── 04_security_helpers.sql       
    ├── ... (03-29 i rekkefølge)
-   └── 29_gdpr_retention.sql         ← Avslutt her
+   ├── 29_gdpr_retention.sql
+   └── 30_profiles_update_lock.sql         ← Avslutt her
    ```
 
 3. **Verifiser migrasjoner**
@@ -309,6 +310,33 @@ Serveren starter på [http://localhost:3000](http://localhost:3000) 🎉
 
 **Standard innlogging** (etter seed-data):
 - **Admin:** Bruk magic link til e-post fra `02_seed.sql`
+
+---
+
+## 🧪 Testing
+
+Vi bruker **Playwright** for End-to-End (E2E) testing av kritiske flyter.
+
+### Kjøre tester
+
+```bash
+# 1. Installer browsere (kun første gang)
+npx playwright install
+
+# 2. Kjør alle tester
+npm run test:e2e
+```
+
+**Hva testes?**
+- ✅ **Innlogging:** Magic link flow, validering, feilhåndtering
+- ✅ **Navigasjon:** Tilgangsstyring, redirects for admin/ansatt
+- ✅ **Landingsside:** Verifisering av innhold og lenker
+- ✅ **API:** Health checks og responstider
+
+For feilsøking kan du se HTML-rapporten:
+```bash
+npx playwright show-report
+```
 
 ---
 
