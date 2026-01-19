@@ -46,7 +46,7 @@ import {
   EditInstructionModal,
   EditUserModal,
   InviteUserModal
-} from './components/modals'
+} from './components/modals/'
 import {
   useAdminAlerts,
   useAdminInstructions,
