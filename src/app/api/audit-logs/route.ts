@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
     }
 
     // Verify user is admin
@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (!profile || profile.role !== 'admin') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 })
     }
 
     // Get query parameters for filtering and pagination

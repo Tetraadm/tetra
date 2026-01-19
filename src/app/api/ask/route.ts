@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     // Enforce authenticated user and derive org/user from profile (ignores client-supplied ids)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
     }
 
     // Rate limiting AFTER auth - use user.id for more accurate limits
@@ -157,10 +157,10 @@ export async function POST(request: NextRequest) {
 
     // If client sent ids, enforce they match the session
     if (clientOrgId && clientOrgId !== profile.org_id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 })
     }
     if (clientUserId && clientUserId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 })
     }
 
     const orgId = profile.org_id
