@@ -51,3 +51,15 @@ spellcheck-report.md
 
 .tools/
 supabase/.temp/
+
+# AI/Agent workspace files
+.agent/
+*GLOBAL_RULES.md
+
+# AI session notes
+docs/_archive/
+docs/**/HANDOFF*.md
+docs/**/SESSION_LOG*.md
+docs/**/BATCH*.md
+docs/**/REPO_CLEANUP*.md
+
