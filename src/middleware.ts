@@ -25,6 +25,21 @@ interface CookieOptions {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
+  // ========================================================================
+  // EXPLICIT PUBLIC ROUTES - Skip ALL auth logic for these paths
+  // This prevents any possibility of redirect loops
+  // ========================================================================
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/invite/') ||
+    pathname === '/api/health'
+
+  if (isPublicRoute) {
+    return NextResponse.next()
+  }
+
   // Create response that will be returned (may be modified with cookies)
   let response = NextResponse.next({
     request: {
