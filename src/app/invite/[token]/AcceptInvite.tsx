@@ -54,29 +54,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
     setLoading(false)
   }
 
-  const handleAzureAccept = async () => {
-    if (!fullName.trim()) {
-      toast.error('Vennligst skriv inn navnet ditt')
-      return
-    }
 
-    setLoading(true)
-    // Store full name in cookie for server-side callback to read
-    document.cookie = `invite_fullname=${encodeURIComponent(fullName.trim())}; path=/; max-age=3600; SameSite=Lax`
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'azure',
-      options: {
-        redirectTo: `${window.location.origin}/invite/${token}/callback`,
-        scopes: 'email',
-      },
-    })
-
-    if (error) {
-      toast.error('Kunne ikke logge inn med Microsoft')
-      setLoading(false)
-    }
-  }
 
   const styles = {
     container: {
@@ -346,60 +324,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
             }}
           />
 
-          <button
-            onClick={handleAzureAccept}
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '15px 22px',
-              fontSize: 15,
-              fontWeight: 600,
-              color: colors.text,
-              background: colors.surface,
-              border: `1px solid ${colors.border}`,
-              borderRadius: radius.md,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 12,
-              marginBottom: 8,
-              transition: `all ${transitions.normal}`,
-              boxShadow: shadows.xs,
-              fontFamily: 'inherit',
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.currentTarget.style.background = colors.backgroundSubtle
-                e.currentTarget.style.borderColor = colors.borderStrong
-                e.currentTarget.style.boxShadow = shadows.sm
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = colors.surface
-              e.currentTarget.style.borderColor = colors.border
-              e.currentTarget.style.boxShadow = shadows.xs
-            }}
-          >
-            <svg width="20" height="20" viewBox="0 0 23 23">
-              <path fill="#f35325" d="M0 0h10.931v10.931H0z" />
-              <path fill="#81bc06" d="M12.069 0H23v10.931H12.069z" />
-              <path fill="#05a6f0" d="M0 12.069h10.931V23H0z" />
-              <path fill="#ffba08" d="M12.069 12.069H23V23H12.069z" />
-            </svg>
-            Fortsett med Microsoft
-          </button>
 
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            margin: '24px 0',
-            gap: 16
-          }}>
-            <div style={{ flex: 1, height: 1, background: colors.border }} />
-            <span style={{ fontSize: 13, color: colors.textMuted, fontWeight: 500 }}>eller</span>
-            <div style={{ flex: 1, height: 1, background: colors.border }} />
-          </div>
 
           <form onSubmit={handleAccept}>
             <button

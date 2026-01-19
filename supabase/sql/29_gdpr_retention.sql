@@ -192,6 +192,18 @@ COMMENT ON FUNCTION public.cleanup_all_old_logs IS
 'Master cleanup function that runs all log cleanup tasks. Returns summary for each log type.';
 
 -- ============================================================================
+-- SECURITY: RESTRICT CLEANUP FUNCTION ACCESS
+-- ============================================================================
+-- These functions should only be callable by service role (server-side) or pg_cron.
+-- Revoking from public and authenticated prevents privilege abuse.
+-- ============================================================================
+
+REVOKE EXECUTE ON FUNCTION public.cleanup_old_audit_logs(integer) FROM public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_old_ask_tetra_logs(integer) FROM public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_old_unanswered_questions(integer) FROM public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_all_old_logs(integer) FROM public, authenticated;
+
+-- ============================================================================
 -- GDPR COMPLIANCE DOCUMENTATION
 -- ============================================================================
 

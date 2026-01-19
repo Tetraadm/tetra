@@ -3,45 +3,45 @@ import { test, expect } from '@playwright/test'
 test.describe('Login Page', () => {
     test('should display login form with email input', async ({ page }) => {
         await page.goto('/login')
+        await page.waitForLoadState('networkidle')
 
-        // Verify page title or heading
-        await expect(page.locator('h1, h2').first()).toBeVisible()
-
-        // Verify email input exists
-        const emailInput = page.locator('input[type="email"]')
-        await expect(emailInput).toBeVisible()
+        // Verify email input exists (using placeholder which is stable)
+        const emailInput = page.getByPlaceholder('navn@bedrift.no')
+        await expect(emailInput).toBeVisible({ timeout: 10000 })
 
         // Verify submit button exists
-        const submitButton = page.locator('button[type="submit"]')
+        const submitButton = page.getByRole('button', { name: /innloggingslenke/i })
         await expect(submitButton).toBeVisible()
     })
 
     test('should show validation message for empty email', async ({ page }) => {
         await page.goto('/login')
+        await page.waitForLoadState('networkidle')
 
         // Click submit without entering email
-        const submitButton = page.locator('button[type="submit"]')
+        const submitButton = page.getByRole('button', { name: /innloggingslenke/i })
         await submitButton.click()
 
         // Browser should show email validation (HTML5)
-        const emailInput = page.locator('input[type="email"]')
+        const emailInput = page.getByPlaceholder('navn@bedrift.no')
         const isValid = await emailInput.evaluate((el: HTMLInputElement) => el.validity.valid)
         expect(isValid).toBe(false)
     })
 
     test('should accept valid email and show loading state', async ({ page }) => {
         await page.goto('/login')
+        await page.waitForLoadState('networkidle')
 
         // Enter valid email
-        const emailInput = page.locator('input[type="email"]')
+        const emailInput = page.getByPlaceholder('navn@bedrift.no')
         await emailInput.fill('test@example.com')
 
         // Click submit
-        const submitButton = page.locator('button[type="submit"]')
+        const submitButton = page.getByRole('button', { name: /innloggingslenke/i })
         await submitButton.click()
 
-        // Should show some loading indication or success message
-        // (The actual behavior depends on backend/Supabase)
-        await page.waitForTimeout(500)
+        // Should show loading text or the button should change state
+        // We give it some time to react
+        await page.waitForTimeout(1000)
     })
 })

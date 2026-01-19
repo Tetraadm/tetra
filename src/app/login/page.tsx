@@ -2,7 +2,6 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
-import toast from 'react-hot-toast'
 import { Mail, CheckCircle, Shield, Loader2 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -33,24 +32,6 @@ export default function LoginPage() {
       setLoading(false)
     } else {
       setSent(true)
-      setLoading(false)
-    }
-  }
-
-  const handleAzureLogin = async () => {
-    setLoading(true)
-    const supabase = createClient()
-
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'azure',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: 'email',
-      },
-    })
-
-    if (error) {
-      toast.error('Kunne ikke logge inn med Microsoft')
       setLoading(false)
     }
   }
@@ -94,29 +75,6 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Microsoft Login */}
-          <Button
-            variant="outline"
-            className="w-full h-12 gap-3 font-semibold"
-            onClick={handleAzureLogin}
-            disabled={loading}
-          >
-            <svg width="20" height="20" viewBox="0 0 23 23">
-              <path fill="#f35325" d="M0 0h10.931v10.931H0z" />
-              <path fill="#81bc06" d="M12.069 0H23v10.931H12.069z" />
-              <path fill="#05a6f0" d="M0 12.069h10.931V23H0z" />
-              <path fill="#ffba08" d="M12.069 12.069H23V23H12.069z" />
-            </svg>
-            Fortsett med Microsoft
-          </Button>
-
-          {/* Divider */}
-          <div className="flex items-center gap-4">
-            <div className="flex-1 h-px bg-border" />
-            <span className="text-sm text-muted-foreground font-medium">eller</span>
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
           {/* Email Login Form */}
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">

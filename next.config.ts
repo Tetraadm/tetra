@@ -43,7 +43,7 @@ const nextConfig: NextConfig = {
               // Additional restrictions (tightened from default)
               "object-src 'none'",           // Block plugins (Flash, Java, etc.)
               "base-uri 'self'",             // Prevent base tag injection
-              "form-action 'self' https://*.supabase.co https://login.microsoftonline.com",          // Allow OAuth redirects
+              "form-action 'self' https://*.supabase.co",          // Allow Supabase
               "upgrade-insecure-requests",   // Force HTTPS
             ].join('; ')
           },
