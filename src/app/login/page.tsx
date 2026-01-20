@@ -3,23 +3,27 @@ import Image from 'next/image'
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
-import { Mail, CheckCircle, Shield, Loader2 } from 'lucide-react'
+import { Mail, CheckCircle, Shield, Loader2, Key, ArrowLeft } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
+type LoginMode = 'select' | 'magic-link' | 'password'
+
 export default function LoginPage() {
+  const [mode, setMode] = useState<LoginMode>('select')
   const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
   const [error, setError] = useState('')
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const supabase = createClient()
+
+  const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    const supabase = createClient()
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -37,6 +41,38 @@ export default function LoginPage() {
     }
   }
 
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (error) {
+      if (error.message === 'Invalid login credentials') {
+        setError('Feil e-post eller passord')
+      } else {
+        setError(error.message)
+      }
+      setLoading(false)
+    } else {
+      // Redirect happens automatically via middleware
+      window.location.href = '/dashboard'
+    }
+  }
+
+  const resetForm = () => {
+    setMode('select')
+    setEmail('')
+    setPassword('')
+    setError('')
+    setSent(false)
+  }
+
+  // Magic link sent confirmation
   if (sent) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6">
@@ -57,6 +93,10 @@ export default function LoginPage() {
             <div className="text-center text-sm text-muted-foreground bg-muted rounded-lg p-4">
               Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.
             </div>
+            <Button variant="outline" className="w-full" onClick={resetForm}>
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Tilbake til innlogging
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -82,48 +122,161 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Email Login Form */}
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-semibold text-foreground">
-                E-postadresse
-              </label>
-              <Input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="navn@bedrift.no"
-                required
-                className="h-12"
-              />
-            </div>
+          {/* Mode Selection */}
+          {mode === 'select' && (
+            <div className="space-y-3">
+              <Button
+                variant="outline"
+                className="w-full h-14 justify-start gap-3"
+                onClick={() => setMode('magic-link')}
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Mail className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold">Magic Link</div>
+                  <div className="text-xs text-muted-foreground">Få innloggingslenke på e-post</div>
+                </div>
+              </Button>
 
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Mail size={14} className="text-primary shrink-0" />
-              <span>Du får en innloggingslenke på e-post</span>
+              <Button
+                variant="outline"
+                className="w-full h-14 justify-start gap-3"
+                onClick={() => setMode('password')}
+              >
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Key className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold">E-post og passord</div>
+                  <div className="text-xs text-muted-foreground">Logg inn med passord</div>
+                </div>
+              </Button>
             </div>
+          )}
 
-            {error && (
-              <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
-                {error}
+          {/* Magic Link Form */}
+          {mode === 'magic-link' && (
+            <form onSubmit={handleMagicLink} className="space-y-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetForm}
+                className="mb-2 -ml-2"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Tilbake
+              </Button>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">
+                  E-postadresse
+                </label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="navn@bedrift.no"
+                  required
+                  className="h-12"
+                  autoFocus
+                />
               </div>
-            )}
 
-            <Button
-              type="submit"
-              className="w-full h-12 font-semibold"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  Sender...
-                </>
-              ) : (
-                'Send innloggingslenke'
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Mail size={14} className="text-primary shrink-0" />
+                <span>Du får en innloggingslenke på e-post</span>
+              </div>
+
+              {error && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                  {error}
+                </div>
               )}
-            </Button>
-          </form>
+
+              <Button
+                type="submit"
+                className="w-full h-12 font-semibold"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Sender...
+                  </>
+                ) : (
+                  'Send innloggingslenke'
+                )}
+              </Button>
+            </form>
+          )}
+
+          {/* Password Login Form */}
+          {mode === 'password' && (
+            <form onSubmit={handlePasswordLogin} className="space-y-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetForm}
+                className="mb-2 -ml-2"
+              >
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Tilbake
+              </Button>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">
+                  E-postadresse
+                </label>
+                <Input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="navn@bedrift.no"
+                  required
+                  className="h-12"
+                  autoFocus
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-semibold text-foreground">
+                  Passord
+                </label>
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="h-12"
+                />
+              </div>
+
+              {error && (
+                <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                className="w-full h-12 font-semibold"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Logger inn...
+                  </>
+                ) : (
+                  'Logg inn'
+                )}
+              </Button>
+            </form>
+          )}
 
           {/* Footer */}
           <div className="flex items-center justify-center gap-2 pt-2 text-muted-foreground">
