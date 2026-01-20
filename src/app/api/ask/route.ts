@@ -116,14 +116,11 @@ async function findRelevantInstructions(
   // Try vector search first if OpenAI is configured
   if (process.env.OPENAI_API_KEY) {
     try {
-      console.log('[ASK] Generating embedding for question:', question.substring(0, 50))
       const questionEmbedding = await generateEmbedding(question)
-      console.log('[ASK] Embedding generated, length:', questionEmbedding.length)
 
       // Call the vector search function
       // Format embedding as PostgreSQL vector: [x,y,z] (not JSON string)
       const embeddingStr = `[${questionEmbedding.join(',')}]`
-      console.log('[ASK] Embedding string length:', embeddingStr.length, 'first 50 chars:', embeddingStr.substring(0, 50))
 
       const { data: vectorResults, error: vectorError } = await supabase
         .rpc('match_instructions', {
@@ -140,7 +137,6 @@ async function findRelevantInstructions(
       })
 
       if (!vectorError && vectorResults && vectorResults.length > 0) {
-        console.log(`[ASK] Vector search found ${vectorResults.length} results`)
         return {
           instructions: vectorResults as VectorSearchResult[],
           usedVectorSearch: true
@@ -148,19 +144,14 @@ async function findRelevantInstructions(
       }
 
       if (vectorError) {
-        console.warn('[ASK] Vector search failed, falling back to keyword search:', vectorError.message)
-      } else {
-        console.log('[ASK] Vector search returned 0 results, falling back to keyword search')
+        console.warn('[ASK] Vector search failed:', vectorError.message)
       }
     } catch (embeddingError) {
       console.warn('[ASK] Embedding generation failed, falling back to keyword search:', embeddingError)
     }
-  } else {
-    console.log('[ASK] OPENAI_API_KEY not set, skipping vector search')
   }
 
   // Fallback to keyword search
-  console.log('[ASK] Using keyword search (vector search unavailable)')
   const { data, error } = await supabase
     .rpc('get_user_instructions', { p_user_id: userId })
 
