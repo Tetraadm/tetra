@@ -17,7 +17,7 @@ const anthropic = new Anthropic({
 const FALLBACK_ANSWER = 'Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig.'
 const RAW_MIN_SCORE = Number(process.env.AI_MIN_RELEVANCE_SCORE ?? '0.35')
 const MIN_SCORE = Number.isFinite(RAW_MIN_SCORE) ? RAW_MIN_SCORE : 0.35
-const VECTOR_SEARCH_THRESHOLD = 0.5 // Minimum similarity for vector search
+const VECTOR_SEARCH_THRESHOLD = 0.25 // Minimum similarity for vector search (lowered for short queries)
 
 const askSchema = z.object({
   question: z.string().min(1).max(1000),
