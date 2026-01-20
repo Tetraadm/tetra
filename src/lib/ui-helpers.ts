@@ -1,5 +1,5 @@
 /**
- * Tetra HMS - UI Helper Functions
+ * Tetrivo HMS - UI Helper Functions
  * Nordic Aurora Design System
  *
  * Shared utilities for severity, role labels, colors, and styling

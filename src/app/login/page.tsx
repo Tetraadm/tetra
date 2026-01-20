@@ -110,7 +110,7 @@ export default function LoginPage() {
         <CardHeader className="text-center pb-4">
           <div className="mx-auto w-32 h-32 relative mb-6">
             <Image
-              src="/tetra-logo.png"
+              src="/tetrivo-logo.png"
               alt="Tetrivo Logo"
               fill
               className="object-contain"

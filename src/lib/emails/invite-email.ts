@@ -1,6 +1,6 @@
 export function generateInviteHtml(inviteUrl: string, role: string, inviterName: string = 'En administrator') {
   const brandColor = '#4F46E5';
-  const logoUrl = 'https://tetrivo.com/tetra-logo.png';
+  const logoUrl = 'https://tetrivo.com/tetrivo-logo.png';
   const previewText = `${inviterName} har invitert deg til Tetrivo HMS.`;
 
   return `
