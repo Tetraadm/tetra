@@ -67,6 +67,7 @@ export default function EmployeeApp({ profile, organization, instructions, alert
     setChatInput,
     messages,
     isTyping,
+    streamingText,
     chatRef,
     handleAsk,
     handleSuggestion,
@@ -152,6 +153,7 @@ export default function EmployeeApp({ profile, organization, instructions, alert
               <AskTetraTab
                 messages={messages}
                 isTyping={isTyping}
+                streamingText={streamingText}
                 chatInput={chatInput}
                 setChatInput={setChatInput}
                 chatRef={chatRef}

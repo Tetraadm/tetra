@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input'
 type Props = {
   messages: ChatMessage[]
   isTyping: boolean
+  streamingText?: string // NEW: Text being streamed in real-time
   chatInput: string
   setChatInput: (value: string) => void
   chatRef: React.RefObject<HTMLDivElement | null>
@@ -27,6 +28,7 @@ type Props = {
 export default function AskTetraTab({
   messages,
   isTyping,
+  streamingText,
   chatInput,
   setChatInput,
   chatRef,
@@ -145,6 +147,14 @@ export default function AskTetraTab({
                     <div className="typing-dot bg-muted-foreground/50"></div>
                     <div className="typing-dot bg-muted-foreground/50"></div>
                   </div>
+                </div>
+              </div>
+            )}
+            {streamingText && (
+              <div className="flex justify-start">
+                <div className="max-w-[85%] px-4 py-3 bg-secondary text-secondary-foreground rounded-2xl rounded-tl-sm text-sm leading-relaxed border border-border/50">
+                  {streamingText}
+                  <span className="inline-block w-2 h-4 ml-1 bg-primary/60 animate-pulse" />
                 </div>
               </div>
             )}

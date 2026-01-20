@@ -1,8 +1,9 @@
 ﻿import { createClient } from '@/lib/supabase/server'
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
 import { z } from 'zod'
+import { generateEmbedding } from '@/lib/embeddings'
 import {
   calculateRelevanceScore,
   extractKeywords,
@@ -16,13 +17,25 @@ const anthropic = new Anthropic({
 const FALLBACK_ANSWER = 'Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig.'
 const RAW_MIN_SCORE = Number(process.env.AI_MIN_RELEVANCE_SCORE ?? '0.35')
 const MIN_SCORE = Number.isFinite(RAW_MIN_SCORE) ? RAW_MIN_SCORE : 0.35
+const VECTOR_SEARCH_THRESHOLD = 0.5 // Minimum similarity for vector search
 
 const askSchema = z.object({
   question: z.string().min(1).max(1000),
-  // orgId/userId kept for backward compatibility; server derives truth.
   orgId: z.string().uuid().optional(),
   userId: z.string().uuid().optional(),
+  stream: z.boolean().optional().default(false), // NEW: Enable streaming
 })
+
+// Type for vector search results
+type VectorSearchResult = {
+  id: string
+  title: string
+  content: string
+  severity: string
+  folder_id: string | null
+  updated_at: string | null
+  similarity: number
+}
 
 function normalizeKeywords(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -44,7 +57,7 @@ function normalizeKeywords(value: unknown): string[] {
 }
 
 function getFolderNameFromInstruction(
-  inst: InstructionWithKeywords & { folders?: unknown }
+  inst: Record<string, unknown>
 ): string {
   if (!('folders' in inst)) {
     return ''
@@ -60,7 +73,7 @@ function getFolderNameFromInstruction(
 }
 
 function getSeverityFromInstruction(
-  inst: InstructionWithKeywords & { severity?: unknown }
+  inst: Record<string, unknown>
 ): string {
   if (!('severity' in inst)) {
     return ''
@@ -89,46 +102,120 @@ function countKeywordOverlap(
   }, 0)
 }
 
+/**
+ * Try vector search first, fall back to keyword search if embeddings not available
+ */
+async function findRelevantInstructions(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  question: string,
+  userId: string
+): Promise<{
+  instructions: Array<VectorSearchResult | InstructionWithKeywords>
+  usedVectorSearch: boolean
+}> {
+  // Try vector search first if OpenAI is configured
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      const questionEmbedding = await generateEmbedding(question)
+
+      // Call the vector search function
+      const { data: vectorResults, error: vectorError } = await supabase
+        .rpc('match_instructions', {
+          query_embedding: JSON.stringify(questionEmbedding),
+          match_threshold: VECTOR_SEARCH_THRESHOLD,
+          match_count: 10,
+          p_user_id: userId
+        })
+
+      if (!vectorError && vectorResults && vectorResults.length > 0) {
+        console.log(`[ASK] Vector search found ${vectorResults.length} results`)
+        return {
+          instructions: vectorResults as VectorSearchResult[],
+          usedVectorSearch: true
+        }
+      }
+
+      if (vectorError) {
+        console.warn('[ASK] Vector search failed, falling back to keyword search:', vectorError.message)
+      }
+    } catch (embeddingError) {
+      console.warn('[ASK] Embedding generation failed, falling back to keyword search:', embeddingError)
+    }
+  }
+
+  // Fallback to keyword search
+  console.log('[ASK] Using keyword search (vector search unavailable)')
+  const { data, error } = await supabase
+    .rpc('get_user_instructions', { p_user_id: userId })
+
+  if (error) {
+    throw new Error(`Failed to fetch instructions: ${error.message}`)
+  }
+
+  const allInstructions = (data || []) as InstructionWithKeywords[]
+  const normalizedInstructions = allInstructions.map(inst => ({
+    ...inst,
+    keywords: normalizeKeywords(inst.keywords)
+  }))
+
+  const instructionsWithContent = normalizedInstructions.filter(i => i.content && i.content.trim())
+  const queryKeywords = extractKeywords(question, 5)
+
+  if (instructionsWithContent.length === 0 || queryKeywords.length === 0) {
+    return { instructions: [], usedVectorSearch: false }
+  }
+
+  const scoredInstructions = instructionsWithContent.map(instruction => {
+    const score = calculateRelevanceScore(
+      queryKeywords,
+      instruction.keywords || [],
+      instruction.title
+    )
+    const overlapCount = countKeywordOverlap(queryKeywords, instruction)
+    return { instruction, score, overlapCount }
+  })
+
+  const relevantInstructions = scoredInstructions
+    .filter(item => item.score >= MIN_SCORE && item.overlapCount > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 10)
+    .map(item => item.instruction)
+
+  return { instructions: relevantInstructions, usedVectorSearch: false }
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Input validation first (cheap operation)
     const body = await request.json()
     const validation = askSchema.safeParse(body)
 
     if (!validation.success) {
-      return NextResponse.json(
-        { error: 'Ugyldig input' },
-        { status: 400 }
-      )
+      return Response.json({ error: 'Ugyldig input' }, { status: 400 })
     }
 
-    const { question, orgId: clientOrgId, userId: clientUserId } = validation.data
+    const { question, orgId: clientOrgId, userId: clientUserId, stream } = validation.data
 
     const supabase = await createClient()
 
-    // Enforce authenticated user and derive org/user from profile (ignores client-supplied ids)
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+      return Response.json({ error: 'Ikke autentisert' }, { status: 401 })
     }
 
-    // Rate limiting AFTER auth - use user.id for more accurate limits
-    // This prevents IP-based bypass when multiple users share same IP (e.g., behind proxy)
     const ip = getClientIp(request)
     const rateLimitKey = `user:${user.id}`
     const { success, limit, remaining, reset, isMisconfigured } = await aiRatelimit.limit(rateLimitKey)
 
-    // Fail-closed: if rate limiter is misconfigured in prod, return 503
     if (isMisconfigured) {
-      console.error('ASK_FATAL: Rate limiter misconfigured (Upstash not configured in production)')
-      return NextResponse.json(
+      console.error('ASK_FATAL: Rate limiter misconfigured')
+      return Response.json(
         { error: 'Tjenesten er midlertidig utilgjengelig. Prøv igjen senere.' },
         { status: 503 }
       )
     }
 
     if (!success) {
-      return NextResponse.json(
+      return Response.json(
         { error: 'For mange forespørsler. Prøv igjen om litt.' },
         {
           status: 429,
@@ -141,7 +228,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Keep ip for potential logging (not used for rate limiting anymore)
     void ip
 
     const { data: profile, error: profileError } = await supabase
@@ -152,103 +238,32 @@ export async function POST(request: NextRequest) {
 
     if (profileError || !profile) {
       console.error('ASK_FATAL: profile fetch failed', profileError)
-      return NextResponse.json({ error: 'Profil ikke funnet' }, { status: 403 })
+      return Response.json({ error: 'Profil ikke funnet' }, { status: 403 })
     }
 
-    // If client sent ids, enforce they match the session
     if (clientOrgId && clientOrgId !== profile.org_id) {
-      return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 })
+      return Response.json({ error: 'Ingen tilgang' }, { status: 403 })
     }
     if (clientUserId && clientUserId !== user.id) {
-      return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 })
+      return Response.json({ error: 'Ingen tilgang' }, { status: 403 })
     }
 
     const orgId = profile.org_id
     const userId = user.id
 
-    let allInstructions: InstructionWithKeywords[] = []
-
-    const { data, error } = await supabase
-      .rpc('get_user_instructions', { p_user_id: userId })
-
-    if (error) {
-      console.error('ASK_FATAL: get_user_instructions failed', error)
-      return NextResponse.json({ error: 'Kunne ikke hente instrukser' }, { status: 500 })
-    }
-
-    allInstructions = (data || []) as InstructionWithKeywords[]
-
-    const normalizedInstructions = (allInstructions || []).map(inst => ({
-      ...inst,
-      keywords: normalizeKeywords(inst.keywords)
-    }))
-
-    // Skill mellom instrukser med tekst og instrukser som kun er filer
-    const instructionsWithContent = normalizedInstructions.filter(i => i.content && i.content.trim())
-    const queryKeywords = extractKeywords(question, 5)
-
-    if (instructionsWithContent.length === 0 || queryKeywords.length === 0) {
-      const { error: logError } = await supabase.from('ask_tetra_logs').insert({
-        org_id: orgId,
-        user_id: userId,
-        question,
-        answer: FALLBACK_ANSWER,
-        source_instruction_id: null
-      })
-      if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
-
-      const { error: unansweredError } = await supabase.from('ai_unanswered_questions').insert({
-        org_id: orgId,
-        user_id: userId ?? null,
-        question
-      })
-      if (unansweredError) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', unansweredError)
-
-      return NextResponse.json({
-        answer: FALLBACK_ANSWER,
-        source: null
-      })
-    }
-
-    const scoredInstructions = instructionsWithContent.map(instruction => {
-      const score = calculateRelevanceScore(
-        queryKeywords,
-        instruction.keywords || [],
-        instruction.title
-      )
-      const overlapCount = countKeywordOverlap(queryKeywords, instruction)
-      return { instruction, score, overlapCount }
-    })
-
-    const relevantInstructions = scoredInstructions
-      .filter(item => item.score >= MIN_SCORE && item.overlapCount > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 10)
-      .map(item => item.instruction)
+    // Find relevant instructions using vector search or keyword fallback
+    const { instructions: relevantInstructions, usedVectorSearch } = await findRelevantInstructions(
+      supabase,
+      question,
+      userId
+    )
 
     if (relevantInstructions.length === 0) {
-      const { error: logError } = await supabase.from('ask_tetra_logs').insert({
-        org_id: orgId,
-        user_id: userId,
-        question,
-        answer: FALLBACK_ANSWER,
-        source_instruction_id: null
-      })
-      if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
-
-      const { error: unansweredError } = await supabase.from('ai_unanswered_questions').insert({
-        org_id: orgId,
-        user_id: userId ?? null,
-        question
-      })
-      if (unansweredError) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', unansweredError)
-
-      return NextResponse.json({
-        answer: FALLBACK_ANSWER,
-        source: null
-      })
+      await logQuestion(supabase, orgId, userId, question, FALLBACK_ANSWER, null, true)
+      return Response.json({ answer: FALLBACK_ANSWER, source: null })
     }
-    // Build context from filtered instructions
+
+    // Build context from instructions
     const context = relevantInstructions.map(inst => {
       const folderName = getFolderNameFromInstruction(inst)
       const severity = getSeverityFromInstruction(inst)
@@ -271,9 +286,69 @@ KRITISKE REGLER:
 TILGJENGELIGE DOKUMENTER:
 ${context}`
 
+    const sourceInstruction = relevantInstructions[0]
+    const sourceData = {
+      instruction_id: sourceInstruction.id,
+      title: sourceInstruction.title,
+      updated_at: 'updated_at' in sourceInstruction ? sourceInstruction.updated_at ?? null : null,
+      open_url_or_route: `/employee?instruction=${sourceInstruction.id}`
+    }
+
+    // STREAMING MODE
+    if (stream) {
+      const encoder = new TextEncoder()
+
+      const readableStream = new ReadableStream({
+        async start(controller) {
+          try {
+            const streamResponse = anthropic.messages.stream({
+              model: 'claude-3-5-haiku-20241022',
+              max_tokens: 500,
+              temperature: 0,
+              system: systemPrompt,
+              messages: [{ role: 'user', content: question }]
+            })
+
+            let fullAnswer = ''
+
+            streamResponse.on('text', (text) => {
+              fullAnswer += text
+              // Send text chunk
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`))
+            })
+
+            await streamResponse.finalMessage()
+
+            // Send source metadata at the end
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'source', content: sourceData })}\n\n`))
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
+
+            // Log the question asynchronously
+            await logQuestion(supabase, orgId, userId, question, fullAnswer, sourceInstruction.id, false)
+
+            controller.close()
+          } catch (error) {
+            console.error('STREAM_ERROR:', error)
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', content: 'Streaming feilet' })}\n\n`))
+            controller.close()
+          }
+        }
+      })
+
+      return new Response(readableStream, {
+        headers: {
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+          'X-Search-Method': usedVectorSearch ? 'vector' : 'keyword'
+        }
+      })
+    }
+
+    // NON-STREAMING MODE (backward compatible)
     const response = await anthropic.messages.create({
       model: 'claude-3-5-haiku-20241022',
-      max_tokens: 300,
+      max_tokens: 500,
       temperature: 0,
       system: systemPrompt,
       messages: [{ role: 'user', content: question }]
@@ -281,33 +356,18 @@ ${context}`
 
     const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
 
-    const sourceInstruction = relevantInstructions[0] || null
+    await logQuestion(supabase, orgId, userId, question, answer, sourceInstruction.id, false)
 
-    const { error: logError } = await supabase.from('ask_tetra_logs').insert({
-      org_id: orgId,
-      user_id: userId,
-      question,
+    return Response.json({
       answer,
-      source_instruction_id: sourceInstruction?.id || null
-    })
-    if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
-
-    return NextResponse.json({
-      answer,
-      source: sourceInstruction ? {
-        instruction_id: sourceInstruction.id,
-        title: sourceInstruction.title,
-        updated_at: 'updated_at' in sourceInstruction
-          ? (sourceInstruction as { updated_at?: string | null }).updated_at ?? null
-          : null,
-        open_url_or_route: `/employee?instruction=${sourceInstruction.id}`
-      } : null
+      source: sourceData,
+      searchMethod: usedVectorSearch ? 'vector' : 'keyword'
     })
 
   } catch (error) {
     console.error('ASK_FATAL:', error)
     const message = error instanceof Error ? error.message : 'Unknown error'
-    return NextResponse.json({
+    return Response.json({
       error: process.env.NODE_ENV === 'production'
         ? 'Kunne ikke behandle spørsmålet'
         : `Feil: ${message}`
@@ -315,5 +375,34 @@ ${context}`
   }
 }
 
+async function logQuestion(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  orgId: string,
+  userId: string,
+  question: string,
+  answer: string,
+  sourceInstructionId: string | null,
+  isUnanswered: boolean
+) {
+  try {
+    const { error: logError } = await supabase.from('ask_tetra_logs').insert({
+      org_id: orgId,
+      user_id: userId,
+      question,
+      answer,
+      source_instruction_id: sourceInstructionId
+    })
+    if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
 
-
+    if (isUnanswered) {
+      const { error: unansweredError } = await supabase.from('ai_unanswered_questions').insert({
+        org_id: orgId,
+        user_id: userId,
+        question
+      })
+      if (unansweredError) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', unansweredError)
+    }
+  } catch (err) {
+    console.error('ASK_LOG_ERROR:', err)
+  }
+}

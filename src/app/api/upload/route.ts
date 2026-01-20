@@ -6,6 +6,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
+import { generateEmbedding, prepareTextForEmbedding } from '@/lib/embeddings'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { z } from 'zod'
 
@@ -335,6 +336,27 @@ export async function POST(request: NextRequest) {
       }
 
       return NextResponse.json({ error: 'Kunne ikke opprette instruks' }, { status: 500 })
+    }
+
+    // Generate embedding for vector search (non-blocking - don't fail upload if this fails)
+    if (instruction && effectiveContent) {
+      try {
+        const textForEmbedding = prepareTextForEmbedding(title, effectiveContent)
+        const embedding = await generateEmbedding(textForEmbedding)
+
+        // Store embedding in database
+        const { error: embeddingError } = await supabase
+          .from('instructions')
+          .update({ embedding: JSON.stringify(embedding) })
+          .eq('id', instruction.id)
+
+        if (embeddingError) {
+          console.error('EMBEDDING_STORE_ERROR', embeddingError)
+        }
+      } catch (embeddingErr) {
+        // Log but don't fail the upload - embedding can be regenerated later
+        console.error('EMBEDDING_GENERATION_ERROR', embeddingErr)
+      }
     }
 
     // Koble til team - men valider først at alle team tilhører riktig org
