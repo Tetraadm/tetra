@@ -14,10 +14,10 @@
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com/)
 
 [![License](https://img.shields.io/badge/License-Proprietary-red?style=for-the-badge)](LICENSE)
-[![Deployment](https://img.shields.io/badge/Deployed-Vercel-black?style=for-the-badge&logo=vercel)](https://tetra.onl)
+[![Deployment](https://img.shields.io/badge/Deployed-Vercel-black?style=for-the-badge&logo=vercel)](https://tetrivo.com)
 [![Status](https://img.shields.io/badge/Status-Pilot%20Ready-success?style=for-the-badge)]()
 
-[🚀 Live Demo](https://tetra.onl) • [📖 Dokumentasjon](#-dokumentasjon) • [🐛 Issues](https://github.com/Tetraadm/tetra/issues) • [💬 Diskusjoner](https://github.com/Tetraadm/tetra/discussions)
+[🚀 Live Demo](https://tetrivo.com) • [📖 Dokumentasjon](#-dokumentasjon) • [🐛 Issues](https://github.com/Tetraadm/tetra/issues) • [💬 Diskusjoner](https://github.com/Tetraadm/tetra/discussions)
 
 ---
 
@@ -241,7 +241,7 @@ ANTHROPIC_API_KEY=sk-ant-api03-...
 # ============================================================================
 # PÅKREVD FOR PRODUCTION - App URL
 # ============================================================================
-NEXT_PUBLIC_APP_URL=https://tetra.onl
+NEXT_PUBLIC_APP_URL=https://tetrivo.com
 ```
 
 > 📝 **Se fullstendig liste:** [Miljøvariabler](#-miljøvariabler)
@@ -350,7 +350,7 @@ npx playwright show-report
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase public anon key | Samme sted ↑ |
 | `SUPABASE_SERVICE_ROLE_KEY` | **⚠️ Aldri eksponer til klient!** Service role key | Samme sted ↑ |
 | `ANTHROPIC_API_KEY` | Claude API-nøkkel | [Anthropic Console](https://console.anthropic.com/) |
-| `NEXT_PUBLIC_APP_URL` | Base URL (production) | `https://tetra.onl` eller din domene |
+| `NEXT_PUBLIC_APP_URL` | Base URL (production) | `https://tetrivo.com` eller din domene |
 
 ---
 
@@ -789,7 +789,7 @@ Health check endpoint (uautentisert).
 
 4. **Deploy** 🎉
 
-**Production:** [https://tetra.onl](https://tetra.onl)
+**Production:** [https://tetrivo.com](https://tetrivo.com)
 
 ---
 
@@ -977,7 +977,7 @@ Tetra har:
 
 Tetra er **proprietary software**. For white-label lisenser, kontakt:
 
-📧 **support@tetra.onl**
+📧 **support@tetrivo.com**
 
 Vi tilbyr:
 - White-label deployment
@@ -1064,7 +1064,7 @@ refactor: splitt AdminDashboard i separate komponenter
 
 Ikke tillatt til kommersiell bruk uten lisens.
 
-For lisensiering, kontakt: support@tetra.onl
+For lisensiering, kontakt: support@tetrivo.com
 
 ---
 
@@ -1074,7 +1074,7 @@ For lisensiering, kontakt: support@tetra.onl
 
 | 🐛 **Bugs** | 💬 **Diskusjoner** | 📧 **E-post** | 🌐 **Nettside** |
 |-------------|-------------------|---------------|----------------|
-| [GitHub Issues](https://github.com/Tetraadm/tetra/issues) | [GitHub Discussions](https://github.com/Tetraadm/tetra/discussions) | support@tetra.onl | [tetra.onl](https://tetra.onl) |
+| [GitHub Issues](https://github.com/Tetraadm/tetra/issues) | [GitHub Discussions](https://github.com/Tetraadm/tetra/discussions) | support@tetrivo.com | [tetrivo.com](https://tetrivo.com) |
 
 </div>
 

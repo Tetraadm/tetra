@@ -1,6 +1,6 @@
 export function generateInviteHtml(inviteUrl: string, role: string, inviterName: string = 'En administrator') {
   const brandColor = '#4F46E5';
-  const logoUrl = 'https://tetra.onl/tetra-logo.png';
+  const logoUrl = 'https://tetrivo.com/tetra-logo.png';
   const previewText = `${inviterName} har invitert deg til Tetra HMS.`;
 
   return `
@@ -90,7 +90,7 @@ export function generateInviteHtml(inviteUrl: string, role: string, inviterName:
             <div style="background-color:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
               <p class="footer-text" style="margin:0;font-size:12px;line-height:16px;color:#6b7280;">
                 &copy; ${new Date().getFullYear()} Tetra HMS. Alle rettigheter forbeholdt.<br>
-                <a href="https://tetra.onl" style="color:${brandColor};text-decoration:underline;">tetra.onl</a>
+                <a href="https://tetrivo.com" style="color:${brandColor};text-decoration:underline;">tetrivo.com</a>
               </p>
             </div>
           </div>

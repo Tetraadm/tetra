@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
     ];
   },
 
-  // NOTE: www.tetra.onl → tetra.onl redirect is handled by Vercel Domains config
+  // NOTE: www.tetrivo.com → tetrivo.com redirect is handled by Vercel Domains config
 
   images: {
     remotePatterns: [

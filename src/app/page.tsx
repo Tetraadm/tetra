@@ -160,8 +160,8 @@ export default function LandingPage() {
                   <Mail size={20} />
                 </div>
                 <h3 className="font-semibold mb-2">E-post</h3>
-                <p className="text-muted-foreground text-sm">kontakt@tetra.onl</p>
-                <p className="text-muted-foreground text-sm">support@tetra.onl</p>
+                <p className="text-muted-foreground text-sm">kontakt@tetrivo.com</p>
+                <p className="text-muted-foreground text-sm">support@tetrivo.com</p>
               </div>
               <div className="flex flex-col items-center p-6 bg-background rounded-xl border shadow-sm">
                 <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary mb-4">

@@ -143,8 +143,8 @@ git push origin main
 
 | Rolle | Kontakt | Ansvar |
 |-------|---------|--------|
-| Teknisk lead | dev@tetra.onl | Feilsøking, deploys, arkitektur |
-| Pilot-kontakt | pilot@tetra.onl | Brukerhenvendelser, feedback |
+| Teknisk lead | dev@tetrivo.com | Feilsøking, deploys, arkitektur |
+| Pilot-kontakt | pilot@tetrivo.com | Brukerhenvendelser, feedback |
 | Supabase support | support@supabase.io | Database/auth issues |
 | Vercel support | support@vercel.com | Hosting/deploy issues |
 | Resend support | support@resend.com | E-post leveringsproblemer |
@@ -203,6 +203,6 @@ SENTRY_DSN=https://xxx@sentry.io/xxx
 
 ### UptimeRobot (Gratis uptime)
 1. Opprett konto på uptimerobot.com
-2. Legg til monitor: `https://tetra.onl/api/health`
+2. Legg til monitor: `https://tetrivo.com/api/health`
 3. Sett intervall: 5 min
 4. Aktiver e-post/Slack alerts
