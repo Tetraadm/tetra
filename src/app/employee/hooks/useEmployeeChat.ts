@@ -37,7 +37,7 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
           question,
           orgId: profile.org_id,
           userId: profile.id,
-          stream: false // Temporarily disabled for debugging
+          stream: true
         })
       })
 
