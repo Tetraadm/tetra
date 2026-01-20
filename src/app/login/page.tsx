@@ -60,7 +60,8 @@ export default function LoginPage() {
       setLoading(false)
     } else {
       // Redirect happens automatically via middleware
-      window.location.href = '/dashboard'
+      // Redirect to post-auth handler which routes based on role
+      window.location.href = '/post-auth'
     }
   }
 
