@@ -119,9 +119,12 @@ async function findRelevantInstructions(
       const questionEmbedding = await generateEmbedding(question)
 
       // Call the vector search function
+      // Format embedding as PostgreSQL vector: [x,y,z] (not JSON string)
+      const embeddingStr = `[${questionEmbedding.join(',')}]`
+
       const { data: vectorResults, error: vectorError } = await supabase
         .rpc('match_instructions', {
-          query_embedding: JSON.stringify(questionEmbedding),
+          query_embedding: embeddingStr,
           match_threshold: VECTOR_SEARCH_THRESHOLD,
           match_count: 10,
           p_user_id: userId
