@@ -104,7 +104,7 @@ export default function HomeContent({
             <div className="h-14 w-14 rounded-md bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
               <MessageCircle size={28} />
             </div>
-            <span className="font-semibold text-indigo-700 dark:text-indigo-300">Spør Tetra</span>
+            <span className="font-semibold text-indigo-700 dark:text-indigo-300">Spør Tetrivo</span>
           </CardContent>
         </Card>
 

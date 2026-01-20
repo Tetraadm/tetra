@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function EmployeePage() {
   const supabase = await createClient()
-  
+
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
@@ -17,7 +17,7 @@ export default async function EmployeePage() {
     .single()
 
   if (!profile) {
-    redirect('/login?error=Du må bli invitert for å bruke Tetra')
+    redirect('/login?error=Du må bli invitert for å bruke Tetrivo')
   }
 
   // Fetch instructions and alerts via security-definer RPCs (team + org-wide)

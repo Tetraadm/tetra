@@ -258,7 +258,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
         <div style={styles.logo}>T</div>
         <h1 style={styles.title}>Du er invitert!</h1>
         <p style={styles.subtitle}>
-          Du har blitt invitert til a bli med i Tetra HMS-plattformen
+          Du har blitt invitert til a bli med i Tetrivo HMS-plattformen
         </p>
 
         <div style={styles.infoBox}>

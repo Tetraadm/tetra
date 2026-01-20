@@ -132,7 +132,7 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
       setStreamingText('')
       setMessages(prev => [...prev, {
         type: 'notfound',
-        text: 'Kunne ikke koble til Tetra. Sjekk nettforbindelsen din og prøv igjen.'
+        text: 'Kunne ikke koble til Tetrivo. Sjekk nettforbindelsen din og prøv igjen.'
       }])
     } finally {
       setIsTyping(false)

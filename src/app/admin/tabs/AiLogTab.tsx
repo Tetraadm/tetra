@@ -22,7 +22,7 @@ export default function AiLogTab({ aiLogs }: Props) {
           fontSize: '1rem',
           color: 'var(--text-secondary)'
         }}>
-          Oversikt over spørsmål til Spør Tetra
+          Oversikt over spørsmål til Spør Tetrivo
         </p>
       </div>
 
@@ -59,7 +59,7 @@ export default function AiLogTab({ aiLogs }: Props) {
           <Bot className="nt-empty-state__icon" />
           <h3 className="nt-empty-state__title">Ingen AI-spørsmål ennå</h3>
           <p className="nt-empty-state__description">
-            {`Når ansatte begynner å bruke "Spør Tetra" funksjonen, vil spørsmål og svar vises her.`}
+            {`Når ansatte begynner å bruke "Spør Tetrivo" funksjonen, vil spørsmål og svar vises her.`}
           </p>
         </div>
       ) : (

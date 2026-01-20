@@ -1,7 +1,7 @@
 export function generateInviteHtml(inviteUrl: string, role: string, inviterName: string = 'En administrator') {
   const brandColor = '#4F46E5';
   const logoUrl = 'https://tetrivo.com/tetra-logo.png';
-  const previewText = `${inviterName} har invitert deg til Tetra HMS.`;
+  const previewText = `${inviterName} har invitert deg til Tetrivo HMS.`;
 
   return `
 <!DOCTYPE html>
@@ -10,7 +10,7 @@ export function generateInviteHtml(inviteUrl: string, role: string, inviterName:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="x-apple-disable-message-reformatting">
-  <title>Invitasjon til Tetra HMS</title>
+  <title>Invitasjon til Tetrivo HMS</title>
   <!--[if mso]>
   <noscript>
     <xml>
@@ -55,17 +55,17 @@ export function generateInviteHtml(inviteUrl: string, role: string, inviterName:
             
             <!-- Header -->
             <div class="header-bg" style="background-color:#1f2937;padding:30px 40px;text-align:center;">
-              <img src="${logoUrl}" width="120" alt="Tetra HMS" style="width:120px;max-width:100%;height:auto;border:none;display:block;margin:0 auto;">
+              <img src="${logoUrl}" width="120" alt="Tetrivo HMS" style="width:120px;max-width:100%;height:auto;border:none;display:block;margin:0 auto;">
             </div>
 
             <!-- Content -->
             <div style="padding:40px 40px;text-align:left;">
-              <h1 style="margin:0 0 20px 0;font-size:24px;line-height:32px;font-weight:bold;color:#111827;">Velkommen til Tetra HMS</h1>
+              <h1 style="margin:0 0 20px 0;font-size:24px;line-height:32px;font-weight:bold;color:#111827;">Velkommen til Tetrivo HMS</h1>
               
               <p style="margin:0 0 16px 0;font-size:16px;line-height:24px;color:#374151;">Hei,</p>
               
               <p style="margin:0 0 16px 0;font-size:16px;line-height:24px;color:#374151;">
-                <strong>${inviterName}</strong> har invitert deg til å bli med i organisasjonen i Tetra HMS – systemet for enkel og effektiv HMS-håndtering.
+                <strong>${inviterName}</strong> har invitert deg til å bli med i organisasjonen i Tetrivo HMS – systemet for enkel og effektiv HMS-håndtering.
               </p>
 
               <p style="margin:0 0 24px 0;font-size:16px;line-height:24px;color:#374151;">
@@ -89,7 +89,7 @@ export function generateInviteHtml(inviteUrl: string, role: string, inviterName:
             <!-- Footer -->
             <div style="background-color:#f9fafb;padding:20px 40px;text-align:center;border-top:1px solid #e5e7eb;">
               <p class="footer-text" style="margin:0;font-size:12px;line-height:16px;color:#6b7280;">
-                &copy; ${new Date().getFullYear()} Tetra HMS. Alle rettigheter forbeholdt.<br>
+                &copy; ${new Date().getFullYear()} Tetrivo HMS. Alle rettigheter forbeholdt.<br>
                 <a href="https://tetrivo.com" style="color:${brandColor};text-decoration:underline;">tetrivo.com</a>
               </p>
             </div>

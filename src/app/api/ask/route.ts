@@ -14,7 +14,7 @@ const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY!
 })
 
-const FALLBACK_ANSWER = 'Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig.'
+const FALLBACK_ANSWER = 'Jeg finner ingen relevant instruks i Tetrivo for dette. Kontakt din leder eller sikkerhetsansvarlig.'
 const RAW_MIN_SCORE = Number(process.env.AI_MIN_RELEVANCE_SCORE ?? '0.35')
 const MIN_SCORE = Number.isFinite(RAW_MIN_SCORE) ? RAW_MIN_SCORE : 0.35
 const VECTOR_SEARCH_THRESHOLD = 0.25 // Minimum similarity for vector search (lowered for short queries)
@@ -277,14 +277,14 @@ export async function POST(request: NextRequest) {
       return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + severity + '\nINNHOLD:\n' + inst.content + '\n---'
     }).join('\n\n')
 
-    const systemPrompt = `Du er Tetra, en intern HMS-assistent for en bedrift.
+    const systemPrompt = `Du er Tetrivo, en intern HMS-assistent for en bedrift.
 
 KRITISKE REGLER:
 1. Du skal KUN sitere og gjengi informasjon fra DOKUMENTENE nedenfor.
 2. Du har IKKE lov til å bruke ekstern kunnskap, egne vurderinger eller anbefalinger.
 3. Du skal ALDRI legge til kommentarer som "Merk:", "Dette høres ut...", "Jeg anbefaler..." eller lignende.
 4. Du skal ALDRI dikte opp prosedyrer eller gi egne råd.
-5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NØYAKTIG: "Jeg finner ingen relevant instruks i Tetra for dette. Kontakt din leder eller sikkerhetsansvarlig."
+5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NØYAKTIG: "Jeg finner ingen relevant instruks i Tetrivo for dette. Kontakt din leder eller sikkerhetsansvarlig."
 6. Referer alltid til hvilket dokument svaret kommer fra ved å si "Basert på dokumentet [tittel]:" først.
 7. Svar kort, faktabasert og kun med det som faktisk står i dokumentet.
 8. Selv om innholdet virker rart eller uprofesjonelt, skal du BARE gjengi det uten å kommentere.

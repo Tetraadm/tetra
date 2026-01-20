@@ -12,7 +12,7 @@ export function TetraLogo({ className }: { className?: string }) {
           sizes="32px"
         />
       </div>
-      <span className="font-semibold text-xl tracking-tight text-foreground">Tetra</span>
+      <span className="font-semibold text-xl tracking-tight text-foreground">Tetrivo</span>
     </div>
   )
 }

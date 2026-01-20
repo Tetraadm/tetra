@@ -126,7 +126,7 @@ export async function POST(request: Request) {
 
         if (resend) {
             try {
-                const fromEmail = process.env.RESEND_FROM_EMAIL || 'Tetra HMS <onboarding@resend.dev>'
+                const fromEmail = process.env.RESEND_FROM_EMAIL || 'Tetrivo HMS <onboarding@resend.dev>'
 
                 // Construct inviter name
                 const inviterName = profile.full_name || 'En administrator';
@@ -144,7 +144,7 @@ export async function POST(request: Request) {
                 await resend.emails.send({
                     from: fromEmail,
                     to: email,
-                    subject: 'Du har blitt invitert til Tetra HMS',
+                    subject: 'Du har blitt invitert til Tetrivo HMS',
                     html: emailHtml
                 })
                 emailSent = true

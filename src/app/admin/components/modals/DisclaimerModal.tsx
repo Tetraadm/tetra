@@ -50,7 +50,7 @@ export function DisclaimerModal({ open, onClose }: DisclaimerModalProps) {
                     marginBottom: 'var(--space-3)',
                     color: 'var(--text-secondary)',
                 }}>
-                    Tetra AI er et <strong>støtteverktøy</strong> som hjelper ansatte med å finne informasjon i bedriftens instrukser og prosedyrer.
+                    Tetrivo AI er et <strong>støtteverktøy</strong> som hjelper ansatte med å finne informasjon i bedriftens instrukser og prosedyrer.
                 </p>
                 <p style={{
                     fontSize: '0.875rem',

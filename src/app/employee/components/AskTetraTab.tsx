@@ -41,7 +41,7 @@ export default function AskTetraTab({
       <CardHeader className="border-b px-6 py-4 bg-card">
         <CardTitle className="flex items-center gap-3 text-lg">
           <MessageCircle className="h-5 w-5 text-primary" />
-          Spør Tetra
+          Spør Tetrivo
         </CardTitle>
       </CardHeader>
 

@@ -96,7 +96,7 @@ export default function EmployeeApp({ profile, organization, instructions, alert
   const employeeTabs: SidebarTab[] = [
     { id: 'home', label: 'Hjem', icon: Home },
     { id: 'instructions', label: 'Bibliotek', icon: FileText },
-    { id: 'ask', label: 'Spør Tetra', icon: MessageSquare },
+    { id: 'ask', label: 'Spør Tetrivo', icon: MessageSquare },
   ]
 
   const handleTabChange = (t: string) => {

@@ -41,13 +41,13 @@ export default function LandingPage() {
             Fremtidens plattform for <br /> trygghet på arbeidsplassen
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
-            Tetra samler HMS, avvikshåndtering og dokumentasjon på ett sted.
+            Tetrivo samler HMS, avvikshåndtering og dokumentasjon på ett sted.
             Enkelt for ansatte, oversiktlig for ledere.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/login">
               <Button size="lg" className="h-12 px-8 text-base shadow-lg hover:shadow-xl transition-all">
-                Kom i gang med Tetra HMS
+                Kom i gang med Tetrivo HMS
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
@@ -77,7 +77,7 @@ export default function LandingPage() {
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-4 text-primary">
                     <Shield size={24} />
                   </div>
-                  <CardTitle className="text-2xl">Tetra HMS</CardTitle>
+                  <CardTitle className="text-2xl">Tetrivo HMS</CardTitle>
                   <CardDescription>Komplett internkontroll</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -88,7 +88,7 @@ export default function LandingPage() {
                 </CardContent>
                 <CardFooter>
                   <Link href="/login" className="w-full">
-                    <Button className="w-full h-11">Gå til Tetra HMS</Button>
+                    <Button className="w-full h-11">Gå til Tetrivo HMS</Button>
                   </Link>
                 </CardFooter>
               </Card>
@@ -179,7 +179,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 border-t bg-background">
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-muted-foreground text-sm">
-          <p>© 2026 Tetra - En del av Antigravity</p>
+          <p>© 2026 Tetrivo - En del av Antigravity</p>
           <div className="flex gap-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-foreground">Personvern</a>
             <a href="#" className="hover:text-foreground">Vilkår</a>

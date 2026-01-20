@@ -70,13 +70,13 @@ export default function LoginPage() {
           <div className="mx-auto w-32 h-32 relative mb-6">
             <Image
               src="/tetra-logo.png"
-              alt="Tetra Logo"
+              alt="Tetrivo Logo"
               fill
               className="object-contain"
               priority
             />
           </div>
-          <CardTitle className="text-2xl">Logg inn på Tetra</CardTitle>
+          <CardTitle className="text-2xl">Logg inn på Tetrivo</CardTitle>
           <CardDescription>
             HMS-plattformen for sikker arbeidsplass
           </CardDescription>
