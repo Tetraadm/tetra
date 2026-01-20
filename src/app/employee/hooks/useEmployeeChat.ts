@@ -88,13 +88,14 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
                 } else if (data.type === 'source') {
                   source = data.content
                 } else if (data.type === 'done') {
-                  // Finalize the message
-                  setStreamingText('')
+                  // Finalize the message - add to messages FIRST, then clear streaming
                   setMessages(prev => [...prev, {
                     type: 'bot',
                     text: accumulatedText,
                     source
                   }])
+                  // Small delay to ensure message is rendered before clearing streaming text
+                  setTimeout(() => setStreamingText(''), 50)
                 } else if (data.type === 'error') {
                   throw new Error(data.content)
                 }
