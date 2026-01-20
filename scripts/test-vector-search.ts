@@ -46,7 +46,7 @@ async function main() {
     const { data: results, error } = await supabase
         .rpc('match_instructions', {
             query_embedding: embeddingStr,
-            match_threshold: 0.5,
+            match_threshold: 0.25,
             match_count: 10,
             p_user_id: null
         })
