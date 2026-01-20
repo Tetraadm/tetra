@@ -34,7 +34,8 @@ export async function middleware(request: NextRequest) {
     pathname === '/login' ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/invite/') ||
-    pathname === '/api/health'
+    pathname === '/api/health' ||
+    pathname === '/api/contact'
 
   if (isPublicRoute) {
     return NextResponse.next()

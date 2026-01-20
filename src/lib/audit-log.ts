@@ -28,8 +28,6 @@ export type AuditActionType =
 export type AuditEntityType = 'instruction' | 'alert' | 'folder' | 'team' | 'user' | 'invite'
 
 type AuditLogParams = {
-  orgId: string
-  userId: string
   actionType: AuditActionType
   entityType: AuditEntityType
   entityId?: string
@@ -37,25 +35,61 @@ type AuditLogParams = {
 }
 
 /**
- * Client-side audit logging function (for Client Components)
- * Use this in client components like AdminDashboard.tsx
+ * F-05 Fix: Server-side audit logging via API
+ * 
+ * This function calls the /api/audit endpoint which:
+ * 1. Validates user authentication
+ * 2. Sets org_id and user_id from server-side session (tamper-proof)
+ * 3. Inserts the audit log entry
+ * 
+ * Use this instead of logAuditEventClient for tamper-resistant logging.
  */
-export async function logAuditEventClient(
-  supabase: SupabaseClient,
+export async function logAuditEvent(
   params: AuditLogParams
 ): Promise<void> {
   try {
-    await supabase
-      .from('audit_logs')
-      .insert({
-        org_id: params.orgId,
-        user_id: params.userId,
-        action_type: params.actionType,
-        entity_type: params.entityType,
-        entity_id: params.entityId || null,
-        details: params.details || {}
+    const response = await fetch('/api/audit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        actionType: params.actionType,
+        entityType: params.entityType,
+        entityId: params.entityId,
+        details: params.details
       })
+    })
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}))
+      console.error('Failed to log audit event:', error)
+    }
   } catch (error) {
     console.error('Failed to log audit event:', error)
   }
 }
+
+/**
+ * @deprecated Use logAuditEvent instead for tamper-resistant logging.
+ * This function inserts directly from client which can be manipulated.
+ * Kept for backwards compatibility with existing code.
+ */
+export async function logAuditEventClient(
+  supabase: SupabaseClient,
+  params: {
+    orgId: string
+    userId: string
+    actionType: AuditActionType
+    entityType: AuditEntityType
+    entityId?: string
+    details?: Record<string, unknown>
+  }
+): Promise<void> {
+  // Redirect to server-side logging
+  await logAuditEvent({
+    actionType: params.actionType,
+    entityType: params.entityType,
+    entityId: params.entityId,
+    details: params.details
+  })
+}
+

@@ -35,7 +35,9 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
 
     setLoading(true)
     // Store full name in cookie for server-side callback to read
-    document.cookie = `invite_fullname=${encodeURIComponent(fullName.trim())}; path=/; max-age=3600; SameSite=Lax`
+    // F-14: Use Secure in production and SameSite=Strict for better security
+    const isSecure = window.location.protocol === 'https:'
+    document.cookie = `invite_fullname=${encodeURIComponent(fullName.trim())}; path=/; max-age=3600; SameSite=Strict${isSecure ? '; Secure' : ''}`
 
     const { error } = await supabase.auth.signInWithOtp({
       email: email.trim(),

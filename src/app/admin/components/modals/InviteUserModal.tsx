@@ -60,7 +60,7 @@ export function InviteUserModal({
                 marginTop: 'calc(var(--space-3) * -1)',
                 marginBottom: 'var(--space-4)',
             }}>
-                E-posten lagres ikke i databasen. Den brukes kun for logging og referanse.
+                E-posten lagres i revisjonsloggen for sporbarhet.
             </p>
 
             <label className="nt-label">Rolle</label>

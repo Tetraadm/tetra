@@ -13,11 +13,12 @@ export async function GET() {
 
     const checks: Record<string, { status: 'ok' | 'error'; ms?: number; error?: string }> = {}
 
-    // Database health check
+    // Database health check - use auth check that doesn't require RLS
     try {
         const dbStart = Date.now()
         const supabase = await createClient()
-        const { error } = await supabase.from('organizations').select('id').limit(1)
+        // Check auth connection - this verifies Supabase connectivity without RLS
+        const { error } = await supabase.auth.getSession()
 
         if (error) throw error
 

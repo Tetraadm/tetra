@@ -212,3 +212,17 @@ export function getClientIp(request: Request): string {
 
   return 'unknown'
 }
+
+// F-15: Export configuration check for deployment verification
+export function getRateLimiterStatus(): {
+  isConfigured: boolean
+  isProduction: boolean
+  provider: 'upstash' | 'in-memory' | 'misconfigured'
+} {
+  return {
+    isConfigured: useUpstash,
+    isProduction: IS_PRODUCTION,
+    provider: useUpstash ? 'upstash' : (IS_PRODUCTION ? 'misconfigured' : 'in-memory')
+  }
+}
+

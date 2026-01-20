@@ -1,14 +1,53 @@
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
+import { getClientIp } from '@/lib/ratelimit'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 
 // Initialize Resend
 const resend = process.env.RESEND_API_KEY
     ? new Resend(process.env.RESEND_API_KEY)
     : null
 
+// Contact-specific rate limiter: 10 requests per hour per IP
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN
+
+const contactRatelimit = (UPSTASH_URL && UPSTASH_TOKEN)
+    ? new Ratelimit({
+        redis: new Redis({ url: UPSTASH_URL, token: UPSTASH_TOKEN }),
+        limiter: Ratelimit.slidingWindow(10, '1 h'),
+        prefix: 'ratelimit:contact',
+    })
+    : null
+
 export async function POST(request: Request) {
     try {
-        const { name, company, email, subject, message } = await request.json()
+        // Rate limiting check
+        if (contactRatelimit) {
+            const ip = getClientIp(request)
+            const { success, remaining, reset } = await contactRatelimit.limit(ip)
+            if (!success) {
+                return NextResponse.json(
+                    { error: 'For mange henvendelser. Prøv igjen senere.' },
+                    {
+                        status: 429,
+                        headers: {
+                            'X-RateLimit-Remaining': remaining.toString(),
+                            'X-RateLimit-Reset': reset.toString(),
+                        }
+                    }
+                )
+            }
+        }
+
+        const { name, company, email, subject, message, website } = await request.json()
+
+        // Honeypot check: if 'website' field is filled, it's likely a bot
+        if (website) {
+            // Silently accept but don't send (fool bots into thinking it worked)
+            return NextResponse.json({ success: true })
+        }
 
         // Validate required fields
         if (!name || !email || !subject || !message) {
@@ -90,7 +129,8 @@ export async function POST(request: Request) {
             html: emailHtml
         })
 
-        console.log(`CONTACT: Email sent from ${email} - Subject: ${subject}`)
+        // F-08: Don't log PII (email) in production logs
+        console.log('CONTACT: Email sent. Subject:', subject)
 
         return NextResponse.json({ success: true })
 

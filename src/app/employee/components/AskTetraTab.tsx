@@ -43,6 +43,10 @@ export default function AskTetraTab({
           <MessageCircle className="h-5 w-5 text-primary" />
           Spør Tetrivo
         </CardTitle>
+        {/* F-10: Privacy disclosure for AI processing */}
+        <p className="text-xs text-muted-foreground mt-2">
+          Spørsmål behandles av AI (Claude). Svar og spørsmål logges for kvalitetssikring.
+        </p>
       </CardHeader>
 
       <div

@@ -120,7 +120,8 @@ export async function POST(request: Request) {
         }
 
         // 5. Send Email via Resend
-        const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || 'http://localhost:3000'
+        // F-07: Always use configured app URL, never trust request origin
+        const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
         const inviteUrl = `${origin}/invite/${invite.token}`
         let emailSent = false
 
@@ -132,7 +133,7 @@ export async function POST(request: Request) {
                 const inviterName = profile.full_name || 'En administrator';
 
                 // Generate HTML content
-                console.log('Generating email for:', email, 'Inviter:', inviterName);
+                console.log('INVITE: Generating email. Role:', role, 'Team:', team_id || 'none');
                 const emailHtml = generateInviteHtml(inviteUrl, role, inviterName);
 
                 // Safety check
