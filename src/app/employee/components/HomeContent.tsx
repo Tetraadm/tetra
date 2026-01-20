@@ -186,7 +186,7 @@ export default function HomeContent({
                     <div className="font-medium mb-1 truncate">
                       {inst.title}
                     </div>
-                    <Badge variant={inst.severity === 'critical' || inst.severity === 'high' ? 'destructive' : 'secondary'}>
+                    <Badge variant={inst.severity === 'critical' ? 'destructive' : 'secondary'}>
                       {severityLabel(inst.severity)}
                     </Badge>
                   </div>

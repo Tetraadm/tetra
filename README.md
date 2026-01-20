@@ -520,10 +520,10 @@ CREATE POLICY "Users view own org instructions"
 
 #### 👤 Rollebasert tilgang
 
-| Rolle | Tilgang |
+| Role | Tilgang |
 |-------|---------|
-| **Admin** | Full kontroll over organisasjon, teams, brukere, instrukser, varsler, audit logs |
-| **Teamleder** | Team-scope: administrer team, inviter brukere, håndter teamvarsler |
+| **Admin** | Full kontroll over organisasjon, invitasjoner, teams, brukere, instrukser, varsler, audit logs |
+| **Teamleder** | Team-scope: administrer team-medlemmer, håndter teamvarsler (ingen invitasjonsrettigheter) |
 | **Ansatt** | Read-only: se tildelte instrukser, bekreft lesing, bruk AI-assistent |
 
 #### 🗑️ Soft Delete
@@ -631,7 +631,7 @@ Last opp instruksdokumenter. **Kun Admin**.
 file: [PDF/TXT/PNG/JPG file, max 10MB]
 title: "Brannrutiner"
 description: "Oppdaterte brannrutiner for 2026"
-severity: "high"
+severity: "critical"
 status: "published"
 teamIds: ["team-uuid-1", "team-uuid-2"]
 folderId: "folder-uuid" (optional)
@@ -655,11 +655,11 @@ folderId: "folder-uuid" (optional)
 
 ### POST `/api/invite`
 
-Send brukerinvitasjon. **Admin eller Teamleder**.
-
+Send brukerinvitasjon. **Kun Admin**.
+ 
 **Constraints:**
-- Teamleder kan kun invitere til sitt eget team
-- Teamleder kan kun invitere med rolle `employee`
+- Kan invitere til alle teams i organisasjonen
+- Validerer at team tilhører organisasjonen
 
 **Rate limit:** 10 invites / 3600 sekunder (1 time)
 
@@ -694,7 +694,7 @@ Bekreft at bruker har lest en instruks.
 **Request:**
 ```json
 {
-  "instruction_id": "instruction-uuid"
+  "instructionId": "instruction-uuid"
 }
 ```
 
@@ -710,7 +710,7 @@ Bekreft at bruker har lest en instruks.
 
 ### GET `/api/read-confirmations`
 
-Hent lesebekreftelser for instrukser. **Kun Admin/Teamleder**.
+Hent lesebekreftelser for instrukser. **Kun Admin**.
 
 **Query params:**
 - `instructionId` (optional) - Filter by instruction
@@ -895,13 +895,13 @@ curl https://api.anthropic.com/v1/messages \
 **Sjekk:**
 1. Filstørrelse under `MAX_UPLOAD_MB` (default 10MB)
 2. MIME type støttet (PDF, TXT, PNG, JPG)
-3. Storage bucket `instruction_files` eksisterer
+3. Storage bucket `instructions` eksisterer
 4. RLS policies på storage (kjør migrasjon 19-20)
 
 **Feilsøk:**
 ```sql
 -- Sjekk storage policies
-SELECT * FROM storage.policies WHERE bucket_id = 'instruction_files';
+SELECT * FROM storage.policies WHERE bucket_id = 'instructions';
 ```
 
 </details>
@@ -1093,3 +1093,4 @@ For lisensiering, kontakt: support@tetra.onl
 **Tetra HMS** • Versjon 0.1.0 • 2026
 
 </div>
+

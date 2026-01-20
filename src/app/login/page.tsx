@@ -1,4 +1,5 @@
 'use client'
+import Image from 'next/image'
 
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
@@ -66,8 +67,14 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-6">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pb-4">
-          <div className="mx-auto w-14 h-14 bg-primary rounded-xl flex items-center justify-center mb-4 text-primary-foreground font-bold text-2xl shadow-lg">
-            T
+          <div className="mx-auto w-32 h-32 relative mb-6">
+            <Image
+              src="/tetra-logo.png"
+              alt="Tetra Logo"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
           <CardTitle className="text-2xl">Logg inn på Tetra</CardTitle>
           <CardDescription>

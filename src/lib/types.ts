@@ -3,8 +3,8 @@
  */
 
 export type Role = 'admin' | 'teamleader' | 'employee'
-export type Severity = 'critical' | 'high' | 'medium' | 'low'
-export type InstructionStatus = 'draft' | 'published' | 'archived'
+export type Severity = 'critical' | 'medium' | 'low'
+export type InstructionStatus = 'draft' | 'published'
 
 export type Profile = {
   id: string

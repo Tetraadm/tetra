@@ -1,4 +1,4 @@
-﻿export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 export default async function PostAuthPage() {
   const supabase = await createClient();
 
-  // getUser() gjør en sikker server-side JWT-verifisering
+  // getUser() gj�r en sikker server-side JWT-verifisering
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?error=NO_SESSION");
 
@@ -17,11 +17,13 @@ export default async function PostAuthPage() {
     .maybeSingle(); // i stedet for .single()
 
   if (profileError) {
-    redirect(`/login?error=${encodeURIComponent(`PROFILE_ERR: ${profileError.message}`)}`);
+    console.error('PROFILE_ERR', profileError);
+    redirect('/login?error=PROFILE_ERR');
   }
 
   if (!profile) {
-    redirect(`/login?error=${encodeURIComponent(`NO_PROFILE_DB for ${user.email} (${user.id})`)}`);
+    console.error('NO_PROFILE_DB', { userId: user.id, email: user.email });
+    redirect('/login?error=NO_PROFILE_DB');
   }
 
   if (profile.role === "admin") redirect("/admin");

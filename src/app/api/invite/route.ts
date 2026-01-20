@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { inviteRatelimit } from '@/lib/ratelimit'
+import { generateInviteHtml } from '@/lib/emails/invite-email'
 
 // Initialize Resend with API Key
 const resend = process.env.RESEND_API_KEY
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
         const { data: profile } = await supabase
             .from('profiles')
-            .select('role, org_id')
+            .select('role, org_id, full_name')
             .eq('id', user.id)
             .single()
 
@@ -82,7 +83,24 @@ export async function POST(request: Request) {
             )
         }
 
-        // 3. Create Invite in DB
+        // 3. Validate team belongs to admin's org (security check)
+        if (team_id) {
+            const { data: teamCheck, error: teamError } = await supabase
+                .from('teams')
+                .select('id')
+                .eq('id', team_id)
+                .eq('org_id', profile.org_id)
+                .single()
+
+            if (teamError || !teamCheck) {
+                return NextResponse.json(
+                    { error: 'Ugyldig team - teamet tilhører ikke din organisasjon' },
+                    { status: 400 }
+                )
+            }
+        }
+
+        // 4. Create Invite in DB
         const { data: invite, error: insertError } = await supabase
             .from('invites')
             .insert({
@@ -101,32 +119,33 @@ export async function POST(request: Request) {
             )
         }
 
-        // 4. Send Email via Resend
-        const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+        // 5. Send Email via Resend
+        const origin = process.env.NEXT_PUBLIC_APP_URL || request.headers.get('origin') || 'http://localhost:3000'
         const inviteUrl = `${origin}/invite/${invite.token}`
         let emailSent = false
 
         if (resend) {
             try {
                 const fromEmail = process.env.RESEND_FROM_EMAIL || 'Tetra HMS <onboarding@resend.dev>'
+
+                // Construct inviter name
+                const inviterName = profile.full_name || 'En administrator';
+
+                // Generate HTML content
+                console.log('Generating email for:', email, 'Inviter:', inviterName);
+                const emailHtml = generateInviteHtml(inviteUrl, role, inviterName);
+
+                // Safety check
+                if (typeof emailHtml !== 'string' || !emailHtml.startsWith('<!DOCTYPE html>')) {
+                    console.error('CRITICAL: Email HTML is not a valid string!', emailHtml);
+                    throw new Error('Email HTML generation failed');
+                }
+
                 await resend.emails.send({
                     from: fromEmail,
                     to: email,
                     subject: 'Du har blitt invitert til Tetra HMS',
-                    html: `
-            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-              <h1 style="color: #4F46E5;">Velkommen til Tetra HMS</h1>
-              <p>Du har blitt invitert til å bli med i organisasjonen.</p>
-              <p>Din rolle vil være: <strong>${role}</strong></p>
-              <p>Klikk på knappen under for å akseptere invitasjonen og opprette din bruker.</p>
-              <div style="margin: 30px 0;">
-                <a href="${inviteUrl}" style="background-color: #4F46E5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
-                  Aksepter invitasjon
-                </a>
-              </div>
-              <p style="color: #666; font-size: 14px;">Denne lenken er gyldig i 7 dager.</p>
-            </div>
-          `
+                    html: emailHtml
                 })
                 emailSent = true
             } catch (emailError) {
@@ -137,7 +156,7 @@ export async function POST(request: Request) {
             console.warn('Resend not configured')
         }
 
-        // 5. Audit Log (Server-side insert)
+        // 6. Audit Log (Server-side insert)
         await supabase.from('audit_logs').insert({
             org_id: profile.org_id,
             user_id: user.id,

@@ -66,7 +66,7 @@ export default function InstructionsTab({
                   <div className="font-medium mb-1 truncate text-foreground">
                     {inst.title}
                   </div>
-                  <Badge variant={inst.severity === 'critical' || inst.severity === 'high' ? 'destructive' : 'secondary'}>
+                  <Badge variant={inst.severity === 'critical' ? 'destructive' : 'secondary'}>
                     {severityLabel(inst.severity)}
                   </Badge>
                 </div>

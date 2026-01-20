@@ -132,7 +132,6 @@ export const transitions = {
 export function severityLabel(severity: string): string {
   switch (severity) {
     case 'critical': return 'Kritisk'
-    case 'high': return 'Hoy'
     case 'medium': return 'Middels'
     case 'low': return 'Lav'
     default: return 'Ukjent'
@@ -149,12 +148,6 @@ export function severityColor(severity: string): ColorSet {
         bg: colors.dangerLight,
         color: colors.danger,
         border: colors.dangerBorder
-      }
-    case 'high':
-      return {
-        bg: colors.highLight,
-        color: colors.high,
-        border: colors.highBorder
       }
     case 'medium':
       return {
@@ -204,22 +197,11 @@ export function statusColor(status: string): ColorSet {
         border: colors.successBorder
       }
     case 'draft':
+    default:
       return {
         bg: colors.warningLight,
         color: colors.warning,
         border: colors.warningBorder
-      }
-    case 'archived':
-      return {
-        bg: colors.backgroundSubtle,
-        color: colors.textMuted,
-        border: colors.border
-      }
-    default:
-      return {
-        bg: colors.backgroundSubtle,
-        color: colors.textSecondary,
-        border: colors.border
       }
   }
 }

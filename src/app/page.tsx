@@ -3,7 +3,9 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, Shield, Building2, Link as LinkIcon, Mail, Phone, MapPin, ArrowRight } from 'lucide-react'
+import { CheckCircle, Shield, Building2, Mail, Phone, ArrowRight } from 'lucide-react'
+
+import { TetraLogo } from '@/components/tetra-logo'
 
 export default function LandingPage() {
   return (
@@ -11,12 +13,9 @@ export default function LandingPage() {
       {/* Header */}
       <header className="border-b sticky top-0 z-50 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-bold text-xl text-primary">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
-              T
-            </div>
-            Tetra
-          </div>
+          <Link href="/">
+            <TetraLogo />
+          </Link>
           <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-muted-foreground">
             <a href="#systemer" className="hover:text-foreground transition-colors">Våre Systemer</a>
             <a href="#priser" className="hover:text-foreground transition-colors">Priser</a>
@@ -201,7 +200,14 @@ function Feature({ text }: { text: string }) {
   )
 }
 
-function PricingCard({ title, price, period, description, features, isPopular }: any) {
+function PricingCard({ title, price, period, description, features, isPopular }: {
+  title: string
+  price: string
+  period?: string
+  description: string
+  features: string[]
+  isPopular?: boolean
+}) {
   return (
     <Card className={`relative flex flex-col ${isPopular ? 'border-primary shadow-xl scale-105 z-10' : 'shadow-md'}`}>
       {isPopular && (

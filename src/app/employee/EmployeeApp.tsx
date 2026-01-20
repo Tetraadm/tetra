@@ -29,13 +29,12 @@ type Props = {
   alerts: Alert[]
 }
 
-export default function EmployeeApp({ profile, organization, team: _team, instructions, alerts }: Props) {
+export default function EmployeeApp({ profile, organization, instructions, alerts }: Props) {
   const supabase = useMemo(() => createClient(), [])
   const [tab, setTab] = useState<'home' | 'instructions' | 'ask'>('home')
   const [isMobile, setIsMobile] = useState(true)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const router = useRouter()
-  void _team
 
   const {
     searchQuery,

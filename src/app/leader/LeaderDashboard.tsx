@@ -218,7 +218,7 @@ export default function LeaderDashboard({
                               <tr key={inst.id} className="border-b transition-colors hover:bg-muted/50">
                                 <td className="p-4 font-medium">{inst.title}</td>
                                 <td className="p-4">
-                                  <Badge variant={inst.severity === 'critical' || inst.severity === 'high' ? 'destructive' : 'secondary'}>
+                                  <Badge variant={inst.severity === 'critical' ? 'destructive' : 'secondary'}>
                                     {severityLabel(inst.severity)}
                                   </Badge>
                                 </td>

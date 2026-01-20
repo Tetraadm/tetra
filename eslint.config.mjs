@@ -15,5 +15,7 @@ export default defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Antigravity agent skills and references:
+    ".agent/**",
   ]),
 ]);

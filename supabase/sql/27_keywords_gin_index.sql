@@ -1,6 +1,6 @@
 -- ============================================================================
 -- GIN INDEX FOR KEYWORDS JSONB SEARCH OPTIMIZATION
--- Migration: 20_keywords_gin_index.sql
+-- Migration: 27_keywords_gin_index.sql
 -- Date: 2026-01-16
 -- ============================================================================
 -- This migration adds a GIN index on the keywords JSONB column to improve
@@ -30,3 +30,4 @@ WHERE deleted_at IS NULL;
 -- SELECT * FROM instructions 
 -- WHERE keywords @> '["brann"]'::jsonb;
 -- ============================================================================
+

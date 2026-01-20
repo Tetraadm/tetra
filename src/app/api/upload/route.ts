@@ -16,8 +16,8 @@ const UploadFormSchema = z.object({
   file: z.instanceof(File, { message: 'File is required' }),
   title: z.string().min(1, 'Title is required').max(200, 'Title too long'),
   content: z.string().max(50000, 'Content too long').optional().default(''),
-  severity: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
-  status: z.enum(['draft', 'published', 'archived']).default('draft'),
+  severity: z.enum(['low', 'medium', 'critical']).default('medium'),
+  status: z.enum(['draft', 'published']).default('draft'),
   orgId: z.string().uuid('Invalid organization ID'),
   folderId: z.string().uuid().nullable().optional(),
   teamIds: z.array(z.string().uuid()).default([]),
@@ -37,10 +37,11 @@ const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
  */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   const loadingTask = getDocument({ data: pdfBytes, useSystemFonts: true })
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
 
   // Create timeout promise that properly cleans up the loading task
   const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => {
+    timeoutId = setTimeout(() => {
       loadingTask.destroy()
       reject(new Error(`PDF parsing timed out after ${PDF_TIMEOUT_MS}ms`))
     }, PDF_TIMEOUT_MS)
@@ -49,6 +50,9 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   try {
     // Race between PDF loading and timeout
     const pdf = await Promise.race([loadingTask.promise, timeoutPromise])
+
+    // Clear timeout on success to prevent race condition
+    if (timeoutId) clearTimeout(timeoutId)
 
     const pagesToProcess = Math.min(pdf.numPages, PDF_MAX_PAGES)
     if (pdf.numPages > PDF_MAX_PAGES) {
@@ -78,7 +82,8 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
 
     return textParts.join('\n\n').trim()
   } catch (error) {
-    // Ensure loading task is destroyed on any error
+    // Clear timeout and ensure loading task is destroyed on any error
+    if (timeoutId) clearTimeout(timeoutId)
     loadingTask.destroy()
     throw error
   }
@@ -321,6 +326,14 @@ export async function POST(request: NextRequest) {
         details: errorDetails.details,
         hint: errorDetails.hint
       })
+      const { error: cleanupError } = await adminClient.storage
+        .from('instructions')
+        .remove([fileName])
+
+      if (cleanupError) {
+        console.error('INSTRUCTION_FILE_CLEANUP_ERROR', cleanupError)
+      }
+
       return NextResponse.json({ error: 'Kunne ikke opprette instruks' }, { status: 500 })
     }
 
@@ -349,12 +362,36 @@ export async function POST(request: NextRequest) {
         )
       }
 
-      await supabase.from('instruction_teams').insert(
+      const { error: teamLinkError } = await supabase.from('instruction_teams').insert(
         teamIds.map((teamId: string) => ({
           instruction_id: instruction.id,
           team_id: teamId
         }))
       )
+
+      // If team linking fails, rollback by soft-deleting the instruction
+      // This prevents instructions from being visible org-wide when team linking fails
+      if (teamLinkError) {
+        console.error('INSTRUCTION_TEAMS_INSERT_ERROR', teamLinkError)
+        // Soft-delete the instruction to prevent org-wide visibility
+        await supabase
+          .from('instructions')
+          .update({ deleted_at: new Date().toISOString() })
+          .eq('id', instruction.id)
+
+        const { error: cleanupError } = await adminClient.storage
+          .from('instructions')
+          .remove([fileName])
+
+        if (cleanupError) {
+          console.error('INSTRUCTION_FILE_CLEANUP_ERROR', cleanupError)
+        }
+
+        return NextResponse.json(
+          { error: 'Kunne ikke koble instruks til team. Prøv igjen.' },
+          { status: 500 }
+        )
+      }
     }
 
     return NextResponse.json({
@@ -368,3 +405,4 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Noe gikk galt' }, { status: 500 })
   }
 }
+

@@ -3,13 +3,14 @@
 import { AlertTriangle } from 'lucide-react'
 
 export default function Error({
-  error: _error,
+  error,
   reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void
 }) {
-  void _error
+  // Log error to console in development
+  console.error(error)
   return (
     <div style={{
       minHeight: '100vh',

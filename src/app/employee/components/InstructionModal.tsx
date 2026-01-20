@@ -38,7 +38,7 @@ export default function InstructionModal({
       >
         <div className="p-6 border-b flex justify-between items-start bg-card">
           <div className="flex-1 pr-4">
-            <Badge variant={instruction.severity === 'critical' || instruction.severity === 'high' ? 'destructive' : 'secondary'}>
+            <Badge variant={instruction.severity === 'critical' ? 'destructive' : 'secondary'}>
               {severityLabel(instruction.severity)}
             </Badge>
             <h2 className="text-xl font-bold mt-3 tracking-tight text-foreground leading-tight">

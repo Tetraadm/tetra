@@ -12,9 +12,6 @@ describe('severityLabel', () => {
         expect(severityLabel('critical')).toBe('Kritisk')
     })
 
-    it('should return Hoy for high severity', () => {
-        expect(severityLabel('high')).toBe('Hoy')
-    })
 
     it('should return Middels for medium severity', () => {
         expect(severityLabel('medium')).toBe('Middels')
@@ -37,11 +34,6 @@ describe('severityColor', () => {
         expect(result.color).toBe(colors.danger)
     })
 
-    it('should return high colors for high severity', () => {
-        const result = severityColor('high')
-        expect(result.bg).toBe(colors.highLight)
-        expect(result.color).toBe(colors.high)
-    })
 
     it('should return warning colors for medium severity', () => {
         const result = severityColor('medium')
@@ -93,15 +85,9 @@ describe('statusColor', () => {
         expect(result.color).toBe(colors.warning)
     })
 
-    it('should return muted colors for archived status', () => {
-        const result = statusColor('archived')
-        expect(result.bg).toBe(colors.backgroundSubtle)
-        expect(result.color).toBe(colors.textMuted)
-    })
-
-    it('should return secondary colors for unknown status', () => {
+    it('should return warning colors for unknown status (default to draft styling)', () => {
         const result = statusColor('unknown')
-        expect(result.bg).toBe(colors.backgroundSubtle)
-        expect(result.color).toBe(colors.textSecondary)
+        expect(result.bg).toBe(colors.warningLight)
+        expect(result.color).toBe(colors.warning)
     })
 })
