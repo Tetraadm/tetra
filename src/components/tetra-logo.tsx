@@ -30,6 +30,8 @@ export function TetraLogo({ className, variant = 'full', size = 40 }: TetraLogoP
         height={height}
         className={variant === 'logo-only' ? `w-auto` : 'h-auto w-auto'}
         style={{ height: `${height}px` }}
+        quality={100}
+        unoptimized
         priority
       />
     </div>
