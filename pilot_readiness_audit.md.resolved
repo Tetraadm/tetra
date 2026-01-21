@@ -106,8 +106,7 @@
 | alerts | ✅ | Notifications |
 | invites | ✅ | User invitations |
 | audit_logs | ✅ | Audit trail |
-| ai_unanswered_questions | ✅ | AI feedback |
-| ask_tetra_logs | ✅ | AI usage logs |
+| ai_unanswered_questions | ✅ | AI feedback (ubesvarte spørsmål) |
 | gdpr_requests | ✅ | GDPR workflow |
 
 > [!IMPORTANT]
@@ -199,12 +198,11 @@ Rate limits configured:
 
 | Issue | Severity | Tables Affected |
 |-------|----------|-----------------|
-| Unindexed Foreign Keys | INFO | `ai_unanswered_questions`, `ask_tetra_logs`, `gdpr_requests`, `instruction_chunks` |
+| Unindexed Foreign Keys | INFO | `ai_unanswered_questions`, `gdpr_requests`, `instruction_chunks` |
 | Multiple Permissive Policies | WARN | `alerts`, `invites`, `profiles`, `instruction_reads`, `instructions`, `teams` |
 
 **Unindexed FKs (can impact JOIN performance):**
 - `ai_unanswered_questions_user_id_fkey`
-- `ask_tetra_logs_source_instruction_id_fkey`
 - `gdpr_requests_processed_by_fkey`
 - `instruction_chunks_instruction_id_fkey`
 
