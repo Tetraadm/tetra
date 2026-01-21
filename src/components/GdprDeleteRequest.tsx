@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Trash2, Loader2 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
 import toast from 'react-hot-toast'
 
 interface GdprDeleteRequestProps {
@@ -15,7 +14,6 @@ export function GdprDeleteRequest({ userName }: GdprDeleteRequestProps) {
     const [reason, setReason] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [hasSubmitted, setHasSubmitted] = useState(false)
-    const supabase = createClient()
 
     const handleSubmit = async () => {
         setIsSubmitting(true)

@@ -53,6 +53,7 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 | **Hosting** | Vercel |
 | **Rate Limiting** | Upstash Redis |
 | **Error Tracking** | Sentry |
+| **GDPR** | Automatisk cleanup + sletteforespørsler |
 
 ---
 
@@ -109,6 +110,11 @@ NEXT_PUBLIC_APP_URL=https://tetrivo.com
 | `RESEND_FROM_EMAIL` | Avsenderadresse |
 | `UPSTASH_REDIS_REST_URL` | Produksjons rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN` | Redis token |
+| `GDPR_CLEANUP_SECRET` | Secret for GDPR cleanup cron |
+| `GDPR_RETENTION_DAYS` | Retention period (default: 90) |
+| `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking |
+| `SENTRY_ORG` | Sentry organization |
+| `SENTRY_PROJECT` | Sentry project |
 
 ---
 
@@ -145,6 +151,8 @@ tetrivo/
 | `/api/invite` | POST | Brukerinvitasjon (Admin) |
 | `/api/confirm-read` | POST | Lesebekreftelse |
 | `/api/health` | GET | Health check |
+| `/api/gdpr-request` | POST/GET/PATCH | GDPR sletteforespørsler |
+| `/api/gdpr-cleanup` | POST | GDPR log cleanup (cron) |
 
 ---
 
@@ -160,6 +168,8 @@ tetrivo/
 | `instructions` | HMS-dokumenter |
 | `instruction_reads` | Lesebekreftelser |
 | `audit_logs` | Aktivitetslogg |
+| `gdpr_requests` | GDPR sletteforespørsler |
+| `gdpr_retention_runs` | GDPR cleanup audit trail |
 
 ### Roller
 
@@ -202,6 +212,18 @@ npm run test:e2e
 | `npm run build` | Produksjonsbuild |
 | `npm run lint` | Kjør ESLint |
 | `npm run test:e2e` | Kjør E2E-tester |
+| `npm run typecheck` | TypeScript sjekk |
+| `npm run spellcheck` | Stavekontroll |
+
+---
+
+## 🤖 GitHub Actions
+
+| Workflow | Trigger | Beskrivelse |
+|----------|---------|-------------|
+| `ci.yml` | Push/PR | Lint, typecheck, test, build |
+| `security.yml` | Push/PR/Weekly | npm audit, secret scanning |
+| `gdpr-cleanup.yml` | Monthly | GDPR log retention cleanup |
 
 ---
 
