@@ -109,7 +109,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center pb-4">
           <div className="mx-auto mb-6 flex justify-center">
-            <TetraLogo variant="logo-only" className="scale-[2.5]" />
+            <TetraLogo variant="logo-only" size={100} />
           </div>
           <CardTitle className="text-2xl">Logg inn på Tetrivo</CardTitle>
           <CardDescription>
