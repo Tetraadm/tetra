@@ -216,38 +216,34 @@ export function useAdminInstructions({
           }
         }
       } else {
-        const textForKeywords = `${newInstruction.title} ${newInstruction.content}`.trim()
-        const keywords = extractKeywords(textForKeywords, 10)
+        const teamIdsToLink = newInstruction.allTeams ? [] : newInstruction.teamIds
 
-        const { data, error } = await supabase
-          .from('instructions')
-          .insert({
+        const response = await fetch('/api/instructions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
             title: newInstruction.title,
             content: newInstruction.content,
             severity: newInstruction.severity,
             status: newInstruction.status,
-            org_id: profile.org_id,
-            created_by: profile.id,
-            folder_id: newInstruction.folderId || null,
-            keywords: keywords
+            orgId: profile.org_id,
+            folderId: newInstruction.folderId || null,
+            teamIds: teamIdsToLink,
+            allTeams: newInstruction.allTeams
           })
-          .select('*, folders(*)')
-          .single()
+        })
 
-        if (error) {
-          toast.error('Kunne ikke opprette instruks')
+        const result = await response.json()
+
+        if (response.status >= 400 || result.error) {
+          toast.error(result.error || 'Kunne ikke opprette instruks')
           setInstructionLoading(false)
           return
         }
 
-        if (data && teamIdsToLink.length > 0) {
-          await supabase.from('instruction_teams').insert(
-            teamIdsToLink.map(teamId => ({
-              instruction_id: data.id,
-              team_id: teamId
-            }))
-          )
-        }
+        const data = result
 
         if (data) {
           setInstructions(prev => [data, ...prev])
@@ -464,31 +460,31 @@ export function useAdminInstructions({
 
 
 
-const loadMoreInstructions = useCallback(async () => {
-  if (instructionsLoadingMore || !instructionsHasMore) return
-  setInstructionsLoadingMore(true)
+  const loadMoreInstructions = useCallback(async () => {
+    if (instructionsLoadingMore || !instructionsHasMore) return
+    setInstructionsLoadingMore(true)
 
-  try {
-    const offset = instructions.length
-    const { data, error } = await supabase
-      .from('instructions')
-      .select('*, folders(*)')
-      .eq('org_id', profile.org_id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + PAGE_SIZE - 1)
+    try {
+      const offset = instructions.length
+      const { data, error } = await supabase
+        .from('instructions')
+        .select('*, folders(*)')
+        .eq('org_id', profile.org_id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + PAGE_SIZE - 1)
 
-    if (error) throw error
+      if (error) throw error
 
-    const nextInstructions = data || []
-    setInstructions(prev => [...prev, ...nextInstructions])
-    setInstructionsHasMore(nextInstructions.length >= PAGE_SIZE)
-  } catch (error) {
-    console.error('Load more instructions error:', error)
-    toast.error('Kunne ikke laste flere instrukser. Prøv igjen.')
-  } finally {
-    setInstructionsLoadingMore(false)
-  }
-}, [instructions.length, instructionsHasMore, instructionsLoadingMore, profile.org_id, supabase])
+      const nextInstructions = data || []
+      setInstructions(prev => [...prev, ...nextInstructions])
+      setInstructionsHasMore(nextInstructions.length >= PAGE_SIZE)
+    } catch (error) {
+      console.error('Load more instructions error:', error)
+      toast.error('Kunne ikke laste flere instrukser. Prøv igjen.')
+    } finally {
+      setInstructionsLoadingMore(false)
+    }
+  }, [instructions.length, instructionsHasMore, instructionsLoadingMore, profile.org_id, supabase])
 
   return {
     instructions,

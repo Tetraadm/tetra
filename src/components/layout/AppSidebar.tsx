@@ -71,7 +71,7 @@ export function AppSidebar({ tabs, activeTab, onTabChange, open, onClose }: AppS
                                                 : tab.badgeColor === 'destructive'
                                                     ? "bg-destructive text-destructive-foreground"
                                                     : tab.badgeColor === 'warning'
-                                                        ? "bg-tetra-warning text-foreground"
+                                                        ? "bg-amber-500 text-foreground"
                                                         : "bg-secondary text-foreground"
                                         )}
                                     >

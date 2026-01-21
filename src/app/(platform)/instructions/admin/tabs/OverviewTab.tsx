@@ -74,7 +74,7 @@ export default function OverviewTab({ profile, users, instructions, alerts, setT
               {activeAlerts.slice(0, 3).map(alert => (
                 <div key={alert.id} className="flex items-center justify-between p-3 rounded-lg bg-background border border-destructive/20">
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline" className={`${alert.severity === 'critical' ? 'border-destructive text-destructive' : 'border-tetra-warning text-foreground'}`}>
+                    <Badge variant="outline" className={`${alert.severity === 'critical' ? 'border-destructive text-destructive' : 'border-amber-500 text-foreground'}`}>
                       {alert.severity}
                     </Badge>
                     <span className="font-medium">{alert.title}</span>

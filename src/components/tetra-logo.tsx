@@ -1,15 +1,16 @@
-import { TetrivoIcon } from '@/components/icons/tetrivo-icon'
+import Image from 'next/image'
 
 export function TetraLogo({ className }: { className?: string }) {
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <div className="relative flex items-center justify-center">
-        <TetrivoIcon size={40} />
-      </div>
-      <span className="font-bold text-2xl tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-teal-600 to-cyan-500 dark:from-teal-400 dark:to-cyan-300">
-        Tetrivo
-      </span>
+      <Image
+        src="/tetrivo-logo.png"
+        alt="Tetrivo"
+        width={140}
+        height={40}
+        className="h-10 w-auto"
+        priority
+      />
     </div>
   )
 }
-

@@ -1,0 +1,31 @@
+# Antigravity Agent Rules
+
+## 🧠 Context Loading Protocol
+You must follow this protocol at the start of every session or when context is lost:
+
+1. **Global Rules**: Read `.agent/rules/GEMINI.md` first. This defines *HOW* I should behave (Socratic Gate, Request Hierarchy).
+2. **Primary Index**: Read `.agent/ARCHITECTURE.md` second. This defines *WHAT* tools I have (Agents, Skills, Workflows):
+   - 🤖 **16 Agents**
+   - 🧠 **40 Skills**
+   - 🔄 **11 Workflows**
+
+2. **Skill Loading**:
+   - ❌ **DO NOT** read all 40 skill files at once. This wastes tokens.
+   - ✅ **DO** use the "Skill Loading Protocol":
+     - Analyze the User Request.
+     - Match it against the **Skills Table** in `ARCHITECTURE.md`.
+     - Load ONLY the relevant `SKILL.md` file (e.g., `view_file .agent/skills/react-patterns/SKILL.md`).
+
+## 🔄 Workflow Activation
+- If the user uses a slash command (e.g., `/plan`, `/debug`), look for the corresponding file in `.agent/workflows/` (e.g., `.agent/workflows/plan.md`) and follow its instructions exactly.
+
+## 📂 Project Structure
+- **Rules**: `.agent/rules/`
+- **Agents**: `.agent/agents/`
+- **Workflows**: `.agent/workflows/`
+- **Skills**: `.agent/skills/`
+
+## 🌍 Language & Localization
+- **UI/UX Text**: Must ALWAYS be in **Norwegian Bokmål**.
+- **Tone**: Professional and clear.
+

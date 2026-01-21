@@ -36,6 +36,9 @@ Kopier og lim inn innholdet fra hver fil i SQL Editor:
 | 5 | `05_policies.sql` | RLS policies |
 | 6 | `06_storage.sql` | Storage bucket |
 | 7 | `07_gdpr.sql` | GDPR funksjoner |
+| 8 | `08_vector_fix.sql` | Vector search schema (embedding & match) |
+| 9 | `09_read_confirmations_rpc.sql` | Read report functions |
+| 10 | `10_gdpr_cron.sql` | GDPR cron schedule |
 
 **VIKTIG:** Kjør filene i nøyaktig denne rekkefølgen!
 

@@ -26,7 +26,7 @@ export default async function PostAuthPage() {
     redirect('/login?error=NO_PROFILE_DB');
   }
 
-  if (profile.role === "admin") redirect("/admin");
-  if (profile.role === "teamleader") redirect("/leader");
-  redirect("/employee");
+  if (profile.role === "admin") redirect("/instructions/admin");
+  if (profile.role === "teamleader") redirect("/instructions/leader");
+  redirect("/instructions/employee");
 }

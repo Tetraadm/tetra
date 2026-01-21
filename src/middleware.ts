@@ -82,11 +82,11 @@ export async function middleware(request: NextRequest) {
   // Refresh session if exists (important for SSR)
   const { data: { user } } = await supabase.auth.getUser()
 
-  // Protected route patterns
+  // Protected route patterns (platform routes)
   const isProtectedRoute =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/employee') ||
-    pathname.startsWith('/leader') ||
+    pathname.startsWith('/instructions') ||
+    pathname.startsWith('/portal') ||
+    pathname.startsWith('/deviations') ||
     pathname.startsWith('/post-auth')
 
   // API routes that need auth (exclude public endpoints)

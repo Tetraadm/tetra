@@ -1,6 +1,6 @@
-# Tetra HMS Runbook
+# Tetrivo HMS Runbook
 
-Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-17.
+Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-21.
 
 ---
 
@@ -57,7 +57,7 @@ Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-17.
 
 ---
 
-## 4. AI / Anthropic-feil
+## 4. AI / Gemini-feil
 
 ### Symptomer
 - "Tjenesten er midlertidig utilgjengelig" (503)
@@ -66,13 +66,13 @@ Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-17.
 ### Feilsøking
 1. **Rate limit (429):** Sjekk Upstash dashboard for rate limit status
 2. **503 Service Unavailable:** Upstash ikke konfigurert! Sjekk `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
-3. **Anthropic API error:** Sjekk `ANTHROPIC_API_KEY`, sjekk Anthropic status page
+3. **Gemini API error:** Sjekk `GOOGLE_GENERATIVE_AI_API_KEY`, sjekk Google AI status
 4. **Ingen relevante instrukser:** AI svarer med fallback fordi ingen matcher
 
 ### Løsning
 - Rate limit: Vent til window resetter (se `X-RateLimit-Reset` header)
 - Upstash mangler: Konfigurer i Vercel env vars, redeploy
-- Anthropic nede: Vent, eller deaktiver Spør Tetra midlertidig
+- Gemini nede: Vent, eller deaktiver Spør Tetrivo midlertidig
 
 ---
 
@@ -127,7 +127,7 @@ git push origin main
 ## 8. Overvåkning / Alerting
 
 ### Anbefalte verktøy
-- **Error tracking:** Sentry (ikke installert ennå)
+- **Error tracking:** Sentry (✅ installert)
 - **Uptime:** UptimeRobot, Better Uptime
 - **Logs:** Vercel Logs, Supabase Logs
 
@@ -148,7 +148,7 @@ git push origin main
 | Supabase support | support@supabase.io | Database/auth issues |
 | Vercel support | support@vercel.com | Hosting/deploy issues |
 | Resend support | support@resend.com | E-post leveringsproblemer |
-| Anthropic status | status.anthropic.com | AI API status |
+| Google AI status | ai.google.dev/status | AI API status |
 
 ---
 
@@ -191,15 +191,10 @@ git push origin main
 ## 12. Monitorering (Anbefalt)
 
 ### Sentry (Error Tracking)
-```bash
-npm install @sentry/nextjs
-npx @sentry/wizard@latest -i nextjs
-```
 
-Legg til i `.env.local`:
-```
-SENTRY_DSN=https://xxx@sentry.io/xxx
-```
+✅ **Allerede installert og konfigurert.**
+
+Sjekk `sentry.client.config.ts`, `sentry.server.config.ts`, og `sentry.edge.config.ts` for konfigurasjon.
 
 ### UptimeRobot (Gratis uptime)
 1. Opprett konto på uptimerobot.com

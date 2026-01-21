@@ -112,24 +112,7 @@ class UpstashRatelimitWrapper {
   }
 }
 
-/**
- * Fail-closed rate limiter for production when Upstash is not configured.
- * Always returns isMisconfigured=true so API routes can return 503.
- */
-class MisconfiguredRatelimit {
-  readonly isMisconfigured = true
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async limit(_identifier: string): Promise<RateLimitCheckResult> {
-    return {
-      success: false,
-      limit: 0,
-      remaining: 0,
-      reset: Date.now(),
-      isMisconfigured: true,
-    }
-  }
-}
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
@@ -164,13 +147,13 @@ function createRateLimiters() {
   }
 
   // Production without Upstash: FAIL CLOSED
+  // Production without Upstash: FAIL OPEN (In-Memory)
   if (IS_PRODUCTION) {
-    console.error('[ratelimit] CRITICAL: Upstash not configured in production! Rate limiting will reject all requests with 503.')
-    const misconfigured = new MisconfiguredRatelimit()
+    console.warn('[ratelimit] WARNING: Upstash not configured in production! Falling back to in-memory (per-lambda) rate limiting. This is not distributed.')
     return {
-      aiRatelimit: misconfigured,
-      uploadRatelimit: misconfigured,
-      inviteRatelimit: misconfigured,
+      aiRatelimit: new InMemoryRatelimit(AI_RATE_LIMIT, AI_RATE_WINDOW_SECONDS),
+      uploadRatelimit: new InMemoryRatelimit(UPLOAD_RATE_LIMIT, UPLOAD_RATE_WINDOW_SECONDS),
+      inviteRatelimit: new InMemoryRatelimit(INVITE_RATE_LIMIT, INVITE_RATE_WINDOW_SECONDS),
     }
   }
 
