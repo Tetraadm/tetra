@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getRateLimiterStatus } from '@/lib/ratelimit'
+
+// Get version from package.json or environment
+const SERVICE_VERSION = process.env.npm_package_version || process.env.NEXT_PUBLIC_APP_VERSION || '0.1.0'
 
 /**
  * Health Check Endpoint
  * GET /api/health
  * 
  * Returns system health status for monitoring tools.
- * Checks: Database connectivity, basic app functionality.
+ * Checks: Database connectivity, rate limiter, external services.
  */
 export async function GET() {
     const startTime = Date.now()
 
-    const checks: Record<string, { status: 'ok' | 'error'; ms?: number; error?: string }> = {}
+    const checks: Record<string, { status: 'ok' | 'error' | 'degraded'; ms?: number; error?: string; details?: Record<string, unknown> }> = {}
 
     // Database health check - use auth check that doesn't require RLS
     try {
@@ -30,23 +34,85 @@ export async function GET() {
         }
     }
 
+    // Rate limiter health check
+    const rateLimiterStatus = getRateLimiterStatus()
+    if (rateLimiterStatus.provider === 'misconfigured') {
+        checks.rateLimiter = {
+            status: 'error',
+            error: 'Upstash not configured in production - rate limiting will fail closed',
+            details: rateLimiterStatus
+        }
+    } else if (rateLimiterStatus.provider === 'in-memory') {
+        checks.rateLimiter = {
+            status: 'degraded',
+            error: 'Using in-memory rate limiter (dev mode only)',
+            details: rateLimiterStatus
+        }
+    } else {
+        checks.rateLimiter = {
+            status: 'ok',
+            details: rateLimiterStatus
+        }
+    }
+
+    // External services configuration check (not connectivity - just config presence)
+    const externalServices = {
+        anthropic: !!process.env.ANTHROPIC_API_KEY,
+        resend: !!process.env.RESEND_API_KEY,
+        sentry: !!process.env.SENTRY_DSN,
+    }
+
+    const missingServices = Object.entries(externalServices)
+        .filter(([, configured]) => !configured)
+        .map(([name]) => name)
+
+    if (missingServices.length > 0) {
+        checks.externalServices = {
+            status: 'degraded',
+            error: `Missing API keys: ${missingServices.join(', ')}`,
+            details: externalServices
+        }
+    } else {
+        checks.externalServices = {
+            status: 'ok',
+            details: externalServices
+        }
+    }
+
     // Calculate overall status
-    const allOk = Object.values(checks).every(c => c.status === 'ok')
+    const hasError = Object.values(checks).some(c => c.status === 'error')
+    const hasDegraded = Object.values(checks).some(c => c.status === 'degraded')
     const totalMs = Date.now() - startTime
 
+    let overallStatus: 'healthy' | 'degraded' | 'unhealthy'
+    let httpStatus: number
+
+    if (hasError) {
+        overallStatus = 'unhealthy'
+        httpStatus = 503
+    } else if (hasDegraded) {
+        overallStatus = 'degraded'
+        httpStatus = 200 // Degraded is still operational
+    } else {
+        overallStatus = 'healthy'
+        httpStatus = 200
+    }
+
     const response = {
-        status: allOk ? 'healthy' : 'degraded',
+        status: overallStatus,
         timestamp: new Date().toISOString(),
-        version: process.env.npm_package_version || '0.1.0',
+        version: SERVICE_VERSION,
         uptime: process.uptime(),
         checks,
         responseTime: totalMs
     }
 
     return NextResponse.json(response, {
-        status: allOk ? 200 : 503,
+        status: httpStatus,
         headers: {
-            'Cache-Control': 'no-store, max-age=0'
+            'Cache-Control': 'no-store, max-age=0',
+            'X-Service-Version': SERVICE_VERSION,
         }
     })
 }
+

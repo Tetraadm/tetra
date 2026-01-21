@@ -1,4 +1,5 @@
 -- 09_read_confirmations_rpc.sql
+-- SECURITY: All functions require authenticated admin of the target organization
 
 -- Function to count total instructions for pagination
 CREATE OR REPLACE FUNCTION public.count_org_instructions(p_org_id uuid)
@@ -8,6 +9,21 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- Security check: Require authentication
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+  
+  -- Security check: Caller must be admin of the specified org
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() 
+    AND role = 'admin' 
+    AND org_id = p_org_id
+  ) THEN
+    RAISE EXCEPTION 'forbidden: admin access required';
+  END IF;
+
   RETURN (
     SELECT count(*)
     FROM public.instructions
@@ -41,6 +57,21 @@ AS $$
 DECLARE
   v_total_org_users bigint;
 BEGIN
+  -- Security check: Require authentication
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+  
+  -- Security check: Caller must be admin of the specified org
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() 
+    AND role = 'admin' 
+    AND org_id = p_org_id
+  ) THEN
+    RAISE EXCEPTION 'forbidden: admin access required';
+  END IF;
+
   -- Get total active users in org
   SELECT count(*) INTO v_total_org_users
   FROM public.profiles
@@ -106,6 +137,21 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- Security check: Require authentication
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'not_authenticated';
+  END IF;
+  
+  -- Security check: Caller must be admin of the specified org
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() 
+    AND role = 'admin' 
+    AND org_id = p_org_id
+  ) THEN
+    RAISE EXCEPTION 'forbidden: admin access required';
+  END IF;
+
   RETURN QUERY
   SELECT
     p.id as user_id,
@@ -124,3 +170,24 @@ BEGIN
   LIMIT p_limit OFFSET p_offset;
 END;
 $$;
+
+-- ============================================================
+-- SECURITY: Restrict execution privileges
+-- Revoke default execute from public/authenticated roles
+-- Only service_role (used by API routes) can call these functions
+-- ============================================================
+
+REVOKE EXECUTE ON FUNCTION public.count_org_instructions(uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.count_org_instructions(uuid) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.count_org_instructions(uuid) FROM anon;
+GRANT EXECUTE ON FUNCTION public.count_org_instructions(uuid) TO service_role;
+
+REVOKE EXECUTE ON FUNCTION public.get_instruction_read_stats(uuid, int, int) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_instruction_read_stats(uuid, int, int) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.get_instruction_read_stats(uuid, int, int) FROM anon;
+GRANT EXECUTE ON FUNCTION public.get_instruction_read_stats(uuid, int, int) TO service_role;
+
+REVOKE EXECUTE ON FUNCTION public.get_instruction_user_reads(uuid, uuid, int, int) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.get_instruction_user_reads(uuid, uuid, int, int) FROM authenticated;
+REVOKE EXECUTE ON FUNCTION public.get_instruction_user_reads(uuid, uuid, int, int) FROM anon;
+GRANT EXECUTE ON FUNCTION public.get_instruction_user_reads(uuid, uuid, int, int) TO service_role;

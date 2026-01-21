@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { z } from 'zod'
+import { sanitizePII } from '@/lib/audit-log'
 
 /**
  * Server-side Audit Logging API
@@ -9,6 +10,8 @@ import { z } from 'zod'
  * 
  * F-05 Fix: Moves audit logging from client-side to server-side for tamper resistance.
  * Client hooks should call this API instead of directly inserting into audit_logs.
+ * 
+ * GDPR: PII in details is automatically sanitized before storage.
  */
 
 const auditSchema = z.object({
@@ -78,6 +81,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Profil ikke funnet' }, { status: 403 })
         }
 
+        // GDPR: Sanitize PII from details before storage
+        const sanitizedDetails = details ? sanitizePII(details) : {}
+
         // Server-side insert - user cannot manipulate org_id or user_id
         const { error: insertError } = await supabase
             .from('audit_logs')
@@ -87,7 +93,7 @@ export async function POST(request: Request) {
                 action_type: actionType,
                 entity_type: entityType,
                 entity_id: entityId || null,
-                details: details || {}
+                details: sanitizedDetails
             })
 
         if (insertError) {

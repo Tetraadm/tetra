@@ -1,5 +1,42 @@
 import { SupabaseClient } from '@supabase/supabase-js'
 
+// ============================================================
+// GDPR: PII Sanitization Helpers
+// Minimize personal data stored in audit logs
+// ============================================================
+
+/**
+ * Sanitizes an email address for audit logging.
+ * Converts "user@example.com" to "u***@example.com"
+ */
+export function sanitizeEmail(email: string): string {
+  if (!email || !email.includes('@')) return '***'
+  const [local, domain] = email.split('@')
+  if (local.length <= 1) return `${local}***@${domain}`
+  return `${local[0]}***@${domain}`
+}
+
+/**
+ * Recursively sanitizes PII in an object.
+ * Looks for common PII field names and sanitizes their values.
+ */
+export function sanitizePII(obj: Record<string, unknown>): Record<string, unknown> {
+  const piiFields = ['email', 'inviteeEmail', 'user_email', 'userEmail']
+  const result: Record<string, unknown> = {}
+
+  for (const [key, value] of Object.entries(obj)) {
+    if (piiFields.includes(key) && typeof value === 'string') {
+      result[key] = sanitizeEmail(value)
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      result[key] = sanitizePII(value as Record<string, unknown>)
+    } else {
+      result[key] = value
+    }
+  }
+
+  return result
+}
+
 export type AuditActionType =
   // Instructions
   | 'create_instruction'
