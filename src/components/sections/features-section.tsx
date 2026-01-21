@@ -1,6 +1,6 @@
 "use client"
 
-import { Bell, FileText, Lock, ShieldCheck, Sparkles, BadgeCheck } from "lucide-react"
+import { Bell, FileText, Lock, Search, ShieldCheck, BadgeCheck } from "lucide-react"
 
 const features = [
     {
@@ -16,12 +16,12 @@ const features = [
     {
         icon: ShieldCheck,
         name: "Revisjonsspor",
-        description: "Få full sporbarhet med audit logg og historikk på alle kritiske hendelser.",
+        description: "Full sporbarhet med revisjonslogg og historikk på kritiske hendelser.",
     },
     {
-        icon: Sparkles,
-        name: "AI-assistent",
-        description: "Still spørsmål og få svar basert på egne rutiner, ikke generisk innhold.",
+        icon: Search,
+        name: "Søkbart innhold",
+        description: "Finn raskt frem til relevante prosedyrer og dokumenter, også på mobil.",
     },
     {
         icon: Lock,
@@ -61,7 +61,7 @@ export function FeaturesSection() {
                             </div>
                             <div className="flex items-start gap-3">
                                 <span className="mt-1 h-2 w-2 rounded-full bg-primary" />
-                                Samlet kontrollpanel for ledelse og HMS-ansvarlige.
+                                Samlet oversikt for ledelsen og HMS-ansvarlige.
                             </div>
                         </div>
                     </div>

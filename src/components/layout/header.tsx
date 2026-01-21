@@ -9,7 +9,7 @@ import { Menu, X } from "lucide-react"
 
 const navigation = [
     { name: "Funksjoner", href: "#funksjoner" },
-    { name: "Våre systemer", href: "#systemer" },
+    { name: "Plattformen", href: "#plattform" },
     { name: "Kontakt", href: "#kontakt" },
 ]
 

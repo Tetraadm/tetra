@@ -121,7 +121,7 @@ export default function LoginPage() {
                   Trygg tilgang til HMS-arbeidet
                 </h2>
                 <p className="mt-4 text-muted-foreground">
-                  Velg innloggingsmetode og få sikker tilgang til alt av dokumenter, instrukser og lesebekreftelser.
+                  Velg innloggingsmetode og få sikker tilgang til HMS-plattformen deres.
                 </p>
               </div>
               <div className="space-y-4 text-sm text-muted-foreground">
@@ -131,11 +131,11 @@ export default function LoginPage() {
                 </div>
                 <div className="flex items-start gap-3">
                   <Lock className="mt-0.5 h-5 w-5 text-primary" />
-                  <span>Rollebasert tilgang for ansatte, teamledere og admin.</span>
+                  <span>Rollebasert tilgang tilpasset organisasjonen.</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
-                  <span>Revisjonsspor for viktige hendelser i systemet.</span>
+                  <span>Sikkerhetslogg for viktige hendelser.</span>
                 </div>
               </div>
             </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, BadgeCheck, FileText, Lock, ShieldCheck, Sparkles } from "lucide-react"
+import { ArrowRight, BadgeCheck, FileText, Lock, Search, ShieldCheck } from "lucide-react"
 import Link from "next/link"
 
 export function HeroSection() {
@@ -27,7 +27,7 @@ export function HeroSection() {
                                 Sikker HMS-styring med dokumentert kontroll
                             </h1>
                             <p className="text-lg leading-8 text-muted-foreground max-w-xl text-pretty animate-fade-up-delay-2 motion-reduce:animate-none">
-                                Tetrivo samler internkontroll, dokumenter og lesebekreftelser i ett system.
+                                Tetrivo samler HMS-rutiner og dokumentasjon i ett system.
                                 Du får tydelig sporbarhet, ryddig tilgangsstyring og trygg drift for hele organisasjonen.
                             </p>
                         </div>
@@ -39,9 +39,9 @@ export function HeroSection() {
                                     <ArrowRight className="ml-2 h-4 w-4" />
                                 </Button>
                             </Link>
-                            <a href="#systemer" className="w-full sm:w-auto">
+                            <a href="#plattform" className="w-full sm:w-auto">
                                 <Button variant="outline" size="lg" className="w-full sm:w-auto px-8">
-                                    Se plattformen
+                                    Se løsningen
                                 </Button>
                             </a>
                         </div>
@@ -105,14 +105,14 @@ export function HeroSection() {
                                 <div className="flex items-start justify-between gap-4 rounded-2xl border border-border/70 bg-background/70 p-4">
                                     <div className="flex items-start gap-3">
                                         <div className="rounded-xl bg-primary/10 p-2 text-primary">
-                                            <Sparkles className="h-5 w-5" />
+                                            <Search className="h-5 w-5" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-semibold text-foreground">AI-assistent</p>
-                                            <p className="text-xs text-muted-foreground">Svar basert på egne rutiner</p>
+                                            <p className="text-sm font-semibold text-foreground">Søkbart innhold</p>
+                                            <p className="text-xs text-muted-foreground">Finn riktig prosedyre raskt</p>
                                         </div>
                                     </div>
-                                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Trygt</span>
+                                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">Oppdatert</span>
                                 </div>
                             </div>
 

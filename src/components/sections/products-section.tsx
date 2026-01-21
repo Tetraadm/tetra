@@ -2,19 +2,19 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Shield, Megaphone, ArrowRight, CheckCircle } from "lucide-react"
+import { Shield, Layers, ArrowRight, CheckCircle } from "lucide-react"
 import Link from "next/link"
 
 export function ProductsSection() {
     return (
-        <section id="systemer" className="py-24 bg-background">
+        <section id="plattform" className="py-24 bg-background">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
                 <div className="mx-auto max-w-2xl text-center mb-16">
                     <h2 className="font-serif text-3xl font-semibold tracking-tight text-foreground sm:text-4xl text-balance">
-                        Systemer for trygg drift
+                        Plattformen for trygg drift
                     </h2>
                     <p className="mt-4 text-lg text-muted-foreground text-pretty">
-                        Velg moduler som matcher behovene deres. Alt er designet for sikkerhet, sporbarhet og enkel administrasjon.
+                        En felles plattform med utvidelser etter behov, bygget for sikkerhet, sporbarhet og enkel administrasjon.
                     </p>
                 </div>
 
@@ -39,7 +39,7 @@ export function ProductsSection() {
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                                AI-assistent for interne rutiner
+                                Søkbart dokumentbibliotek
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
@@ -60,37 +60,39 @@ export function ProductsSection() {
                         </CardFooter>
                     </Card>
 
-                    {/* Kunngjøringer */}
+                    {/* Tilvalg og integrasjoner */}
                     <Card className="relative overflow-hidden border border-border/80 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                         <CardHeader>
                             <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center mb-4 text-accent">
-                                <Megaphone size={28} />
+                                <Layers size={28} />
                             </div>
-                            <CardTitle className="text-2xl">Kunngjøringer</CardTitle>
-                            <CardDescription className="text-base">Meldinger som vises direkte i appen</CardDescription>
+                            <CardTitle className="text-2xl">Tilvalg og integrasjoner</CardTitle>
+                            <CardDescription className="text-base">Utvid plattformen etter behov</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-3">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                                Send meldinger til alle ansatte eller utvalgte team
+                                Meldinger og varsling til ansatte
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                                Prioritet og synlighet styres fra administrator
+                                Rapporter og innsikt for ledelsen
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                                Tydelig visning på ansattes startside
+                                Integrasjoner mot HR og IT
                             </div>
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <CheckCircle className="h-4 w-4 text-primary flex-shrink-0" />
-                                Tilgjengelig som tilleggstjeneste
+                                Tilpasset utrulling og oppsett
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button variant="outline" className="w-full h-12 text-base" disabled>
-                                Kommer snart
-                            </Button>
+                            <a href="#kontakt" className="w-full">
+                                <Button variant="outline" className="w-full h-12 text-base">
+                                    Ta kontakt
+                                </Button>
+                            </a>
                         </CardFooter>
                     </Card>
                 </div>
