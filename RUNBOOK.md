@@ -94,7 +94,58 @@ Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-21.
 
 ---
 
-## 6. Backup / Restore
+## 6. GDPR Sletteforespørsler
+
+### Symptomer
+- Bruker har bedt om sletting av konto
+- Pending request i admin-dashboard
+
+### Arbeidsflyt
+1. **Bruker sender forespørsel:** Via "Konto" → "Be om sletting"
+2. **Admin varsles:** E-post til alle org-admins
+3. **Admin behandler:** Admin-dashboard → GDPR-fane
+4. **Godkjenn/Avvis:** Klikk handling, skriv evt. notat
+5. **Ved godkjenning:** Bruker slettes automatisk via `gdpr_hard_delete_user()`
+
+### Database
+```sql
+-- Sjekk pending requests
+SELECT * FROM gdpr_requests WHERE status = 'pending';
+
+-- Historikk
+SELECT * FROM gdpr_requests WHERE org_id = 'ORG_ID';
+```
+
+### Manuell sletting (nødstilfelle)
+```sql
+SELECT public.gdpr_hard_delete_user('USER_ID_HER');
+```
+
+> ⚠️ ADVARSEL: Sletting er permanent og kan ikke angres!
+
+---
+
+## 7. GDPR Log Cleanup
+
+### Automatisk (GitHub Actions)
+Kjører månedlig via `.github/workflows/gdpr-cleanup.yml`.
+
+**Sjekk status:** GitHub → Actions → gdpr-cleanup
+
+### Manuell trigger
+```bash
+curl -X POST https://tetrivo.com/api/gdpr-cleanup \
+  -H "Authorization: Bearer $GDPR_CLEANUP_SECRET"
+```
+
+### Hva slettes
+- `audit_logs` eldre enn `GDPR_RETENTION_DAYS` (default 90)
+- `ask_tetra_logs` eldre enn retention period
+
+### Sjekk siste kjøring
+```sql
+SELECT * FROM gdpr_retention_runs ORDER BY executed_at DESC LIMIT 5;
+```
 
 ### Supabase Backup
 Supabase Pro har automatisk daglig PITR (Point-in-Time Recovery).
@@ -108,7 +159,7 @@ Supabase Pro har automatisk daglig PITR (Point-in-Time Recovery).
 
 ---
 
-## 7. Rollback Deploy (Vercel)
+## 9. Rollback Deploy (Vercel)
 
 ### Instant Rollback
 1. Gå til [Vercel Dashboard](https://vercel.com)
@@ -124,7 +175,7 @@ git push origin main
 
 ---
 
-## 8. Overvåkning / Alerting
+## 10. Overvåkning / Alerting
 
 ### Anbefalte verktøy
 - **Error tracking:** Sentry (✅ installert)
@@ -139,7 +190,7 @@ git push origin main
 
 ---
 
-## 9. Kontaktpunkter
+## 11. Kontaktpunkter
 
 | Rolle | Kontakt | Ansvar |
 |-------|---------|--------|
@@ -152,7 +203,7 @@ git push origin main
 
 ---
 
-## 10. Health Endpoint
+## 12. Health Endpoint
 
 **URL:** `GET /api/health`
 
@@ -160,12 +211,15 @@ git push origin main
 ```json
 {
   "status": "healthy",
-  "timestamp": "2026-01-19T08:00:00.000Z",
+  "timestamp": "2026-01-21T17:13:26.671Z",
   "version": "0.1.0",
+  "uptime": 0.68,
   "checks": {
-    "database": { "status": "ok", "ms": 45 }
+    "database": { "status": "ok", "ms": 5 },
+    "rateLimiter": { "status": "ok", "details": { "isConfigured": true, "provider": "upstash" }},
+    "externalServices": { "status": "ok", "details": { "anthropic": true, "resend": true, "sentry": true }}
   },
-  "responseTime": 50
+  "responseTime": 5
 }
 ```
 
@@ -177,7 +231,7 @@ git push origin main
 
 ---
 
-## 11. Pilot SLA
+## 13. Pilot SLA
 
 | Kritikalitet | Responstid | Løsningstid |
 |--------------|------------|-------------|
@@ -188,7 +242,7 @@ git push origin main
 
 ---
 
-## 12. Monitorering (Anbefalt)
+## 14. Monitorering (Anbefalt)
 
 ### Sentry (Error Tracking)
 
