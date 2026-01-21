@@ -51,12 +51,11 @@ export type Alert = {
   created_at: string
 }
 
-export type AiLog = {
+export type UnansweredQuestion = {
   id: string
   question: string
-  answer: string
   created_at: string
-  instructions: { title: string } | null
+  profiles?: { full_name: string } | null
 }
 
 export type ChatMessage = {

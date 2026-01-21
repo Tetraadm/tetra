@@ -113,38 +113,67 @@ async function findRelevantInstructions(
   instructions: Array<VectorSearchResult | InstructionWithKeywords>
   usedVectorSearch: boolean
 }> {
-  // Try vector search first if OpenAI is configured
+  // Try hybrid search first (vector + full-text) if OpenAI is configured
   if (process.env.OPENAI_API_KEY) {
     try {
       const questionEmbedding = await generateEmbedding(question)
 
-      // Call the vector search function
+      // Call the hybrid search function (vector + FTS with RRF)
       // Format embedding as PostgreSQL vector: [x,y,z] (not JSON string)
       const embeddingStr = `[${questionEmbedding.join(',')}]`
 
-      const { data: vectorResults, error: vectorError } = await supabase
-        .rpc('match_instructions', {
+      const { data: hybridResults, error: hybridError } = await supabase
+        .rpc('match_chunks_hybrid', {
           query_embedding: embeddingStr,
-          match_threshold: VECTOR_SEARCH_THRESHOLD,
+          query_text: question,
           match_count: 10,
           p_user_id: userId
         })
 
-      console.log('[ASK] Vector search result:', {
-        hasError: !!vectorError,
-        errorMsg: vectorError?.message,
-        resultCount: vectorResults?.length ?? 0
+      console.log('[ASK] Hybrid search result:', {
+        hasError: !!hybridError,
+        errorMsg: hybridError?.message,
+        resultCount: hybridResults?.length ?? 0
       })
 
-      if (!vectorError && vectorResults && vectorResults.length > 0) {
+      if (!hybridError && hybridResults && hybridResults.length > 0) {
+        // Map to VectorSearchResult format
+        const results = hybridResults.map((r: { instruction_id: string; title: string; content: string; severity: string; folder_id: string | null; updated_at: string | null; combined_score: number }) => ({
+          id: r.instruction_id,
+          title: r.title,
+          content: r.content,
+          severity: r.severity,
+          folder_id: r.folder_id,
+          updated_at: r.updated_at,
+          similarity: r.combined_score
+        }))
         return {
-          instructions: vectorResults as VectorSearchResult[],
-          usedVectorSearch: true
+          instructions: results as VectorSearchResult[],
+          usedVectorSearch: true // Indicates hybrid was used
         }
       }
 
-      if (vectorError) {
-        console.warn('[ASK] Vector search failed:', vectorError.message)
+      // Fallback to legacy match_instructions if no chunks exist yet
+      if (hybridError?.message?.includes('instruction_chunks') || hybridResults?.length === 0) {
+        console.log('[ASK] Falling back to legacy match_instructions')
+        const { data: vectorResults, error: vectorError } = await supabase
+          .rpc('match_instructions', {
+            query_embedding: embeddingStr,
+            match_threshold: VECTOR_SEARCH_THRESHOLD,
+            match_count: 10,
+            p_user_id: userId
+          })
+
+        if (!vectorError && vectorResults && vectorResults.length > 0) {
+          return {
+            instructions: vectorResults as VectorSearchResult[],
+            usedVectorSearch: true
+          }
+        }
+      }
+
+      if (hybridError) {
+        console.warn('[ASK] Hybrid search failed:', hybridError.message)
       }
     } catch (embeddingError) {
       console.warn('[ASK] Embedding generation failed, falling back to keyword search:', embeddingError)
@@ -266,7 +295,7 @@ export async function POST(request: NextRequest) {
     )
 
     if (relevantInstructions.length === 0) {
-      await logQuestion(supabase, orgId, userId, question, FALLBACK_ANSWER, null, true)
+      await logUnansweredQuestion(supabase, orgId, userId, question)
       return Response.json({ answer: FALLBACK_ANSWER, source: null })
     }
 
@@ -330,9 +359,7 @@ ${context}`
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'source', content: sourceData })}\n\n`))
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
 
-            // Log the question asynchronously
-            await logQuestion(supabase, orgId, userId, question, fullAnswer, sourceInstruction.id, false)
-
+            // Question was answered - no logging needed
             controller.close()
           } catch (error) {
             console.error('STREAM_ERROR:', error)
@@ -363,7 +390,7 @@ ${context}`
 
     const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
 
-    await logQuestion(supabase, orgId, userId, question, answer, sourceInstruction.id, false)
+    // Question was answered - no logging needed
 
     return Response.json({
       answer,
@@ -382,33 +409,19 @@ ${context}`
   }
 }
 
-async function logQuestion(
+async function logUnansweredQuestion(
   supabase: Awaited<ReturnType<typeof createClient>>,
   orgId: string,
   userId: string,
-  question: string,
-  answer: string,
-  sourceInstructionId: string | null,
-  isUnanswered: boolean
+  question: string
 ) {
   try {
-    const { error: logError } = await supabase.from('ask_tetra_logs').insert({
+    const { error } = await supabase.from('ai_unanswered_questions').insert({
       org_id: orgId,
       user_id: userId,
-      question,
-      answer,
-      source_instruction_id: sourceInstructionId
+      question
     })
-    if (logError) console.error('ASK_LOG_ERROR: ask_tetra_logs insert', logError)
-
-    if (isUnanswered) {
-      const { error: unansweredError } = await supabase.from('ai_unanswered_questions').insert({
-        org_id: orgId,
-        user_id: userId,
-        question
-      })
-      if (unansweredError) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', unansweredError)
-    }
+    if (error) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', error)
   } catch (err) {
     console.error('ASK_LOG_ERROR:', err)
   }

@@ -24,7 +24,7 @@ import type {
   Instruction,
   Folder,
   Alert,
-  AiLog
+  UnansweredQuestion
 } from '@/lib/types'
 // Nordic Technical styles via CSS variables (no need for createAdminStyles)
 import {
@@ -68,7 +68,7 @@ type Props = {
   instructions: Instruction[]
   folders: Folder[]
   alerts: Alert[]
-  aiLogs: AiLog[]
+  unansweredQuestions: UnansweredQuestion[]
 }
 
 export default function AdminDashboard({
@@ -79,7 +79,7 @@ export default function AdminDashboard({
   instructions: initialInstructions,
   folders: initialFolders,
   alerts: initialAlerts,
-  aiLogs
+  unansweredQuestions
 }: Props) {
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
@@ -271,7 +271,7 @@ export default function AdminDashboard({
     { id: 'team', label: 'Team', icon: UsersRound },
     { id: 'instrukser', label: 'Instrukser', icon: FileText },
     { id: 'meldinger', label: 'Kunngjøringer', icon: AlertTriangle },
-    { id: 'ailogg', label: 'AI-logg', icon: Bot },
+    { id: 'ailogg', label: 'Ubesvarte', icon: Bot },
     { id: 'innsikt', label: 'Innsikt', icon: BarChart3 },
     { id: 'auditlog', label: 'Aktivitetslogg', icon: ClipboardList },
     { id: 'lesebekreftelser', label: 'Lesebekreftelser', icon: CheckSquare },
@@ -372,16 +372,15 @@ export default function AdminDashboard({
                 loadMoreAlerts={loadMoreAlerts}
               />
             )}
-
             {tab === 'ailogg' && (
               <AiLogTab
-                aiLogs={aiLogs}
+                unansweredQuestions={unansweredQuestions}
               />
             )}
 
             {tab === 'innsikt' && (
               <InsightsTab
-                aiLogs={aiLogs}
+                unansweredQuestions={unansweredQuestions}
                 instructions={instructions}
               />
             )}

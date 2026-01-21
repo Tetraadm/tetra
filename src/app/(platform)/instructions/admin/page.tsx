@@ -7,7 +7,7 @@ import AdminDashboard from './AdminDashboard'
 const ADMIN_PAGE_SIZE = 50
 const ALERT_PAGE_SIZE = 50
 const FOLDER_PAGE_SIZE = 200
-const AI_LOG_PAGE_SIZE = 100
+const UNANSWERED_PAGE_SIZE = 100
 
 export default async function AdminPage() {
   const supabase = await createClient()
@@ -68,13 +68,13 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
     .limit(ALERT_PAGE_SIZE)
 
-  // Hent AI-logger
-  const { data: aiLogs } = await supabase
-    .from('ask_tetra_logs')
-    .select('*, profiles(full_name), instructions(title)')
+  // Hent ubesvarte spørsmål
+  const { data: unansweredQuestions } = await supabase
+    .from('ai_unanswered_questions')
+    .select('*, profiles(full_name)')
     .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
-    .limit(AI_LOG_PAGE_SIZE)
+    .limit(UNANSWERED_PAGE_SIZE)
 
   return (
     <AdminDashboard
@@ -85,7 +85,7 @@ export default async function AdminPage() {
       instructions={instructions || []}
       folders={folders || []}
       alerts={alerts || []}
-      aiLogs={aiLogs || []}
+      unansweredQuestions={unansweredQuestions || []}
     />
   )
 }

@@ -1,12 +1,12 @@
 import { Bot, FileText } from 'lucide-react'
-import type { AiLog, Instruction } from '@/lib/types'
+import type { UnansweredQuestion, Instruction } from '@/lib/types'
 
 type Props = {
-  aiLogs: AiLog[]
+  unansweredQuestions: UnansweredQuestion[]
   instructions: Instruction[]
 }
 
-export default function InsightsTab({ aiLogs, instructions }: Props) {
+export default function InsightsTab({ unansweredQuestions, instructions }: Props) {
   return (
     <>
       <div className="mb-8">
@@ -43,14 +43,14 @@ export default function InsightsTab({ aiLogs, instructions }: Props) {
               fontWeight: 600,
               color: 'var(--text-primary)'
             }}>
-              AI-bruk
+              Ubesvarte spørsmål
             </h3>
           </div>
           <div className="nt-stat-card__value" style={{ marginBottom: 8 }}>
-            {aiLogs.length}
+            {unansweredQuestions.length}
           </div>
           <div className="nt-stat-card__label">
-            Totalt antall spørsmål
+            Spørsmål uten svar i systemet
           </div>
         </div>
 

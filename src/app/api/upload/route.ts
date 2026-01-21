@@ -6,7 +6,8 @@ import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
-import { generateEmbedding, prepareTextForEmbedding } from '@/lib/embeddings'
+import { generateEmbedding, generateEmbeddings, prepareTextForEmbedding } from '@/lib/embeddings'
+import { chunkText, prepareChunksForEmbedding } from '@/lib/chunking'
 import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { z } from 'zod'
 
@@ -338,23 +339,52 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kunne ikke opprette instruks' }, { status: 500 })
     }
 
-    // Generate embedding for vector search (non-blocking - don't fail upload if this fails)
+    // Generate chunks and embeddings for vector search (non-blocking - don't fail upload if this fails)
     if (instruction && effectiveContent) {
       try {
+        // Legacy: Also store full document embedding for backward compatibility
         const textForEmbedding = prepareTextForEmbedding(title, effectiveContent)
-        const embedding = await generateEmbedding(textForEmbedding)
+        const fullEmbedding = await generateEmbedding(textForEmbedding)
 
-        // Store embedding in database
         const { error: embeddingError } = await supabase
           .from('instructions')
-          .update({ embedding: JSON.stringify(embedding) })
+          .update({ embedding: JSON.stringify(fullEmbedding) })
           .eq('id', instruction.id)
 
         if (embeddingError) {
           console.error('EMBEDDING_STORE_ERROR', embeddingError)
         }
+
+        // NEW: Generate chunks with embeddings
+        const chunks = chunkText(effectiveContent)
+
+        if (chunks.length > 0) {
+          // Prepare chunk texts with title context for embedding
+          const chunkTexts = prepareChunksForEmbedding(title, chunks)
+
+          // Generate embeddings for all chunks in batch
+          const chunkEmbeddings = await generateEmbeddings(chunkTexts)
+
+          // Insert chunks into database
+          const chunkInserts = chunks.map((chunk, idx) => ({
+            instruction_id: instruction.id,
+            chunk_index: chunk.index,
+            content: chunk.content,
+            embedding: JSON.stringify(chunkEmbeddings[idx])
+          }))
+
+          const { error: chunksError } = await supabase
+            .from('instruction_chunks')
+            .insert(chunkInserts)
+
+          if (chunksError) {
+            console.error('CHUNKS_INSERT_ERROR', chunksError)
+          } else {
+            console.log(`[UPLOAD] Created ${chunks.length} chunks for instruction ${instruction.id}`)
+          }
+        }
       } catch (embeddingErr) {
-        // Log but don't fail the upload - embedding can be regenerated later
+        // Log but don't fail the upload - embeddings can be regenerated later
         console.error('EMBEDDING_GENERATION_ERROR', embeddingErr)
       }
     }
