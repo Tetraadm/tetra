@@ -1,14 +1,30 @@
 import Image from 'next/image'
 
-export function TetraLogo({ className }: { className?: string }) {
+type LogoVariant = 'full' | 'logo-only' | 'text-only'
+
+interface TetraLogoProps {
+  className?: string
+  variant?: LogoVariant
+}
+
+export function TetraLogo({ className, variant = 'full' }: TetraLogoProps) {
+  const logoSrc = variant === 'full'
+    ? '/tetrivo-full.png'
+    : variant === 'logo-only'
+      ? '/tetrivo-logo.png'
+      : '/Tetrivo-tekst (2).png'
+
+  const width = variant === 'full' ? 180 : variant === 'logo-only' ? 40 : 140
+  const height = 40
+
   return (
-    <div className={`flex items-center gap-3 ${className}`}>
+    <div className={`flex items-center ${className}`}>
       <Image
-        src="/tetrivo-logo.png"
+        src={logoSrc}
         alt="Tetrivo"
-        width={140}
-        height={40}
-        className="h-10 w-auto"
+        width={width}
+        height={height}
+        className={variant === 'logo-only' ? 'h-10 w-10' : 'h-10 w-auto'}
         priority
       />
     </div>

@@ -4,7 +4,8 @@ import Link from "next/link"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Menu, X, Shield } from "lucide-react"
+import { TetraLogo } from "@/components/tetra-logo"
+import { Menu, X } from "lucide-react"
 
 const navigation = [
     { name: "Funksjoner", href: "#funksjoner" },
@@ -19,9 +20,8 @@ export function Header() {
         <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
             <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
                 <div className="flex lg:flex-1">
-                    <Link href="/" className="flex items-center gap-2 -m-1.5 p-1.5">
-                        <Shield className="h-8 w-8 text-primary" />
-                        <span className="text-xl font-bold text-foreground">Tetrivo</span>
+                    <Link href="/" className="-m-1.5 p-1.5">
+                        <TetraLogo variant="full" />
                     </Link>
                 </div>
 
@@ -63,9 +63,8 @@ export function Header() {
                     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
                     <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-background px-6 py-6 sm:max-w-sm border-l border-border">
                         <div className="flex items-center justify-between">
-                            <Link href="/" className="flex items-center gap-2 -m-1.5 p-1.5">
-                                <Shield className="h-8 w-8 text-primary" />
-                                <span className="text-xl font-bold text-foreground">Tetrivo</span>
+                            <Link href="/" className="-m-1.5 p-1.5">
+                                <TetraLogo variant="full" />
                             </Link>
                             <button
                                 type="button"

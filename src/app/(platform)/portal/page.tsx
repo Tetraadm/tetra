@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Building2, FileWarning, BookOpen, ArrowRight, Lock } from "lucide-react";
+import { TetraLogo } from "@/components/tetra-logo";
 
 interface OrgModules {
     instructions: boolean;
@@ -63,6 +64,9 @@ export default function PortalPage() {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
             <div className="container mx-auto px-4 py-16">
                 <div className="text-center mb-12">
+                    <div className="mb-6 flex justify-center">
+                        <TetraLogo variant="full" className="scale-125" />
+                    </div>
                     <h1 className="text-4xl font-bold text-white mb-4">Velg App</h1>
                     <p className="text-slate-400">Velg hvilken modul du vil jobbe med</p>
                 </div>
@@ -94,8 +98,8 @@ export default function PortalPage() {
                     {/* Deviations App Card */}
                     <div
                         className={`bg-slate-800/30 backdrop-blur border rounded-2xl p-8 text-left ${modules.deviations
-                                ? "border-slate-700 hover:border-orange-500/50 cursor-pointer"
-                                : "border-slate-700/50 opacity-60"
+                            ? "border-slate-700 hover:border-orange-500/50 cursor-pointer"
+                            : "border-slate-700/50 opacity-60"
                             }`}
                     >
                         <div className="flex items-center gap-4 mb-4">
