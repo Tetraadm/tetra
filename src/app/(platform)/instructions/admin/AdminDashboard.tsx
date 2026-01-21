@@ -11,7 +11,8 @@ import {
   Bot,
   BarChart3,
   ClipboardList,
-  CheckSquare
+  CheckSquare,
+  Shield
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
@@ -35,7 +36,8 @@ import {
   AiLogTab,
   InsightsTab,
   AuditLogTab,
-  ReadConfirmationsTab
+  ReadConfirmationsTab,
+  GdprTab
 } from './tabs'
 import {
   CreateAlertModal,
@@ -82,7 +84,7 @@ export default function AdminDashboard({
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
-  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'meldinger' | 'ailogg' | 'innsikt' | 'auditlog' | 'lesebekreftelser'>('oversikt')
+  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'meldinger' | 'ailogg' | 'innsikt' | 'auditlog' | 'lesebekreftelser' | 'gdpr'>('oversikt')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   const [showCreateTeam, setShowCreateTeam] = useState(false)
@@ -273,6 +275,7 @@ export default function AdminDashboard({
     { id: 'innsikt', label: 'Innsikt', icon: BarChart3 },
     { id: 'auditlog', label: 'Aktivitetslogg', icon: ClipboardList },
     { id: 'lesebekreftelser', label: 'Lesebekreftelser', icon: CheckSquare },
+    { id: 'gdpr', label: 'GDPR', icon: Shield },
   ]
 
   return (
@@ -409,6 +412,10 @@ export default function AdminDashboard({
                 totalPages={totalPages}
                 goToPage={goToPage}
               />
+            )}
+
+            {tab === 'gdpr' && (
+              <GdprTab />
             )}
           </main>
         </div>

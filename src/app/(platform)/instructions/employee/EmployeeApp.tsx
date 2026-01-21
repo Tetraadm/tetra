@@ -17,9 +17,10 @@ import HomeContent from './components/HomeContent'
 import InstructionsTab from './components/InstructionsTab'
 import AskTetraTab from './components/AskTetraTab'
 import InstructionModal from './components/InstructionModal'
+import AccountTab from './components/AccountTab'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { AppSidebar, type SidebarTab } from '@/components/layout/AppSidebar'
-import { Home, FileText, MessageSquare } from 'lucide-react'
+import { Home, FileText, MessageSquare, User } from 'lucide-react'
 
 type Props = {
   profile: Profile
@@ -31,7 +32,7 @@ type Props = {
 
 export default function EmployeeApp({ profile, organization, instructions, alerts }: Props) {
   const supabase = useMemo(() => createClient(), [])
-  const [tab, setTab] = useState<'home' | 'instructions' | 'ask'>('home')
+  const [tab, setTab] = useState<'home' | 'instructions' | 'ask' | 'account'>('home')
   const [isMobile, setIsMobile] = useState(true)
   const [showMobileMenu, setShowMobileMenu] = useState(false)
   const router = useRouter()
@@ -97,10 +98,11 @@ export default function EmployeeApp({ profile, organization, instructions, alert
     { id: 'home', label: 'Hjem', icon: Home },
     { id: 'instructions', label: 'Bibliotek', icon: FileText },
     { id: 'ask', label: 'Spør Tetrivo', icon: MessageSquare },
+    { id: 'account', label: 'Konto', icon: User },
   ]
 
   const handleTabChange = (t: string) => {
-    setTab(t as 'home' | 'instructions' | 'ask')
+    setTab(t as 'home' | 'instructions' | 'ask' | 'account')
     setShowMobileMenu(false)
   }
 
@@ -160,6 +162,13 @@ export default function EmployeeApp({ profile, organization, instructions, alert
                 onAsk={handleAsk}
                 onSuggestion={handleSuggestion}
                 onOpenSource={handleChatOpenSource}
+              />
+            )}
+
+            {tab === 'account' && (
+              <AccountTab
+                userName={profile.full_name || 'Bruker'}
+                userEmail={profile.email || ''}
               />
             )}
           </main>

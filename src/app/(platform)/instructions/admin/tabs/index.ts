@@ -7,3 +7,5 @@ export { default as AiLogTab } from './AiLogTab'
 export { default as InsightsTab } from './InsightsTab'
 export { default as AuditLogTab } from './AuditLogTab'
 export { default as ReadConfirmationsTab } from './ReadConfirmationsTab'
+export { default as GdprTab } from './GdprTab'
+

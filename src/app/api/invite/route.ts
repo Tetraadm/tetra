@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { inviteRatelimit } from '@/lib/ratelimit'
+import { sanitizeEmail } from '@/lib/audit-log'
 import { generateInviteHtml } from '@/lib/emails/invite-email'
 
 // Initialize Resend with API Key
@@ -165,7 +166,7 @@ export async function POST(request: Request) {
             entity_type: 'invite',
             entity_id: invite.id,
             details: {
-                invited_email: email,
+                invited_email: sanitizeEmail(email),
                 invited_role: role,
                 email_sent: emailSent
             }

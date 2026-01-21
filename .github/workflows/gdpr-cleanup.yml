@@ -1,0 +1,32 @@
+name: GDPR Cleanup
+
+on:
+  schedule:
+    # Runs at 02:00 UTC on the 1st of every month
+    - cron: '0 2 1 * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger GDPR Cleanup
+        run: |
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "${{ secrets.APP_URL }}/api/gdpr-cleanup" \
+            -H "Authorization: Bearer ${{ secrets.GDPR_CLEANUP_SECRET }}" \
+            -H "Content-Type: application/json")
+          
+          http_code=$(echo "$response" | tail -n1)
+          body=$(echo "$response" | sed '$d')
+          
+          echo "Response: $body"
+          echo "HTTP Code: $http_code"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "GDPR cleanup failed with status $http_code"
+            exit 1
+          fi
+          
+          echo "GDPR cleanup completed successfully"
