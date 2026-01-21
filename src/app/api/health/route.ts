@@ -59,7 +59,7 @@ export async function GET() {
     const externalServices = {
         anthropic: !!process.env.ANTHROPIC_API_KEY,
         resend: !!process.env.RESEND_API_KEY,
-        sentry: !!process.env.SENTRY_DSN,
+        sentry: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
     }
 
     const missingServices = Object.entries(externalServices)
