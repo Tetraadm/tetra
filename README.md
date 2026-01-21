@@ -32,7 +32,7 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 
 ## ✨ Funksjoner
 
-- **🤖 AI-Assistent** – Google Gemini for intelligent Q&A
+- **🤖 AI-Assistent** – Claude Haiku 3.5 + OpenAI for intelligent Q&A
 - **📄 Dokumenthåndtering** – PDF-opplasting med tekstekstraksjon
 - **✅ Lesebekreftelse** – Signeringslogg for alle instrukser
 - **🔔 Varsling** – Automatiske varsler ved nye dokumenter
@@ -48,7 +48,7 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 | **Framework** | Next.js 16.1, React 19 |
 | **Språk** | TypeScript 5 |
 | **Database** | PostgreSQL (Supabase) |
-| **AI** | Google Gemini |
+| **AI** | Claude Haiku 3.5, OpenAI |
 | **E-post** | Resend |
 | **Hosting** | Vercel |
 | **Rate Limiting** | Upstash Redis |
@@ -63,7 +63,8 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 - Node.js 20+
 - npm 10+
 - [Supabase](https://supabase.com/) prosjekt
-- [Google AI](https://ai.google.dev/) API-nøkkel
+- [Anthropic](https://anthropic.com/) API-nøkkel
+- [OpenAI](https://openai.com/) API-nøkkel (valgfritt)
 
 ### Installasjon
 
@@ -95,7 +96,8 @@ npm run dev
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
-GOOGLE_GENERATIVE_AI_API_KEY=AIza...
+ANTHROPIC_API_KEY=sk-ant-api03-...
+OPENAI_API_KEY=sk-... # Valgfritt
 NEXT_PUBLIC_APP_URL=https://tetrivo.com
 ```
 
