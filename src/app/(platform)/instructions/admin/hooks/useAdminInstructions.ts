@@ -63,6 +63,7 @@ export function useAdminInstructions({
   const [editInstructionSeverity, setEditInstructionSeverity] = useState('')
   const [editInstructionStatus, setEditInstructionStatus] = useState('')
   const [editInstructionFolder, setEditInstructionFolder] = useState('')
+  const [editInstructionTeams, setEditInstructionTeams] = useState<string[]>([])
   const [instructionLoading, setInstructionLoading] = useState(false)
   const [folderLoading, setFolderLoading] = useState(false)
 
@@ -356,15 +357,23 @@ export function useAdminInstructions({
     }
   }, [profile.id, profile.org_id, supabase])
 
-  const openEditInstruction = useCallback((instruction: Instruction) => {
+  const openEditInstruction = useCallback(async (instruction: Instruction) => {
     setEditingInstruction(instruction)
     setEditInstructionTitle(instruction.title)
     setEditInstructionContent(instruction.content || '')
     setEditInstructionSeverity(instruction.severity)
     setEditInstructionStatus(instruction.status)
     setEditInstructionFolder(instruction.folder_id || '')
+
+    // Load current team mappings
+    const { data: teamMappings } = await supabase
+      .from('instruction_teams')
+      .select('team_id')
+      .eq('instruction_id', instruction.id)
+
+    setEditInstructionTeams(teamMappings?.map(t => t.team_id) || [])
     onOpenEditInstruction?.()
-  }, [onOpenEditInstruction])
+  }, [onOpenEditInstruction, supabase])
 
   const saveEditInstruction = useCallback(async () => {
     if (!editingInstruction) return
@@ -392,6 +401,23 @@ export function useAdminInstructions({
         .single()
 
       if (error) throw error
+
+      // Update team mappings
+      // First delete existing mappings
+      await supabase
+        .from('instruction_teams')
+        .delete()
+        .eq('instruction_id', editingInstruction.id)
+
+      // Then insert new mappings
+      if (editInstructionTeams.length > 0) {
+        await supabase
+          .from('instruction_teams')
+          .insert(editInstructionTeams.map(teamId => ({
+            instruction_id: editingInstruction.id,
+            team_id: teamId
+          })))
+      }
 
       setInstructions(prev => prev.map(i =>
         i.id === editingInstruction.id ? data : i
@@ -436,6 +462,7 @@ export function useAdminInstructions({
     editInstructionFolder,
     editInstructionSeverity,
     editInstructionStatus,
+    editInstructionTeams,
     editInstructionTitle,
     editingInstruction,
     onCloseEditInstruction,
@@ -500,6 +527,7 @@ export function useAdminInstructions({
     editInstructionSeverity,
     editInstructionStatus,
     editInstructionFolder,
+    editInstructionTeams,
     instructionLoading,
     folderLoading,
     instructionsHasMore,
@@ -515,6 +543,7 @@ export function useAdminInstructions({
     setEditInstructionSeverity,
     setEditInstructionStatus,
     setEditInstructionFolder,
+    setEditInstructionTeams,
     createFolder,
     deleteFolder,
     createInstruction,

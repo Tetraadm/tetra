@@ -160,6 +160,7 @@ export default function AdminDashboard({
     editInstructionSeverity,
     editInstructionStatus,
     editInstructionFolder,
+    editInstructionTeams,
     instructionLoading,
     folderLoading,
     instructionsHasMore,
@@ -175,6 +176,7 @@ export default function AdminDashboard({
     setEditInstructionSeverity,
     setEditInstructionStatus,
     setEditInstructionFolder,
+    setEditInstructionTeams,
     createFolder,
     deleteFolder,
     createInstruction,
@@ -446,6 +448,7 @@ export default function AdminDashboard({
       <EditInstructionModal
         open={showEditInstruction}
         folders={folders}
+        teams={teams}
         editingInstruction={editingInstruction}
         editInstructionTitle={editInstructionTitle}
         setEditInstructionTitle={setEditInstructionTitle}
@@ -457,6 +460,8 @@ export default function AdminDashboard({
         setEditInstructionStatus={setEditInstructionStatus}
         editInstructionFolder={editInstructionFolder}
         setEditInstructionFolder={setEditInstructionFolder}
+        editInstructionTeams={editInstructionTeams}
+        setEditInstructionTeams={setEditInstructionTeams}
         instructionLoading={instructionLoading}
         saveEditInstruction={saveEditInstruction}
         onClose={() => setShowEditInstruction(false)}

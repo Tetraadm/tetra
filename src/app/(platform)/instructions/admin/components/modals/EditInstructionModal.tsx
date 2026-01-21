@@ -1,10 +1,11 @@
 import { useId, type Dispatch, type SetStateAction } from 'react'
-import { Folder, Instruction } from '@/lib/types'
+import { Folder, Instruction, Team } from '@/lib/types'
 import { ModalShell } from './ModalShell'
 
 type EditInstructionModalProps = {
     open: boolean
     folders: Folder[]
+    teams: Team[]
     editingInstruction: Instruction | null
     editInstructionTitle: string
     setEditInstructionTitle: Dispatch<SetStateAction<string>>
@@ -16,6 +17,8 @@ type EditInstructionModalProps = {
     setEditInstructionStatus: Dispatch<SetStateAction<string>>
     editInstructionFolder: string
     setEditInstructionFolder: Dispatch<SetStateAction<string>>
+    editInstructionTeams: string[]
+    setEditInstructionTeams: Dispatch<SetStateAction<string[]>>
     instructionLoading: boolean
     saveEditInstruction: () => void
     onClose: () => void
@@ -24,6 +27,7 @@ type EditInstructionModalProps = {
 export function EditInstructionModal({
     open,
     folders,
+    teams,
     editingInstruction,
     editInstructionTitle,
     setEditInstructionTitle,
@@ -35,11 +39,21 @@ export function EditInstructionModal({
     setEditInstructionStatus,
     editInstructionFolder,
     setEditInstructionFolder,
+    editInstructionTeams,
+    setEditInstructionTeams,
     instructionLoading,
     saveEditInstruction,
     onClose
 }: EditInstructionModalProps) {
     const titleId = useId()
+
+    const toggleTeam = (teamId: string) => {
+        setEditInstructionTeams(prev =>
+            prev.includes(teamId)
+                ? prev.filter(id => id !== teamId)
+                : [...prev, teamId]
+        )
+    }
 
     if (!open || !editingInstruction) return null
 
@@ -105,6 +119,35 @@ export function EditInstructionModal({
                 <option value="medium">Middels</option>
                 <option value="low">Lav</option>
             </select>
+
+            <label className="nt-label">Team</label>
+            <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px',
+                padding: '12px',
+                background: 'var(--bg-secondary)',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-default)',
+                maxHeight: '150px',
+                overflowY: 'auto'
+            }}>
+                {teams.length === 0 ? (
+                    <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Ingen team opprettet</span>
+                ) : (
+                    teams.map((team) => (
+                        <label key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                            <input
+                                type="checkbox"
+                                checked={editInstructionTeams.includes(team.id)}
+                                onChange={() => toggleTeam(team.id)}
+                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                            />
+                            <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>{team.name}</span>
+                        </label>
+                    ))
+                )}
+            </div>
 
             <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
                 <button className="nt-btn nt-btn-secondary" onClick={onClose}>
