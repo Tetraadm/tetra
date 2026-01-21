@@ -2,9 +2,28 @@ import './globals.css'
 import { Toaster } from 'react-hot-toast'
 import OfflineBanner from '@/components/OfflineBanner'
 import { ThemeProvider } from '@/components/theme-provider'
-import { Inter } from "next/font/google"
+import { IBM_Plex_Mono, IBM_Plex_Sans, IBM_Plex_Serif } from 'next/font/google'
 
-const inter = Inter({ subsets: ["latin"] })
+const plexSans = IBM_Plex_Sans({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-plex-sans',
+  display: 'swap',
+})
+
+const plexSerif = IBM_Plex_Serif({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-plex-serif',
+  display: 'swap',
+})
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500', '600'],
+  variable: '--font-plex-mono',
+  display: 'swap',
+})
 
 export const metadata = {
   title: 'Tetrivo',
@@ -18,7 +37,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="no" suppressHydrationWarning>
-      <body className={`${inter.className} font-sans antialiased`}>
+      <body className={`${plexSans.variable} ${plexSerif.variable} ${plexMono.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <OfflineBanner />
           {children}

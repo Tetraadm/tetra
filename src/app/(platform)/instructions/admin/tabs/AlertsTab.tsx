@@ -23,47 +23,31 @@ export default function AlertsTab({
 }: Props) {
   return (
     <>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 32,
-        flexWrap: 'wrap',
-        gap: 16
-      }}>
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 style={{
-            fontSize: '1.875rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            marginBottom: 8,
-            letterSpacing: '-0.02em'
-          }}>
-            Avvik & Varsler
+          <h1 className="text-2xl lg:text-3xl font-semibold font-serif tracking-tight text-foreground">
+            Kunngjøringer
           </h1>
-          <p style={{
-            fontSize: '1rem',
-            color: 'var(--text-secondary)'
-          }}>
-            Varsler vises på ansattes hjemmeside
+          <p className="text-muted-foreground">
+            Kunngjøringer vises på ansattes startside
           </p>
         </div>
         <button className="nt-btn nt-btn-primary" onClick={() => setShowCreateAlert(true)}>
           <Plus size={16} />
-          <span>Nytt avvik</span>
+          <span>Ny kunngjøring</span>
         </button>
       </div>
 
       {alerts.length === 0 ? (
         <div className="nt-empty-state">
           <Inbox className="nt-empty-state__icon" />
-          <h3 className="nt-empty-state__title">Ingen avvik registrert</h3>
+          <h3 className="nt-empty-state__title">Ingen kunngjøringer publisert</h3>
           <p className="nt-empty-state__description">
-            Opprett ditt første avvik eller varsel. Aktive varsler vises på ansattes hjemmeside.
+            Opprett din første kunngjøring. Meldingen vises på ansattes startside.
           </p>
           <button className="nt-btn nt-btn-primary" onClick={() => setShowCreateAlert(true)}>
             <Plus size={16} />
-            <span>Nytt avvik</span>
+            <span>Ny kunngjøring</span>
           </button>
         </div>
       ) : (

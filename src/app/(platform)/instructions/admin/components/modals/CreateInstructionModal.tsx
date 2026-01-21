@@ -34,13 +34,7 @@ export function CreateInstructionModal({
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    letterSpacing: '-0.01em',
-                    marginBottom: 'var(--space-5)',
-                    color: 'var(--text-primary)',
-                }}
+                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
             >
                 Opprett instruks
             </h2>
@@ -77,12 +71,7 @@ export function CreateInstructionModal({
 
             <label className="nt-label">
                 Innhold (brukes av AI)
-                <span style={{
-                    fontSize: '0.75rem',
-                    fontWeight: 400,
-                    color: 'var(--text-tertiary)',
-                    marginLeft: 'var(--space-2)',
-                }}>
+                <span className="mt-1 block text-xs font-normal text-muted-foreground">
                     Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
                 </span>
             </label>
@@ -110,48 +99,27 @@ export function CreateInstructionModal({
                 type="file"
                 accept=".pdf"
                 onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                style={{
-                    marginBottom: 'var(--space-4)',
-                    fontSize: '0.875rem',
-                    color: 'var(--text-secondary)',
-                }}
+                className="mb-4 block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-secondary/70 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-foreground hover:file:bg-secondary"
             />
             {selectedFile && (
-                <p style={{
-                    fontSize: '0.8125rem',
-                    color: 'var(--color-success-700)',
-                    marginBottom: 'var(--space-4)',
-                    fontWeight: 500,
-                }}>
+                <p className="mb-4 text-xs font-semibold text-[var(--success)]">
                     Valgt fil: {selectedFile.name}
                 </p>
             )}
 
             <label className="nt-label">Team</label>
-            <div style={{ marginBottom: 'var(--space-4)' }}>
-                <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)',
-                    marginBottom: 'var(--space-3)',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    color: 'var(--text-secondary)',
-                }}>
+            <div className="mb-4">
+                <label className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
                     <input
                         type="checkbox"
                         checked={newInstruction.allTeams}
                         onChange={(e) => setNewInstruction({ ...newInstruction, allTeams: e.target.checked, teamIds: [] })}
-                        style={{
-                            width: '16px',
-                            height: '16px',
-                            cursor: 'pointer',
-                        }}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                     />
                     <span>Alle team</span>
                 </label>
                 {!newInstruction.allTeams && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                    <div className="flex flex-wrap gap-2">
                         {teams.map((team) => {
                             const isSelected = newInstruction.teamIds.includes(team.id)
                             return (
@@ -164,23 +132,11 @@ export function CreateInstructionModal({
                                             : [...newInstruction.teamIds, team.id]
                                         setNewInstruction({ ...newInstruction, teamIds: ids })
                                     }}
-                                    style={{
-                                        padding: 'var(--space-2) var(--space-4)',
-                                        fontSize: '0.8125rem',
-                                        fontWeight: 600,
-                                        borderRadius: 'var(--radius-full)',
-                                        border: isSelected
-                                            ? '2px solid var(--color-primary-600)'
-                                            : '1px solid var(--border-primary)',
-                                        background: isSelected
-                                            ? 'var(--color-primary-100)'
-                                            : 'var(--bg-elevated)',
-                                        color: isSelected
-                                            ? 'var(--color-primary-700)'
-                                            : 'var(--text-secondary)',
-                                        cursor: 'pointer',
-                                        transition: 'var(--transition-fast)',
-                                    }}
+                                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                                        isSelected
+                                            ? 'border-primary bg-primary/10 text-primary'
+                                            : 'border-border/70 bg-card/70 text-muted-foreground hover:border-primary/40'
+                                    }`}
                                 >
                                     {team.name}
                                 </button>

@@ -35,21 +35,11 @@ export function EditUserModal({
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    letterSpacing: '-0.01em',
-                    marginBottom: 'var(--space-5)',
-                    color: 'var(--text-primary)',
-                }}
+                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-2"
             >
                 Rediger bruker
             </h2>
-            <p style={{
-                color: 'var(--text-tertiary)',
-                marginBottom: 'var(--space-4)',
-                fontSize: '0.875rem',
-            }}>
+            <p className="text-sm text-muted-foreground mb-4">
                 {editingUser.full_name}
             </p>
 

@@ -39,7 +39,7 @@ export default function AskTetraTab({
   return (
     <Card className="h-[calc(100vh-140px)] md:h-[700px] flex flex-col overflow-hidden border-border bg-card shadow-sm">
       <CardHeader className="border-b px-6 py-4 bg-card">
-        <CardTitle className="flex items-center gap-3 text-lg">
+        <CardTitle className="flex items-center gap-3 text-lg font-serif">
           <MessageCircle className="h-5 w-5 text-primary" />
           Spør Tetrivo
         </CardTitle>
@@ -70,7 +70,7 @@ export default function AskTetraTab({
                 className="justify-start gap-3 h-auto py-3 px-4 font-normal hover:bg-secondary/50"
                 onClick={() => onSuggestion('Hva gjør jeg ved brann?')}
               >
-                <Flame className="h-4 w-4 text-orange-600 shrink-0" />
+                <Flame className="h-4 w-4 text-[var(--high)] shrink-0" />
                 Hva gjør jeg ved brann?
               </Button>
               <Button
@@ -84,10 +84,10 @@ export default function AskTetraTab({
               <Button
                 variant="outline"
                 className="justify-start gap-3 h-auto py-3 px-4 font-normal hover:bg-secondary/50"
-                onClick={() => onSuggestion('Hvordan rapporterer jeg avvik?')}
+                onClick={() => onSuggestion('Hvordan blir jeg varslet om nye kunngjøringer?')}
               >
-                <PenLine className="h-4 w-4 text-emerald-600 shrink-0" />
-                Hvordan rapporterer jeg avvik?
+                <PenLine className="h-4 w-4 text-[var(--success)] shrink-0" />
+                Hvordan blir jeg varslet om nye kunngjøringer?
               </Button>
             </div>
           </div>
@@ -130,8 +130,8 @@ export default function AskTetraTab({
                   )}
                   {msg.type === 'notfound' && (
                     <div className="flex justify-start">
-                      <div className="max-w-[85%] px-4 py-3 bg-warning/10 text-warning-foreground border border-warning/20 rounded-2xl rounded-tl-sm text-sm leading-relaxed">
-                        <strong className="block mb-1">{notFoundMessage || 'Fant ikke relevant instruks.'}</strong>
+                      <div className="max-w-[85%] px-4 py-3 bg-[var(--warning-soft)] text-foreground border border-[var(--warning-border)] rounded-2xl rounded-tl-sm text-sm leading-relaxed">
+                        <strong className="block mb-1 text-[var(--warning)]">{notFoundMessage || 'Fant ikke relevant instruks.'}</strong>
                         {!notFoundMessage && (
                           <span className="text-xs opacity-90">
                             Kontakt din nærmeste leder hvis dette haster.

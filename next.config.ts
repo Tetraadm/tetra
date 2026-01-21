@@ -56,6 +56,7 @@ const nextConfig: NextConfig = {
   // NOTE: www.tetrivo.com → tetrivo.com redirect is handled by Vercel Domains config
 
   images: {
+    qualities: [75, 100],
     remotePatterns: [
       { protocol: 'https', hostname: '*.supabase.co' },
     ],

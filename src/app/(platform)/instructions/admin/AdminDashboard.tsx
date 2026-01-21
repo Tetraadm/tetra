@@ -82,7 +82,7 @@ export default function AdminDashboard({
   const router = useRouter()
   const supabase = useMemo(() => createClient(), [])
 
-  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'avvik' | 'ailogg' | 'innsikt' | 'auditlog' | 'lesebekreftelser'>('oversikt')
+  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'meldinger' | 'ailogg' | 'innsikt' | 'auditlog' | 'lesebekreftelser'>('oversikt')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
 
   const [showCreateTeam, setShowCreateTeam] = useState(false)
@@ -268,7 +268,7 @@ export default function AdminDashboard({
     { id: 'brukere', label: 'Brukere', icon: Users },
     { id: 'team', label: 'Team', icon: UsersRound },
     { id: 'instrukser', label: 'Instrukser', icon: FileText },
-    { id: 'avvik', label: 'Avvik & Varsler', icon: AlertTriangle },
+    { id: 'meldinger', label: 'Kunngjøringer', icon: AlertTriangle },
     { id: 'ailogg', label: 'AI-logg', icon: Bot },
     { id: 'innsikt', label: 'Innsikt', icon: BarChart3 },
     { id: 'auditlog', label: 'Aktivitetslogg', icon: ClipboardList },
@@ -299,7 +299,7 @@ export default function AdminDashboard({
             onClose={() => setShowMobileMenu(false)}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/10">
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/30">
             {tab === 'oversikt' && (
               <OverviewTab
                 profile={profile}
@@ -358,7 +358,7 @@ export default function AdminDashboard({
               />
             )}
 
-            {tab === 'avvik' && (
+            {tab === 'meldinger' && (
               <AlertsTab
                 alerts={alerts}
                 toggleAlert={toggleAlert}

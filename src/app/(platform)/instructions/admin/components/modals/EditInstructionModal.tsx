@@ -61,13 +61,7 @@ export function EditInstructionModal({
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    letterSpacing: '-0.01em',
-                    marginBottom: 'var(--space-5)',
-                    color: 'var(--text-primary)',
-                }}
+                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
             >
                 Rediger instruks
             </h2>
@@ -121,29 +115,19 @@ export function EditInstructionModal({
             </select>
 
             <label className="nt-label">Team</label>
-            <div style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                padding: '12px',
-                background: 'var(--bg-secondary)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-default)',
-                maxHeight: '150px',
-                overflowY: 'auto'
-            }}>
+            <div className="flex max-h-[150px] flex-col gap-2 overflow-y-auto rounded-lg border border-border/70 bg-secondary/60 p-3">
                 {teams.length === 0 ? (
-                    <span style={{ color: 'var(--text-tertiary)', fontSize: '0.875rem' }}>Ingen team opprettet</span>
+                    <span className="text-sm text-muted-foreground">Ingen team opprettet</span>
                 ) : (
                     teams.map((team) => (
-                        <label key={team.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <label key={team.id} className="flex items-center gap-2 text-sm text-foreground">
                             <input
                                 type="checkbox"
                                 checked={editInstructionTeams.includes(team.id)}
                                 onChange={() => toggleTeam(team.id)}
-                                style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                             />
-                            <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>{team.name}</span>
+                            <span>{team.name}</span>
                         </label>
                     ))
                 )}

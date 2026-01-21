@@ -27,28 +27,12 @@ export default function UsersTab({
 }: Props) {
   return (
     <>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 32,
-        flexWrap: 'wrap',
-        gap: 16
-      }}>
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 style={{
-            fontSize: '1.875rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            marginBottom: 8,
-            letterSpacing: '-0.02em'
-          }}>
+          <h1 className="text-2xl lg:text-3xl font-semibold font-serif tracking-tight text-foreground">
             Brukere
           </h1>
-          <p style={{
-            fontSize: '1rem',
-            color: 'var(--text-secondary)'
-          }}>
+          <p className="text-muted-foreground">
             Administrer ansatte og teamledere
           </p>
         </div>

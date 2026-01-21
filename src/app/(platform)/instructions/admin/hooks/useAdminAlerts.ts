@@ -81,7 +81,7 @@ export function useAdminAlerts({
       setAlerts(prev => [data, ...prev])
       setNewAlert({ title: '', description: '', severity: 'medium', teamIds: [], allTeams: true })
       onCloseCreateAlert?.()
-      toast.success('Avvik opprettet')
+      toast.success('Kunngjøring opprettet')
 
       await logAuditEventClient(supabase, {
         orgId: profile.org_id,
@@ -96,7 +96,7 @@ export function useAdminAlerts({
       })
     } catch (error) {
       console.error('Create alert error:', error)
-      toast.error('Kunne ikke opprette avvik. Prøv igjen.')
+      toast.error('Kunne ikke opprette kunngjøring. Prøv igjen.')
     } finally {
       setAlertLoading(false)
     }
@@ -114,7 +114,7 @@ export function useAdminAlerts({
       if (error) throw error
 
       setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, active: !active } : a))
-      toast.success(active ? 'Avvik deaktivert' : 'Avvik aktivert')
+      toast.success(active ? 'Kunngjøring deaktivert' : 'Kunngjøring aktivert')
 
       await logAuditEventClient(supabase, {
         orgId: profile.org_id,
@@ -130,12 +130,12 @@ export function useAdminAlerts({
       })
     } catch (error) {
       console.error('Toggle alert error:', error)
-      toast.error('Kunne ikke endre avviksstatus. Prøv igjen.')
+      toast.error('Kunne ikke endre status på kunngjøring. Prøv igjen.')
     }
   }, [alerts, profile.id, profile.org_id, supabase])
 
   const deleteAlert = useCallback(async (alertId: string) => {
-    if (!confirm('Slette dette avviket? Avviket arkiveres og kan gjenopprettes av support.')) return
+    if (!confirm('Slette denne kunngjøringen? Den arkiveres og kan gjenopprettes av support.')) return
 
     try {
       const alertToDelete = alerts.find(a => a.id === alertId)
@@ -149,7 +149,7 @@ export function useAdminAlerts({
       if (error) throw error
 
       setAlerts(prev => prev.filter(a => a.id !== alertId))
-      toast.success('Avvik slettet')
+      toast.success('Kunngjøring slettet')
 
       await logAuditEventClient(supabase, {
         orgId: profile.org_id,
@@ -165,7 +165,7 @@ export function useAdminAlerts({
       })
     } catch (error) {
       console.error('Delete alert error:', error)
-      toast.error('Kunne ikke slette avvik. Prøv igjen.')
+      toast.error('Kunne ikke slette kunngjøring. Prøv igjen.')
     }
   }, [alerts, profile.id, profile.org_id, supabase])
 
@@ -191,7 +191,7 @@ const loadMoreAlerts = useCallback(async () => {
     setAlertsHasMore(nextAlerts.length >= PAGE_SIZE)
   } catch (error) {
     console.error('Load more alerts error:', error)
-    toast.error('Kunne ikke laste flere avvik. Prøv igjen.')
+    toast.error('Kunne ikke laste flere kunngjøringer. Prøv igjen.')
   } finally {
     setAlertsLoadingMore(false)
   }

@@ -29,7 +29,7 @@ export default function InstructionsTab({
           placeholder="Søk i instrukser..."
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9 bg-background"
+          className="pl-9"
         />
       </div>
 

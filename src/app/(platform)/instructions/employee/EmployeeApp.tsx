@@ -127,7 +127,7 @@ export default function EmployeeApp({ profile, organization, instructions, alert
             onClose={() => setShowMobileMenu(false)}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/10">
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/30">
             {tab === 'home' && (
               <HomeContent
                 alerts={alerts}

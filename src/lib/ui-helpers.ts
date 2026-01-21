@@ -1,6 +1,6 @@
 /**
  * Tetrivo HMS - UI Helper Functions
- * Nordic Aurora Design System
+ * Nordic Secure Design System
  *
  * Shared utilities for severity, role labels, colors, and styling
  */
@@ -20,64 +20,64 @@ export interface ColorSet {
 // ============================================
 
 export const colors = {
-  // Primary - Aurora Green
-  primary: '#00d4aa',
-  primaryHover: '#00c4b4',
-  primaryActive: '#00b3a3',
-  primaryMuted: 'rgba(0, 212, 170, 0.25)',
-  primarySubtle: 'rgba(0, 212, 170, 0.08)',
+  // Primary - Nordic Secure
+  primary: 'var(--primary)',
+  primaryHover: 'var(--primary-strong)',
+  primaryActive: 'var(--primary-strong)',
+  primaryMuted: 'var(--primary-muted)',
+  primarySubtle: 'var(--primary-subtle)',
 
-  // Background & Surface (Dark mode)
-  background: '#0a0f1a',
-  backgroundSubtle: '#0f1424',
-  surface: '#141a2e',
-  surfaceHover: '#1a2139',
+  // Background & Surface
+  background: 'var(--background)',
+  backgroundSubtle: 'var(--surface-muted)',
+  surface: 'var(--surface)',
+  surfaceHover: 'var(--surface-strong)',
 
-  // Text (Dark mode)
-  text: 'rgba(255, 255, 255, 0.95)',
-  textSecondary: 'rgba(255, 255, 255, 0.7)',
-  textMuted: 'rgba(255, 255, 255, 0.35)',
-  textInverse: '#050810',
+  // Text
+  text: 'var(--foreground)',
+  textSecondary: 'var(--text-secondary)',
+  textMuted: 'var(--text-muted)',
+  textInverse: 'var(--text-inverse)',
 
   // Borders
-  border: 'rgba(255, 255, 255, 0.12)',
-  borderStrong: 'rgba(255, 255, 255, 0.18)',
-  borderSubtle: 'rgba(255, 255, 255, 0.08)',
+  border: 'var(--border)',
+  borderStrong: 'var(--border-strong)',
+  borderSubtle: 'var(--border-subtle)',
 
   // Semantic - Danger/Critical
-  danger: '#ef4444',
-  dangerHover: '#dc2626',
-  dangerLight: 'rgba(239, 68, 68, 0.12)',
-  dangerBorder: 'rgba(239, 68, 68, 0.25)',
+  danger: 'var(--danger)',
+  dangerHover: 'var(--danger-hover)',
+  dangerLight: 'var(--danger-soft)',
+  dangerBorder: 'var(--danger-border)',
 
   // Semantic - Warning/High
-  warning: '#f59e0b',
-  warningHover: '#d97706',
-  warningLight: 'rgba(245, 158, 11, 0.12)',
-  warningBorder: 'rgba(245, 158, 11, 0.25)',
+  warning: 'var(--warning)',
+  warningHover: 'var(--warning-hover)',
+  warningLight: 'var(--warning-soft)',
+  warningBorder: 'var(--warning-border)',
 
   // Semantic - High Priority (Orange)
-  high: '#ea580c',
-  highLight: 'rgba(234, 88, 12, 0.12)',
-  highBorder: 'rgba(234, 88, 12, 0.25)',
+  high: 'var(--high)',
+  highLight: 'var(--high-soft)',
+  highBorder: 'var(--high-border)',
 
   // Semantic - Success/Low
-  success: '#22c55e',
-  successHover: '#16a34a',
-  successLight: 'rgba(34, 197, 94, 0.12)',
-  successBorder: 'rgba(34, 197, 94, 0.25)',
+  success: 'var(--success)',
+  successHover: 'var(--success-hover)',
+  successLight: 'var(--success-soft)',
+  successBorder: 'var(--success-border)',
 
   // Semantic - Info
-  info: '#00a8ff',
-  infoHover: '#0091e0',
-  infoLight: 'rgba(0, 168, 255, 0.12)',
-  infoBorder: 'rgba(0, 168, 255, 0.25)',
+  info: 'var(--info)',
+  infoHover: 'var(--info-hover)',
+  infoLight: 'var(--info-soft)',
+  infoBorder: 'var(--info-border)',
 
-  // Aurora accent colors
-  auroraGreen: '#00d4aa',
-  auroraViolet: '#7b61ff',
-  auroraBlue: '#00a8ff',
-  auroraPink: '#ff6b9d',
+  // Accent colors
+  auroraGreen: 'var(--primary)',
+  auroraViolet: 'var(--accent)',
+  auroraBlue: 'var(--info)',
+  auroraPink: 'var(--high)',
 } as const
 
 // ============================================
@@ -85,16 +85,16 @@ export const colors = {
 // ============================================
 
 export const shadows = {
-  xs: '0 1px 2px rgba(0, 0, 0, 0.3)',
-  sm: '0 2px 8px rgba(0, 0, 0, 0.3)',
-  md: '0 4px 16px rgba(0, 0, 0, 0.4)',
-  lg: '0 8px 32px rgba(0, 0, 0, 0.5)',
-  xl: '0 16px 48px rgba(0, 0, 0, 0.6)',
-  elevated: '0 12px 40px rgba(0, 0, 0, 0.5)',
-  focus: '0 0 0 3px rgba(0, 212, 170, 0.2)',
-  focusDanger: '0 0 0 3px rgba(239, 68, 68, 0.2)',
-  glow: '0 0 40px rgba(0, 212, 170, 0.15)',
-  glowViolet: '0 0 40px rgba(123, 97, 255, 0.12)',
+  xs: '0 1px 2px rgba(15, 23, 42, 0.08)',
+  sm: '0 4px 12px rgba(15, 23, 42, 0.12)',
+  md: '0 8px 20px rgba(15, 23, 42, 0.16)',
+  lg: '0 16px 32px rgba(15, 23, 42, 0.2)',
+  xl: '0 24px 48px rgba(15, 23, 42, 0.24)',
+  elevated: '0 18px 40px rgba(15, 23, 42, 0.22)',
+  focus: '0 0 0 3px color-mix(in oklch, var(--primary) 25%, transparent)',
+  focusDanger: '0 0 0 3px color-mix(in oklch, var(--danger) 25%, transparent)',
+  glow: '0 0 30px color-mix(in oklch, var(--primary) 20%, transparent)',
+  glowViolet: '0 0 30px color-mix(in oklch, var(--accent) 20%, transparent)',
 } as const
 
 // ============================================
@@ -102,12 +102,12 @@ export const shadows = {
 // ============================================
 
 export const radius = {
-  xs: '4px',
-  sm: '6px',
-  md: '10px',
-  lg: '14px',
-  xl: '20px',
-  '2xl': '28px',
+  xs: '6px',
+  sm: '8px',
+  md: '12px',
+  lg: '16px',
+  xl: '24px',
+  '2xl': '32px',
   full: '9999px',
 } as const
 

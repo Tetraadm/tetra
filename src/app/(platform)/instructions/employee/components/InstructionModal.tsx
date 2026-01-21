@@ -33,7 +33,7 @@ export default function InstructionModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[700px] max-h-[90vh] bg-card rounded-lg shadow-xl flex flex-col overflow-hidden"
+        className="w-full max-w-[700px] max-h-[90vh] bg-card rounded-2xl shadow-xl flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         <div className="p-6 border-b flex justify-between items-start bg-card">
@@ -41,7 +41,7 @@ export default function InstructionModal({
             <Badge variant={instruction.severity === 'critical' ? 'destructive' : 'secondary'}>
               {severityLabel(instruction.severity)}
             </Badge>
-            <h2 className="text-xl font-bold mt-3 tracking-tight text-foreground leading-tight">
+            <h2 className="text-xl font-semibold font-serif mt-3 tracking-tight text-foreground leading-tight">
               {instruction.title}
             </h2>
           </div>
@@ -71,8 +71,8 @@ export default function InstructionModal({
 
           <div className="mt-8 pt-5 border-t">
             {isConfirmed ? (
-              <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 rounded-md text-green-700 dark:text-green-400 text-sm font-medium">
-                <CheckCircle size={20} className="text-green-600 dark:text-green-500" />
+              <div className="flex items-center gap-3 p-4 bg-[var(--success-soft)] border border-[var(--success-border)] rounded-md text-[var(--success)] text-sm font-medium">
+                <CheckCircle size={20} className="text-[var(--success)]" />
                 Du har bekreftet at du har lest og forstått denne instruksen
               </div>
             ) : (

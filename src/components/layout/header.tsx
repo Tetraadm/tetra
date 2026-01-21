@@ -17,11 +17,11 @@ export function Header() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     return (
-        <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
+        <header className="fixed top-0 left-0 right-0 z-50 border-b border-border/70 bg-background/70 backdrop-blur-lg">
             <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
                 <div className="flex lg:flex-1">
                     <Link href="/" className="-m-1.5 p-1.5">
-                        <TetraLogo variant="full" className="scale-150" />
+                        <TetraLogo variant="full" size={36} />
                     </Link>
                 </div>
 
@@ -42,7 +42,7 @@ export function Header() {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                            className="text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
                         >
                             {item.name}
                         </Link>

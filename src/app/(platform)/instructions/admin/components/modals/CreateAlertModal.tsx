@@ -28,15 +28,9 @@ export function CreateAlertModal({
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    letterSpacing: '-0.01em',
-                    marginBottom: 'var(--space-5)',
-                    color: 'var(--text-primary)',
-                }}
+                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
             >
-                Opprett avvik
+                Opprett kunngjøring
             </h2>
 
             <label className="nt-label">Tittel</label>
@@ -44,7 +38,7 @@ export function CreateAlertModal({
                 className="nt-input"
                 value={newAlert.title}
                 onChange={(e) => setNewAlert({ ...newAlert, title: e.target.value })}
-                placeholder="F.eks. Stengt nødutgang"
+                placeholder="F.eks. Viktig melding til alle ansatte"
             />
 
             <label className="nt-label">Beskrivelse</label>
@@ -67,30 +61,18 @@ export function CreateAlertModal({
             </select>
 
             <label className="nt-label">Synlig for</label>
-            <div style={{ marginBottom: 'var(--space-4)' }}>
-                <label style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 'var(--space-2)',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    color: 'var(--text-secondary)',
-                    marginBottom: 'var(--space-3)',
-                }}>
+            <div className="mb-4">
+                <label className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
                     <input
                         type="checkbox"
                         checked={newAlert.allTeams}
                         onChange={(e) => setNewAlert({ ...newAlert, allTeams: e.target.checked, teamIds: [] })}
-                        style={{
-                            width: '16px',
-                            height: '16px',
-                            cursor: 'pointer',
-                        }}
+                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                     />
                     <span>Alle team</span>
                 </label>
                 {!newAlert.allTeams && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-2)' }}>
+                    <div className="flex flex-wrap gap-2">
                         {teams.map((team) => {
                             const isSelected = newAlert.teamIds.includes(team.id)
                             return (
@@ -103,23 +85,11 @@ export function CreateAlertModal({
                                             : [...newAlert.teamIds, team.id]
                                         setNewAlert({ ...newAlert, teamIds: ids })
                                     }}
-                                    style={{
-                                        padding: 'var(--space-2) var(--space-4)',
-                                        fontSize: '0.8125rem',
-                                        fontWeight: 600,
-                                        borderRadius: 'var(--radius-full)',
-                                        border: isSelected
-                                            ? '2px solid var(--color-primary-600)'
-                                            : '1px solid var(--border-primary)',
-                                        background: isSelected
-                                            ? 'var(--color-primary-100)'
-                                            : 'var(--bg-elevated)',
-                                        color: isSelected
-                                            ? 'var(--color-primary-700)'
-                                            : 'var(--text-secondary)',
-                                        cursor: 'pointer',
-                                        transition: 'var(--transition-fast)',
-                                    }}
+                                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                                        isSelected
+                                            ? 'border-primary bg-primary/10 text-primary'
+                                            : 'border-border/70 bg-card/70 text-muted-foreground hover:border-primary/40'
+                                    }`}
                                 >
                                     {team.name}
                                 </button>

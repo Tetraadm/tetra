@@ -86,11 +86,11 @@ export default function LeaderDashboard({
             onClose={() => setShowMobileMenu(false)}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/10">
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/30">
             {tab === 'oversikt' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Oversikt</h1>
+                  <h1 className="text-2xl font-semibold font-serif tracking-tight">Oversikt</h1>
                   <p className="text-muted-foreground">Velkommen tilbake, {profile.full_name}</p>
                 </div>
 
@@ -158,7 +158,7 @@ export default function LeaderDashboard({
             {tab === 'team' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Mitt team</h1>
+                  <h1 className="text-2xl font-semibold font-serif tracking-tight">Mitt team</h1>
                   <p className="text-muted-foreground">{team?.name || 'Ingen team'}</p>
                 </div>
 
@@ -196,7 +196,7 @@ export default function LeaderDashboard({
             {tab === 'instrukser' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Instrukser</h1>
+                  <h1 className="text-2xl font-semibold font-serif tracking-tight">Instrukser</h1>
                   <p className="text-muted-foreground">Instrukser for {team?.name}</p>
                 </div>
 

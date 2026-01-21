@@ -35,13 +35,7 @@ export function InviteUserModal({
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    letterSpacing: '-0.01em',
-                    marginBottom: 'var(--space-5)',
-                    color: 'var(--text-primary)',
-                }}
+                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
             >
                 Lag invitasjonslenke
             </h2>
@@ -54,12 +48,7 @@ export function InviteUserModal({
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="bruker@bedrift.no"
             />
-            <p style={{
-                fontSize: '0.8125rem',
-                color: 'var(--text-tertiary)',
-                marginTop: 'calc(var(--space-3) * -1)',
-                marginBottom: 'var(--space-4)',
-            }}>
+            <p className="-mt-3 mb-4 text-xs text-muted-foreground">
                 E-posten lagres i revisjonsloggen for sporbarhet.
             </p>
 

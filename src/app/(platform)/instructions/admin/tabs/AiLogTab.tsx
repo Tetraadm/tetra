@@ -8,31 +8,22 @@ type Props = {
 export default function AiLogTab({ aiLogs }: Props) {
   return (
     <>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{
-          fontSize: '1.875rem',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          marginBottom: 8,
-          letterSpacing: '-0.02em'
-        }}>
+      <div className="mb-8">
+        <h1 className="text-2xl lg:text-3xl font-semibold font-serif tracking-tight text-foreground">
           AI-logg
         </h1>
-        <p style={{
-          fontSize: '1rem',
-          color: 'var(--text-secondary)'
-        }}>
+        <p className="text-muted-foreground">
           Oversikt over spørsmål til Spør Tetrivo
         </p>
       </div>
 
-      <div className="bg-amber-50 dark:bg-amber-950/50 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-5 mb-6">
-        <p className="m-0 text-[0.9375rem] text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-2">
+      <div className="bg-[var(--warning-soft)] border border-[var(--warning-border)] rounded-2xl p-5 mb-6">
+        <p className="m-0 text-[0.9375rem] text-[var(--warning)] flex items-start gap-2 mb-2">
           <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
           <span><strong>Viktig:</strong> AI-assistenten svarer kun basert på publiserte instrukser.</span>
         </p>
-        <p className="m-0 text-[0.9375rem] text-amber-700 dark:text-amber-300">
-          Alle spørsmål og svar logges for kvalitetssikring og compliance.
+        <p className="m-0 text-[0.9375rem] text-muted-foreground">
+          Alle spørsmål og svar logges for kvalitetssikring og etterlevelse.
         </p>
       </div>
 

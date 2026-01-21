@@ -15,78 +15,32 @@ export function DisclaimerModal({ open, onClose }: DisclaimerModalProps) {
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                style={{
-                    fontSize: '1.125rem',
-                    fontWeight: 700,
-                    letterSpacing: '-0.01em',
-                    marginBottom: 'var(--space-5)',
-                    color: 'var(--text-primary)',
-                }}
+                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
             >
                 Om AI-assistenten
             </h2>
 
-            <div
-                style={{
-                    background: 'linear-gradient(135deg, var(--color-warning-50), var(--color-warning-100))',
-                    border: '2px solid var(--color-warning-200)',
-                    borderLeft: '4px solid var(--color-warning-600)',
-                    borderRadius: 'var(--radius-md)',
-                    padding: 'var(--space-4)',
-                    marginBottom: 'var(--space-6)',
-                }}
-            >
-                <h3 style={{
-                    fontWeight: 600,
-                    marginBottom: 'var(--space-2)',
-                    color: 'var(--text-primary)',
-                    fontSize: '0.9375rem',
-                }}>
+            <div className="rounded-2xl border border-[var(--warning-border)] bg-[var(--warning-soft)] p-4 mb-6">
+                <h3 className="text-sm font-semibold text-foreground mb-2">
                     Ansvarsfraskrivelse
                 </h3>
-                <p style={{
-                    fontSize: '0.875rem',
-                    lineHeight: 1.6,
-                    marginBottom: 'var(--space-3)',
-                    color: 'var(--text-secondary)',
-                }}>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     Tetrivo AI er et <strong>støtteverktøy</strong> som hjelper ansatte med å finne informasjon i bedriftens instrukser og prosedyrer.
                 </p>
-                <p style={{
-                    fontSize: '0.875rem',
-                    lineHeight: 1.6,
-                    marginBottom: 'var(--space-3)',
-                    color: 'var(--text-secondary)',
-                }}>
+                <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     AI-assistenten svarer <strong>kun basert på publiserte dokumenter</strong> i systemet. Den bruker ikke ekstern kunnskap eller generell informasjon.
                 </p>
-                <p style={{
-                    fontSize: '0.875rem',
-                    lineHeight: 1.6,
-                    color: 'var(--color-warning-800)',
-                }}>
+                <p className="text-sm leading-relaxed text-[var(--warning)]">
                     <strong>Viktig:</strong> AI-svar er ikke juridisk bindende eller operativ fasit. Ved tvil, kontakt alltid ansvarlig leder.
                 </p>
             </div>
 
-            <h3 style={{
-                fontWeight: 600,
-                marginBottom: 'var(--space-2)',
-                color: 'var(--text-primary)',
-                fontSize: '0.9375rem',
-            }}>
-                Logging
-            </h3>
-            <p style={{
-                fontSize: '0.875rem',
-                lineHeight: 1.6,
-                marginBottom: 'var(--space-5)',
-                color: 'var(--text-secondary)',
-            }}>
+            <h3 className="text-sm font-semibold text-foreground mb-2">Logging</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed mb-5">
                 Alle spørsmål og svar logges for kvalitetssikring. Loggene er kun tilgjengelige for administratorer.
             </p>
 
-            <button className="nt-btn nt-btn-primary" onClick={onClose} style={{ width: '100%' }}>
+            <button className="nt-btn nt-btn-primary w-full" onClick={onClose}>
                 Lukk
             </button>
         </ModalShell>

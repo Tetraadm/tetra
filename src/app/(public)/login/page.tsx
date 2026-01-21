@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { TetraLogo } from '@/components/tetra-logo'
 import { useState } from 'react'
-import { Mail, CheckCircle, Shield, Loader2, Key, ArrowLeft } from 'lucide-react'
+import { Mail, CheckCircle, ShieldCheck, Loader2, Key, ArrowLeft, Clock, Lock } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -76,47 +76,85 @@ export default function LoginPage() {
   // Magic link sent confirmation
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6">
-        <Card className="w-full max-w-md">
-          <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-              <CheckCircle className="w-10 h-10 text-primary" />
-            </div>
-            <CardTitle className="text-2xl">Sjekk e-posten din</CardTitle>
-            <CardDescription>
-              Vi har sendt en innloggingslenke til
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center font-semibold text-foreground bg-primary/5 border border-primary/20 rounded-lg py-3 px-4">
-              {email}
-            </div>
-            <div className="text-center text-sm text-muted-foreground bg-muted rounded-lg p-4">
-              Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.
-            </div>
-            <Button variant="outline" className="w-full" onClick={resetForm}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Tilbake til innlogging
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen bg-background relative">
+        <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(14,116,144,0.12),transparent_55%)]" />
+        <div className="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-6 py-16">
+          <Card className="w-full max-w-md border-border/80 bg-card/90 shadow-xl">
+            <CardHeader className="text-center pb-2">
+              <div className="mx-auto w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+                <CheckCircle className="w-10 h-10 text-primary" />
+              </div>
+              <CardTitle className="text-2xl font-serif">Sjekk e-posten din</CardTitle>
+              <CardDescription>
+                Vi har sendt en innloggingslenke til
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="text-center font-semibold text-foreground bg-primary/5 border border-primary/20 rounded-lg py-3 px-4">
+                {email}
+              </div>
+              <div className="text-center text-sm text-muted-foreground bg-secondary/60 rounded-lg p-4">
+                Lenken er gyldig i 1 time. Sjekk spam-mappen hvis du ikke finner e-posten.
+              </div>
+              <Button variant="outline" className="w-full" onClick={resetForm}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Tilbake til innlogging
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-6">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center pb-4">
-          <div className="mx-auto mb-6 flex justify-center">
-            <TetraLogo variant="logo-only" size={100} />
+    <div className="min-h-screen bg-background relative">
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_20%,rgba(14,116,144,0.12),transparent_55%)]" />
+      <div className="mx-auto flex min-h-screen max-w-6xl items-center px-6 py-16">
+        <div className="grid w-full gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="hidden lg:flex flex-col justify-between rounded-3xl border border-border/80 bg-card/70 p-8 shadow-lg">
+            <div className="space-y-6">
+              <TetraLogo variant="full" size={36} />
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">Sikker innlogging</p>
+                <h2 className="mt-3 font-serif text-3xl font-semibold text-foreground">
+                  Trygg tilgang til HMS-arbeidet
+                </h2>
+                <p className="mt-4 text-muted-foreground">
+                  Velg innloggingsmetode og få sikker tilgang til alt av dokumenter, instrukser og lesebekreftelser.
+                </p>
+              </div>
+              <div className="space-y-4 text-sm text-muted-foreground">
+                <div className="flex items-start gap-3">
+                  <Clock className="mt-0.5 h-5 w-5 text-primary" />
+                  <span>Tidsbegrenset innloggingslenke sendt til e-post.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Lock className="mt-0.5 h-5 w-5 text-primary" />
+                  <span>Rollebasert tilgang for ansatte, teamledere og admin.</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-0.5 h-5 w-5 text-primary" />
+                  <span>Revisjonsspor for viktige hendelser i systemet.</span>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-border/70 bg-secondary/60 p-4 text-xs text-muted-foreground">
+              Trenger du hjelp? Kontakt oss på kontakt@tetrivo.com.
+            </div>
           </div>
-          <CardTitle className="text-2xl">Logg inn på Tetrivo</CardTitle>
-          <CardDescription>
-            HMS-plattformen for sikker arbeidsplass
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+
+          <Card className="w-full max-w-md justify-self-center border-border/80 bg-card/90 shadow-xl">
+            <CardHeader className="text-center pb-4">
+              <div className="mx-auto mb-6 flex justify-center">
+                <TetraLogo variant="logo-only" size={100} />
+              </div>
+              <CardTitle className="text-2xl font-serif">Logg inn til Tetrivo</CardTitle>
+              <CardDescription>
+                HMS-plattformen for trygg og dokumentert drift
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
           {/* Mode Selection */}
           {mode === 'select' && (
             <div className="space-y-3">
@@ -129,8 +167,8 @@ export default function LoginPage() {
                   <Mail className="w-5 h-5 text-primary" />
                 </div>
                 <div className="text-left">
-                  <div className="font-semibold">Magic Link</div>
-                  <div className="text-xs text-muted-foreground">Få innloggingslenke på e-post</div>
+                  <div className="font-semibold">Innloggingslenke</div>
+                  <div className="text-xs text-muted-foreground">Få lenke sendt til e-post</div>
                 </div>
               </Button>
 
@@ -198,7 +236,7 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Sender...
+                    Sender ...
                   </>
                 ) : (
                   'Send innloggingslenke'
@@ -264,7 +302,7 @@ export default function LoginPage() {
                 {loading ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                    Logger inn...
+                    Logger inn ...
                   </>
                 ) : (
                   'Logg inn'
@@ -275,11 +313,13 @@ export default function LoginPage() {
 
           {/* Footer */}
           <div className="flex items-center justify-center gap-2 pt-2 text-muted-foreground">
-            <Shield size={16} className="text-primary" />
+            <ShieldCheck size={16} className="text-primary" />
             <span className="text-xs">Sikker innlogging til HMS-plattformen</span>
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   )
 }

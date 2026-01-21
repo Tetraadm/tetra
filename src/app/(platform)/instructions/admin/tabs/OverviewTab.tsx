@@ -1,5 +1,6 @@
 import { AlertTriangle, Users, FileText, File } from 'lucide-react'
 import type { Profile, Alert, Instruction } from '@/lib/types'
+import { severityLabel } from '@/lib/ui-helpers'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,7 +10,7 @@ type Props = {
   users: Profile[]
   instructions: Instruction[]
   alerts: Alert[]
-  setTab: (tab: 'avvik') => void
+  setTab: (tab: 'meldinger') => void
 }
 
 export default function OverviewTab({ profile, users, instructions, alerts, setTab }: Props) {
@@ -21,15 +22,15 @@ export default function OverviewTab({ profile, users, instructions, alerts, setT
     { label: "Totale brukere", value: users.length, icon: Users },
     { label: "Publiserte instrukser", value: publishedInstructions.length, icon: FileText },
     { label: "Utkast", value: draftInstructions.length, icon: File },
-    { label: "Aktive avvik", value: activeAlerts.length, icon: AlertTriangle, status: activeAlerts.length > 0 ? 'danger' : 'success' },
+    { label: "Aktive kunngjøringer", value: activeAlerts.length, icon: AlertTriangle, status: activeAlerts.length > 0 ? 'danger' : 'success' },
   ]
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Velkommen, {profile.full_name}</h1>
-          <p className="text-muted-foreground mt-1">Her er oversikten over din organisasjon</p>
+          <h1 className="text-2xl lg:text-3xl font-semibold font-serif text-foreground">Velkommen, {profile.full_name}</h1>
+          <p className="text-muted-foreground mt-1">Her er oversikten over organisasjonen din</p>
         </div>
       </div>
 
@@ -66,7 +67,7 @@ export default function OverviewTab({ profile, users, instructions, alerts, setT
               Krever oppmerksomhet
             </CardTitle>
             <CardDescription>
-              {activeAlerts.length} aktive avvik som må håndteres.
+              {activeAlerts.length} aktive kunngjøringer som må følges opp.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -74,15 +75,15 @@ export default function OverviewTab({ profile, users, instructions, alerts, setT
               {activeAlerts.slice(0, 3).map(alert => (
                 <div key={alert.id} className="flex items-center justify-between p-3 rounded-lg bg-background border border-destructive/20">
                   <div className="flex items-center gap-3">
-                    <Badge variant="outline" className={`${alert.severity === 'critical' ? 'border-destructive text-destructive' : 'border-amber-500 text-foreground'}`}>
-                      {alert.severity}
+                    <Badge variant="outline" className={`${alert.severity === 'critical' ? 'border-destructive text-destructive' : 'border-[var(--warning-border)] text-[var(--warning)]'}`}>
+                      {severityLabel(alert.severity)}
                     </Badge>
                     <span className="font-medium">{alert.title}</span>
                   </div>
                 </div>
               ))}
-              <Button variant="outline" onClick={() => setTab('avvik')} className="w-full mt-2 border-destructive/30 hover:bg-destructive/10 text-destructive">
-                Se alle avvik
+              <Button variant="outline" onClick={() => setTab('meldinger')} className="w-full mt-2 border-destructive/30 hover:bg-destructive/10 text-destructive">
+                Se alle kunngjøringer
               </Button>
             </div>
           </CardContent>

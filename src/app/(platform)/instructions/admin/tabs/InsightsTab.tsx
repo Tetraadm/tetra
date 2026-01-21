@@ -9,20 +9,11 @@ type Props = {
 export default function InsightsTab({ aiLogs, instructions }: Props) {
   return (
     <>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{
-          fontSize: '1.875rem',
-          fontWeight: 700,
-          color: 'var(--text-primary)',
-          marginBottom: 8,
-          letterSpacing: '-0.02em'
-        }}>
+      <div className="mb-8">
+        <h1 className="text-2xl lg:text-3xl font-semibold font-serif tracking-tight text-foreground">
           Innsikt
         </h1>
-        <p style={{
-          fontSize: '1rem',
-          color: 'var(--text-secondary)'
-        }}>
+        <p className="text-muted-foreground">
           Statistikk og analyse
         </p>
       </div>

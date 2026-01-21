@@ -46,14 +46,15 @@ export function ContactSection() {
     }
 
     return (
-        <section id="kontakt" className="py-24 bg-background">
+        <section id="kontakt" className="relative py-24 bg-background">
+            <div className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_80%_20%,rgba(14,116,144,0.08),transparent_55%)]" />
             <div className="container mx-auto px-4">
                 <div className="grid md:grid-cols-2 gap-16 max-w-6xl mx-auto">
                     {/* Venstre: Kontaktinformasjon */}
                     <div>
-                        <h2 className="text-3xl md:text-5xl font-bold mb-6">La oss ta en prat</h2>
+                        <h2 className="font-serif text-3xl md:text-5xl font-semibold mb-6">La oss sikre HMS-arbeidet sammen</h2>
                         <p className="text-xl text-muted-foreground mb-10">
-                            Har du spørsmål om Tetrivo, eller ønsker du å vite mer om hvordan vi kan hjelpe din bedrift? Send oss en melding, så tar vi kontakt.
+                            Har du spørsmål om Tetrivo, eller ønsker du en trygg pilot? Send oss en melding, så setter vi opp neste steg.
                         </p>
 
                         <div className="space-y-6">
@@ -78,7 +79,7 @@ export function ContactSection() {
                             </div>
                         </div>
 
-                        <div className="mt-10 p-6 bg-muted/50 rounded-2xl border">
+                        <div className="mt-10 p-6 bg-secondary/60 rounded-2xl border border-border/80">
                             <div className="flex items-center gap-3 mb-3">
                                 <div className="flex -space-x-2">
                                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">SH</div>
@@ -89,7 +90,7 @@ export function ContactSection() {
                                 </div>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                                Vi svarer vanligvis innen 24 timer på hverdager.
+                                Vi svarer normalt innen 24 timer på hverdager.
                             </p>
                         </div>
                     </div>
@@ -107,7 +108,7 @@ export function ContactSection() {
                                 </p>
                             </Card>
                         ) : (
-                            <Card className="p-8 shadow-xl border-2">
+                            <Card className="p-8 shadow-xl border-2 border-border/80 bg-card/90">
                                 <form onSubmit={handleSubmit} className="space-y-6">
                                     <div className="grid md:grid-cols-2 gap-4">
                                         <div>
@@ -145,7 +146,7 @@ export function ContactSection() {
                                         )}
                                     </Button>
                                     <p className="text-xs text-muted-foreground text-center">
-                                        Ved å sende inn skjemaet gødtar du vår personvernerklæring.
+                                        Ved å sende inn skjemaet godtar du vår personvernerklæring.
                                     </p>
                                 </form>
                             </Card>

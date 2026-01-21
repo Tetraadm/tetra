@@ -65,9 +65,9 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      background: '#FFFFFF',
+      background: colors.background,
       padding: 24,
-      fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+      fontFamily: 'inherit',
       position: 'relative' as const,
       overflow: 'hidden',
     },
@@ -78,7 +78,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       width: '50%',
       height: '60%',
       borderRadius: '50%',
-      background: `radial-gradient(circle, rgba(5, 150, 105, 0.05) 0%, transparent 70%)`,
+      background: 'radial-gradient(circle, rgba(14, 116, 144, 0.12) 0%, transparent 70%)',
       pointerEvents: 'none' as const,
     },
     decorShape2: {
@@ -88,24 +88,24 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       width: '60%',
       height: '70%',
       borderRadius: '50%',
-      background: `radial-gradient(circle, rgba(2, 132, 199, 0.04) 0%, transparent 70%)`,
+      background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
       pointerEvents: 'none' as const,
     },
     card: {
       position: 'relative' as const,
       zIndex: 1,
-      background: '#FFFFFF',
+      background: colors.surface,
       padding: '44px 40px',
       borderRadius: radius.xl,
       boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.02)',
-      border: '1px solid #E2E8F0',
+      border: `1px solid ${colors.border}`,
       maxWidth: 460,
       width: '100%',
     },
     logo: {
       width: 56,
       height: 56,
-      background: `linear-gradient(135deg, #059669 0%, #047857 100%)`,
+      background: `linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)`,
       borderRadius: radius.lg,
       display: 'flex',
       alignItems: 'center',
@@ -114,7 +114,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       color: 'white',
       fontWeight: 800,
       fontSize: 24,
-      boxShadow: `0 8px 20px -4px rgba(5, 150, 105, 0.3)`,
+      boxShadow: '0 12px 24px -12px rgba(14, 116, 144, 0.35)',
     },
     title: {
       fontSize: 26,
@@ -184,24 +184,24 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       fontSize: 15,
       fontWeight: 600,
       color: 'white',
-      background: `linear-gradient(135deg, #059669 0%, #047857 100%)`,
+      background: `linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)`,
       border: 'none',
       borderRadius: radius.md,
       cursor: 'pointer',
       transition: `all ${transitions.normal}`,
-      boxShadow: `0 4px 12px -2px rgba(5, 150, 105, 0.35)`,
+      boxShadow: '0 8px 20px -12px rgba(14, 116, 144, 0.4)',
       fontFamily: 'inherit',
     },
     checkIcon: {
       width: 80,
       height: 80,
-      background: '#D1FAE5',
+      background: colors.successLight,
       borderRadius: '50%',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       margin: '0 auto 24px',
-      color: '#059669',
+      color: colors.success,
       boxShadow: `0 8px 20px -4px rgba(5, 150, 105, 0.25)`,
     },
   }
@@ -263,7 +263,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
         </div>
         <h1 style={styles.title}>Du er invitert!</h1>
         <p style={styles.subtitle}>
-          Du har blitt invitert til a bli med i Tetrivo HMS-plattformen
+          Du har blitt invitert til å bli med i Tetrivo HMS-plattformen
         </p>
 
         <div style={styles.infoBox}>
@@ -354,7 +354,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
                 }
               }}
             >
-              {loading ? 'Sender...' : 'Send innloggingslenke pa e-post'}
+              {loading ? 'Sender ...' : 'Send innloggingslenke på e-post'}
             </button>
           </form>
 

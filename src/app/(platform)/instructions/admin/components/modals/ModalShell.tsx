@@ -74,31 +74,12 @@ export function ModalShell({ open, onClose, titleId, children }: ModalShellProps
 
     return (
         <div
-            style={{
-                position: 'fixed',
-                inset: 0,
-                background: 'rgba(0, 0, 0, 0.6)',
-                backdropFilter: 'blur(4px)',
-                WebkitBackdropFilter: 'blur(4px)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                zIndex: 1000,
-                padding: 'var(--space-4)',
-                animation: 'fadeIn 200ms ease-out',
-            }}
+            className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
             onClick={onClose}
         >
             <div
                 ref={contentRef}
-                className="nt-card"
-                style={{
-                    width: '100%',
-                    maxWidth: '560px',
-                    maxHeight: '90vh',
-                    overflowY: 'auto',
-                    animation: 'slideUp 300ms ease-out',
-                }}
+                className="w-full max-w-[600px] max-h-[90vh] overflow-y-auto rounded-2xl border border-border/80 bg-card/95 p-6 shadow-xl animate-fade-up"
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={titleId}

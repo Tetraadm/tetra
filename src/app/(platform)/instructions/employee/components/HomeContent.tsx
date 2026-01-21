@@ -37,9 +37,9 @@ export default function HomeContent({
     <div className="space-y-8">
       {alerts.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <AlertTriangle className="h-5 w-5 text-warning-600" />
-            Aktive varsler
+          <h2 className="text-lg font-semibold font-serif flex items-center gap-2 mb-4">
+            <AlertTriangle className="h-5 w-5 text-[var(--warning)]" />
+            Aktive kunngjøringer
           </h2>
           <div className="space-y-3">
             {alerts.map(alert => {
@@ -51,17 +51,20 @@ export default function HomeContent({
                     "flex gap-4 p-5 rounded-lg border-2",
                     isCritical
                       ? "bg-gradient-to-br from-destructive/5 to-destructive/10 border-destructive/20"
-                      : "bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200 dark:from-yellow-900/10 dark:to-yellow-900/20 dark:border-yellow-900/30"
+                      : "bg-[var(--warning-soft)] border-[var(--warning-border)]"
                   )}
                 >
                   <AlertTriangle
                     className={cn(
                       "h-5 w-5 mt-0.5 shrink-0",
-                      isCritical ? "text-destructive" : "text-yellow-600 dark:text-yellow-500"
+                      isCritical ? "text-destructive" : "text-[var(--warning)]"
                     )}
                   />
                   <div className="flex-1">
-                    <Badge variant={isCritical ? "destructive" : "outline"} className={cn(!isCritical && "border-yellow-200 text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20 dark:text-yellow-400 dark:border-yellow-900/50")}>
+                    <Badge
+                      variant={isCritical ? "destructive" : "outline"}
+                      className={cn(!isCritical && "border-[var(--warning-border)] text-[var(--warning)] bg-[var(--warning-soft)]")}
+                    >
                       {severityLabel(alert.severity)}
                     </Badge>
                     <div className="font-semibold mt-2 text-foreground">
@@ -97,14 +100,14 @@ export default function HomeContent({
         </Card>
 
         <Card
-          className="cursor-pointer hover:bg-muted/50 transition-colors border-indigo-200 bg-indigo-50/50 dark:bg-indigo-900/10 dark:border-indigo-800"
+          className="cursor-pointer hover:bg-accent/10 transition-colors border-accent/20 bg-accent/5"
           onClick={() => onTabChange('ask')}
         >
           <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
-            <div className="h-14 w-14 rounded-md bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+            <div className="h-14 w-14 rounded-md bg-accent/10 flex items-center justify-center text-accent">
               <MessageCircle size={28} />
             </div>
-            <span className="font-semibold text-indigo-700 dark:text-indigo-300">Spør Tetrivo</span>
+            <span className="font-semibold text-accent">Spør Tetrivo</span>
           </CardContent>
         </Card>
 
@@ -127,7 +130,7 @@ export default function HomeContent({
 
       {criticalInstructions.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-destructive">
+          <h2 className="text-lg font-semibold font-serif flex items-center gap-2 mb-4 text-destructive">
             <Zap className="h-5 w-5" />
             Kritiske instrukser
           </h2>
@@ -158,7 +161,7 @@ export default function HomeContent({
       )}
 
       <section>
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-muted-foreground">
+        <h2 className="text-lg font-semibold font-serif flex items-center gap-2 mb-4 text-muted-foreground">
           <Clock className="h-5 w-5" />
           Siste instrukser
         </h2>
