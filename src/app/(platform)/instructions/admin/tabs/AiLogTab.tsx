@@ -26,30 +26,12 @@ export default function AiLogTab({ aiLogs }: Props) {
         </p>
       </div>
 
-      <div style={{
-        background: 'linear-gradient(135deg, var(--color-primary-50), var(--color-primary-100))',
-        border: '2px solid var(--color-primary-200)',
-        borderRadius: 'var(--radius-lg)',
-        padding: 'var(--space-5)',
-        marginBottom: 'var(--space-6)'
-      }}>
-        <p style={{
-          margin: 0,
-          fontSize: '0.9375rem',
-          color: 'var(--color-primary-800)',
-          display: 'flex',
-          alignItems: 'start',
-          gap: 8,
-          marginBottom: 8
-        }}>
-          <AlertTriangle size={16} style={{ flexShrink: 0, marginTop: 2 }} aria-hidden="true" />
-          <strong>Viktig:</strong> AI-assistenten svarer kun basert på publiserte instrukser.
+      <div className="bg-amber-50 dark:bg-amber-950/50 border-2 border-amber-200 dark:border-amber-800 rounded-lg p-5 mb-6">
+        <p className="m-0 text-[0.9375rem] text-amber-800 dark:text-amber-200 flex items-start gap-2 mb-2">
+          <AlertTriangle size={16} className="flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <span><strong>Viktig:</strong> AI-assistenten svarer kun basert på publiserte instrukser.</span>
         </p>
-        <p style={{
-          margin: 0,
-          fontSize: '0.9375rem',
-          color: 'var(--color-primary-700)'
-        }}>
+        <p className="m-0 text-[0.9375rem] text-amber-700 dark:text-amber-300">
           Alle spørsmål og svar logges for kvalitetssikring og compliance.
         </p>
       </div>
