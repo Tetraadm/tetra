@@ -36,7 +36,7 @@ export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDis
                     <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
                         <Menu className="h-5 w-5" />
                     </Button>
-                    <TetraLogo className="hidden sm:flex" />
+                    <TetraLogo variant="logo-only" size={48} className="hidden sm:flex" />
                     {organizationName && (
                         <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-md bg-muted text-muted-foreground text-xs font-medium border border-border">
                             {organizationName}
