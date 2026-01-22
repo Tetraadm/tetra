@@ -1,6 +1,7 @@
 'use client'
 
 import { GdprDeleteRequest } from '@/components/GdprDeleteRequest'
+import { GdprDataExport } from '@/components/GdprDataExport'
 
 interface AccountTabProps {
     userName: string
@@ -32,8 +33,12 @@ export default function AccountTab({ userName, userEmail }: AccountTabProps) {
                 </dl>
             </div>
 
+            {/* GDPR Data Export */}
+            <GdprDataExport />
+
             {/* GDPR Delete Request */}
             <GdprDeleteRequest userName={userName} />
         </div>
     )
 }
+
