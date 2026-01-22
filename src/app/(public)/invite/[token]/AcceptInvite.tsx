@@ -48,7 +48,8 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
     })
 
     if (error) {
-      toast.error('Kunne ikke sende e-post: ' + error.message)
+      toast.error('Kunne ikke sende e-post. Prøv igjen.')
+      console.error('OTP email error:', error.message)
       setLoading(false)
       return
     }

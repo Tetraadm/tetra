@@ -56,7 +56,9 @@ export default function LoginPage() {
       if (error.message === "Invalid login credentials") {
         setError("Feil e-post eller passord");
       } else {
-        setError(error.message);
+        // Show generic Norwegian message instead of raw error
+        setError("Kunne ikke logge inn. Prøv igjen eller kontakt support.");
+        console.error("Login error:", error.message);
       }
       setIsLoading(false);
     } else {

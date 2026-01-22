@@ -34,7 +34,7 @@ export default function FileLink({ fileUrl, supabase }: FileLinkProps) {
         }
       } catch (err) {
         console.error('Get signed URL error:', err)
-        const errorMsg = err instanceof Error ? err.message : 'Kunne ikke laste vedlegg'
+        const errorMsg = 'Kunne ikke laste vedlegg'
         setError(errorMsg)
         toast.error(errorMsg)
       }
