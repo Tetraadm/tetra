@@ -3,6 +3,7 @@ import { Resend } from 'resend'
 import { getClientIp } from '@/lib/ratelimit'
 import { Ratelimit } from '@upstash/ratelimit'
 import { Redis } from '@upstash/redis'
+import { escapeHtml } from '@/lib/sanitize-html'
 
 // Initialize Resend
 const resend = process.env.RESEND_API_KEY
@@ -74,7 +75,13 @@ export async function POST(request: Request) {
             )
         }
 
-        // Build email content
+        // Build email content - F-005: Escape HTML to prevent XSS
+        const safeName = escapeHtml(name)
+        const safeCompany = company ? escapeHtml(company) : ''
+        const safeEmail = escapeHtml(email)
+        const safeSubject = escapeHtml(subject)
+        const safeMessage = escapeHtml(message)
+
         const emailHtml = `
 <!DOCTYPE html>
 <html>
@@ -88,26 +95,26 @@ export async function POST(request: Request) {
     <table style="width: 100%; border-collapse: collapse;">
         <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; font-weight: 600; width: 120px;">Navn:</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${name}</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${safeName}</td>
         </tr>
-        ${company ? `
+        ${safeCompany ? `
         <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; font-weight: 600;">Bedrift:</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${company}</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${safeCompany}</td>
         </tr>
         ` : ''}
         <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; font-weight: 600;">E-post:</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${email}">${email}</a></td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;"><a href="mailto:${safeEmail}">${safeEmail}</a></td>
         </tr>
         <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb; font-weight: 600;">Emne:</td>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${subject}</td>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">${safeSubject}</td>
         </tr>
     </table>
     
     <h3 style="margin-top: 24px; margin-bottom: 12px;">Melding:</h3>
-    <div style="background-color: #f9fafb; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${message}</div>
+    <div style="background-color: #f9fafb; padding: 16px; border-radius: 8px; white-space: pre-wrap;">${safeMessage}</div>
     
     <hr style="margin-top: 32px; border: none; border-top: 1px solid #e5e7eb;">
     <p style="color: #6b7280; font-size: 12px;">

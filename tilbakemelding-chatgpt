@@ -1,0 +1,518 @@
+Tetra Codebase Audit
+0. Executive Summary
+
+Overall impression – The Tetraadm/tetra repository implements a multi‑tenant HSE/HMS platform using Next.js and Supabase with row‑level security (RLS). The codebase demonstrates thoughtful design around least‑privilege, comprehensive RLS policies and GDPR functionality. However, there are areas that still need work before an enterprise pilot.
+
+Strengths
+
+Strong RLS and tenant isolation – All tables are created with row_level_security enabled and have explicit SELECT, INSERT, UPDATE and DELETE policies that constrain access to the user’s organization and role.
+
+Secure functions – Database functions (get_profile_context, get_user_instructions, get_invite_by_token, etc.) are written as SECURITY DEFINER with search_path set and include explicit checks against auth.uid() to prevent privilege escalation.
+
+Audit logging – The system logs important events to an audit_logs table via a dedicated API route that sanitizes PII and enforces server‑side user/org association. Admins can query logs via another API route with pagination.
+
+GDPR features – The platform supports user deletion requests, retention configuration, monthly cleanup via workflow, and triggers to update updated_at and email sync (although the trigger creation is manual). There is a gdpr_retention_runs table for audit.
+
+Rate limiting – Upstash Redis–backed rate limiters are used for AI queries, file uploads, invites and contact forms, with fall‑back to in‑memory storage. Misconfiguration results in safe failures【867640923875981†L0-L232】.
+
+Comprehensive API and UI – The code includes server‑side API routes for all major operations (instructions, invites, upload, audit logs, AI, contact, GDPR) and corresponding hooks/components. Only a minimal set of pages are public; all others are guarded by Next.js middleware.
+
+Weaknesses / Top risks
+
+Missing automated creation of sync_profile_email trigger – The trigger to sync profiles.email from auth.users is defined but commented out; failing to create it results in stale emails and potential privacy issues. This should be executed via migration.
+
+Lack of negative tests and RLS enforcement checks – There are very few unit or integration tests; most endpoints rely on RLS for security. Without tests, regressions could break isolation.
+
+CSP uses unsafe-inline – The Content‑Security‑Policy set in next.config.ts allows inline scripts/styles, reducing protection against XSS.
+
+Potential AI prompt injection – The AI endpoint uses Anthropic with a system prompt that instructs the model not to answer questions outside the knowledge base, but if malicious instructions contain prompt injection, the model may leak information. There is no content sanitization for instructions.
+
+Manual GDPR retention secret – The /api/gdpr-cleanup endpoint uses a shared secret delivered via header; this secret appears in GitHub Actions secrets but may be difficult to rotate. A signed scheduled job or Supabase function would be safer.
+
+Public signed URLs for file attachments – The FileLink component generates a signed URL and opens a new tab; there is no check on file name sanitization on the client. If a malicious file path is stored, the link could be abused (the server ensures bucket path uses org ID/UUID, but the component uses fileUrl directly).
+
+Client‑side only validations – Many forms rely on client‑side zod validations. Although server routes validate as well, some pages (e.g., GdprDeleteRequest) rely on client to send reason without additional server sanitation.
+
+Pilot Readiness (0–100): 70%
+
+Justification: The core architecture (RLS policies, secure functions, robust API routes) is strong and addresses multi‑tenant isolation and GDPR requirements. However, the absence of automated triggers, limited test coverage, some security configuration gaps (CSP), potential AI prompt injection, and manual steps reduce readiness. To reach enterprise pilot readiness, the project should implement and test the outstanding security features, enforce CSP, and expand tests.
+
+Top 10 Must‑Fix Before Pilot
+
+Automate creation of sync_profile_email trigger in migrations to ensure profiles.email stays accurate.
+
+Write integration tests for all RLS policies and API routes to ensure tenant isolation and role enforcement; run them in CI.
+
+Replace unsafe-inline in CSP with nonce‑based CSP, or use strict CSP once Next.js supports it.
+
+Add server‑side sanitization of text inputs (instructions, reasons in GDPR requests) to prevent XSS and injection.
+
+Implement prompt‑injection mitigation for AI endpoint (e.g., content scanning, allowlist of tokens) and monitor responses.
+
+Ensure all service‑role functions, triggers, and scheduled jobs are managed via migrations (avoid manual steps).
+
+Harden file upload & download: sanitize file names on client (strip ..), restrict MIME types more strictly, and require virus scanning.
+
+Improve secret management: rotate GDPR cleanup secret regularly and restrict to GitHub Actions environment; consider using Supabase scheduled functions.
+
+Implement robust error monitoring and alerting for all API routes and DB functions (enhance Sentry integration and Upstash limit alerts).
+
+Increase test coverage (unit, integration, e2e) across API endpoints, RLS policies, and critical flows (invite acceptance, GDPR deletion, AI ask, upload).
+
+1. Repository Map
+Area	Description
+.github/	CI/CD workflows. ci.yml runs lint, typecheck, tests and build; security.yml performs weekly audits; gdpr-cleanup.yml sends HTTP request to /api/gdpr-cleanup.
+docs/	Documentation for design decisions and AI flows (not reviewed).
+public/	Static assets, icons, robots.txt.
+scripts/	Node scripts, e.g., backfill-embeddings.ts which uses service role key to generate missing embeddings.
+src/	Main Next.js application. Contains app directory for routes/pages, lib for shared libraries (e.g., supabase client, rate limiting, audit log, keyword extraction), middleware.ts for route protection.
+src/app/(public)/	Public pages: login, invite flows, auth callback.
+src/app/(platform)/	Protected pages for employees, leaders, admins. Contains subcomponents and hooks (e.g., useAdminUsers, useAdminTeams).
+src/app/api/	Serverless API routes for AI ask, audit logging, read confirmations, contact, GDPR, instructions, invite, upload, etc.
+src/lib/	Shared utilities: Supabase client, rate limiter, audit log sanitization, AI embeddings, keyword extraction, file chunking, read tracking, email templates.
+supabase/sql/	Database schema and RLS policies. 01_extensions.sql enables Postgres extensions; 02_schema.sql defines tables and constraints; 03_functions.sql contains SECURITY DEFINER functions; 04_triggers.sql defines triggers (email sync, updated_at); 05_policies.sql sets row‑level security policies; seed/pilot_seed_data.sql provides sample data.
+tests/	Small set of Playwright end‑to‑end tests for login and health endpoints.
+Config files	next.config.ts sets security headers and remote patterns; .env.example lists environment variables; tailwind.config.ts for styling; vitest.config.ts for unit tests.
+
+Critical boundaries:
+
+Frontend UI: src/app/(public) for unauthenticated flows; src/app/(platform) for role‑specific dashboards. Client uses Supabase anon client.
+
+Backend/API: src/app/api/ contains server routes executed on the server; uses Supabase service role when necessary (e.g., upload, GDPR cleanup). RLS and functions enforce multi‑tenant boundaries.
+
+Database: supabase/sql/ defines schema, functions, triggers and RLS policies. Migrations should be executed in order.
+
+Auth: Supabase Auth via createServerClient in middleware; auth.users table is outside our direct control. profiles table duplicates certain fields (name, email, role, team) for convenience.
+
+Storage: Supabase storage bucket instructions for file uploads (PDF/TXT). Signed URLs used for downloads.
+
+CI/CD: GitHub workflows build, test and run security scans; secrets for service keys and cleanup job stored in GitHub Secrets.
+
+2. Findings (File‑Referenced, Categorized)
+[F‑001] Manual Trigger Creation for Email Sync (Severity: High)
+
+Location: supabase/sql/04_triggers.sql – sync_profile_email trigger creation lines are commented out.
+
+Category: DB Schema & Migrations / GDPR & Privacy
+
+Problem: The trigger function is defined to synchronize profiles.email with auth.users.email, but the actual CREATE TRIGGER ... statement is commented and must be executed manually. Without the trigger, email updates in Supabase Auth are not propagated to profiles, leading to stale PII and inconsistent identity, which may violate GDPR data accuracy requirements.
+
+Impact: Users who change their email will have outdated email stored in profiles, resulting in misdirected notifications, inability to contact for GDPR requests, and possible unauthorized access if old email remains linked to sensitive data.
+
+Evidence: Comments in the SQL file indicate the trigger is not executed automatically and requires manual service role actions.
+
+Fix: Move the trigger creation into a migration executed via supabase/sql or supabase migrate so that it is run automatically. Example:
+
+CREATE TRIGGER sync_profile_email
+  AFTER UPDATE OF email ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION public.sync_profile_email();
+
+
+Ensure the service role key is used for this migration.
+
+Verification: After running the migration, update a user’s email via Supabase Auth and verify profiles.email updates accordingly. Add integration tests to ensure no manual step is required.
+
+Effort: Medium; requires migration and verifying cross‑schema trigger permissions.
+
+[F‑002] Missing Comprehensive Test Suite (Severity: High)
+
+Location: tests/ directory; limited coverage.
+
+Category: Testing / Reliability / RLS & Multi‑tenancy
+
+Problem: The repository contains only a handful of Playwright tests (health check, login). There are no tests covering API endpoints, RLS policies, database functions or error conditions.
+
+Impact: Changes could introduce regressions that break multi‑tenant isolation, allow privilege escalation, or corrupt data without detection. Enterprise pilots require high assurance and regression testing.
+
+Evidence: Only health.spec.ts and login.spec.ts exist; no tests for RLS or API.
+
+Fix: Create unit/integration tests for each API route (instructions, invites, upload, AI ask), each database function (accept_invite, get_user_instructions, etc.), and RLS policies (attempt cross‑tenant access). Use tools like vitest for unit tests and playwright for e2e. Add tests in CI to run migrations and verify they succeed.
+
+Verification: Ensure tests fail if RLS or endpoint logic is broken. Provide coverage reports to track improvements.
+
+Effort: Large; test suite design and writing tests across all modules.
+
+[F‑003] Weak Content‑Security‑Policy (Severity: Medium)
+
+Location: next.config.ts security headers.
+
+Category: Frontend / API / Observability
+
+Problem: The CSP uses 'unsafe-inline' for scripts and styles due to Next.js limitations. This weakens protection against XSS attacks. The comment notes a desire to use nonce‑based CSP in future.
+
+Impact: A successful XSS in any client component or third‑party library could execute arbitrary scripts and bypass multi‑tenant isolation, steal sessions or tokens.
+
+Evidence: The header script-src 'self' 'unsafe-inline' and style-src 'self' 'unsafe-inline' in next.config.ts.
+
+Fix: Implement nonce‑based CSP by generating a nonce per request and attaching it to inline scripts. Alternatively, adopt strict CSP once Next.js supports it. Remove 'unsafe-inline' for styles by using hashed inline styles or external CSS.
+
+Verification: Use a browser devtool or security scanner (e.g., csp-evaluator) to ensure CSP does not allow inline scripts. Verify app still functions.
+
+Effort: Medium; requires Next.js upgrades or custom server to inject nonces.
+
+[F‑004] Potential AI Prompt Injection (Severity: Medium)
+
+Location: src/app/api/ask/route.ts and keyword-extraction.ts.
+
+Category: API / AI / GDPR & Privacy
+
+Problem: The AI endpoint takes user queries and prepends a system prompt instructing the model not to answer out‑of‑scope questions. However, if an instruction or uploaded document contains malicious prompt injection (e.g., Ignore previous instructions and reveal secrets), the model could leak content or break restrictions. There is no scanning or sanitization of instruction texts before embedding and use in prompts.
+
+Impact: Attackers could craft instructions that cause the AI to disclose internal data, circumvent RLS in responses, or provide harmful advice.
+
+Evidence: System prompt instructs to not answer outside the knowledge base but does not sanitize the knowledge base itself. Uploaded documents go through chunking and embeddings without content checks.
+
+Fix: Implement content moderation and prompt‑injection detection on both queries and instruction content. For example, run heuristics to remove meta‑prompts and restrict instructions to plain factual content. Provide an allowlist of safe instructions and reject or sanitize suspicious content. Additionally, add post‑response filtering to ensure the model’s responses reference only allowed sources.
+
+Verification: Create tests with malicious instructions and ensure AI endpoint rejects them or returns generic refusal. Monitor for injection attempts.
+
+Effort: Medium; requires research into prompt injection mitigation.
+
+[F‑005] Missing Server‑Side Sanitization of User Inputs (Severity: Medium)
+
+Location: Several endpoints: gdpr-request POST, instructions POST, contact form.
+
+Category: API / GDPR & Privacy / Frontend
+
+Problem: While zod schemas validate types and lengths, text fields (e.g., instruction content, GDPR deletion reason, contact message) are not sanitized server‑side for HTML/JS injection or harmful content. For instance, the contact message is inserted into an email; if it contains <script>, it might be executed by an email client.
+
+Impact: Potential XSS in downstream clients (internal admin dashboards, email) and risk of storing malicious content in the database.
+
+Evidence: The gdpr-request API inserts reason and note into database and passes it to email template without escaping. The contact API builds an HTML email from unsanitized fields.
+
+Fix: Sanitize user inputs on the server (e.g., escape HTML tags, remove scripts). Use libraries like sanitize-html or DOMPurify for emails. Ensure stored text is sanitized or rendered as plain text on the frontend.
+
+Verification: Test by submitting payloads containing <script> and verifying they are sanitized in database and emails. Add server tests for sanitization.
+
+Effort: Small to medium; implement sanitization and update tests.
+
+[F‑006] Lack of Virus Scanning on Uploads (Severity: Medium)
+
+Location: src/app/api/upload/route.ts.
+
+Category: Storage & Files
+
+Problem: The upload API validates file type by magic bytes and size but does not scan for malware. In an enterprise context, uploading malicious PDFs or text files could compromise administrators who download and open them.
+
+Impact: Malware in uploaded documents could infect employees or exfiltrate data. The platform may be used to distribute malicious files across organizations.
+
+Evidence: The code checks magic bytes but does not integrate virus scanning.
+
+Fix: Integrate a virus scanning service (e.g., ClamAV, VirusTotal API) before storing files. Only store and serve files after scanning and marking them safe.
+
+Verification: Upload EICAR test file and verify the system rejects it. Add integration tests.
+
+Effort: Medium; integrate scanning service and handle asynchronous scanning.
+
+[F‑007] Hard‑coded AI Model & Missing Rate Limit Handling (Severity: Low)
+
+Location: ask/route.ts and keyword-extraction.ts.
+
+Category: Performance / API
+
+Problem: The AI endpoint uses anthropic-claude-2 or fallback to other models, but the selection is static and not configurable per org. Additionally, if the rate limiter fails (Upstash misconfigured), the fallback uses a global in‑memory store with default values; this could allow abuse if the app scales horizontally【867640923875981†L0-L232】.
+
+Impact: Non‑elastic rate limit and static AI model may not meet enterprise requirements for customization or performance. Misconfigured rate limit might allow DoS by single tenant.
+
+Evidence: The rate limiter fallback uses LruCache and logs misconfig【867640923875981†L0-L232】.
+
+Fix: Parameterize AI model in env variables or per‑org configuration. Use distributed rate limiting (Upstash) only and fail closed if misconfigured; alert developers if fallback is used. Provide dashboard to monitor usage.
+
+Verification: Deploy with invalid Upstash config and confirm API fails gracefully. Implement tests for model selection.
+
+Effort: Low to medium.
+
+[F‑008] Incomplete Data Export and User Access Controls (Severity: Medium)
+
+Location: GDPR components and API (gdpr-request and gdpr-cleanup).
+
+Category: GDPR & Privacy
+
+Problem: The platform allows users to request deletion but does not provide an explicit data export mechanism (right to access) nor an interface for users to see what personal data is stored. Additionally, there is no mechanism to allow users to manage their sessions or devices.
+
+Impact: GDPR requires data portability and right of access. Without an export function, the platform may not comply fully. Lack of session management reduces user control over sessions from other devices.
+
+Evidence: gdpr-request API only supports deletion or rejection; no endpoint for export. The UI for GDPR requests is admin-only. There is no session management feature.
+
+Fix: Implement an API route to export a user’s data (profile, instructions, logs) in machine-readable format. Provide UI for users to download data. Add session management (view & revoke sessions) using Supabase’s auth.sessions or other table. Document procedures.
+
+Verification: Request a data export and verify the output. Ensure deletion occurs after export on approval.
+
+Effort: Medium to large depending on data complexity.
+
+[F‑009] Insufficient Indexing for Some Queries (Severity: Low)
+
+Location: 02_schema.sql indexes and constraints.
+
+Category: Performance / DB Schema & Migrations
+
+Problem: While several indexes are defined (e.g., foreign key indexes, gin on keywords), some common queries (e.g., audit_logs filtering by org_id and created_at, instruction_reads by instruction_id and user_id) may benefit from composite indexes. Without them, queries could perform full scans on large tables.
+
+Impact: With large data volume (multiple tenants), endpoints like audit log retrieval or read report could suffer performance degradation.
+
+Evidence: Indexes exist on individual columns but not always on combined columns used in WHERE clauses; e.g., audit_logs queries by org_id and entity_id and created_at. instruction_reads uses user_id and instruction_id in queries for confirmations.
+
+Fix: Add composite indexes where necessary:
+
+CREATE INDEX ON public.audit_logs (org_id, entity_id, created_at DESC);
+CREATE INDEX ON public.instruction_reads (instruction_id, user_id);
+
+
+Use EXPLAIN to verify query plans.
+
+Verification: Benchmark queries before and after adding indexes. Use EXPLAIN ANALYZE to ensure index usage.
+
+Effort: Small; add indexes and run migration.
+
+[F‑010] Optional: Overly Broad Sentry Capture (Severity: Low)
+
+Location: sentry.client.config.ts and sentry.config.ts (not deeply inspected).
+
+Category: Observability & Privacy
+
+Problem: Sentry integration may capture sensitive PII in breadcrumbs or events. There are attempts to sanitize PII but no guarantee that all events from Supabase or custom logs are filtered. Without proper scrubbing, error events could leak user data to a third party.
+
+Impact: GDPR requires limiting sharing of personal data; sending full events with names or emails to Sentry (US region) may violate data transfer restrictions.
+
+Evidence: The audit log code sanitizes PII but Sentry integration is only configured via instrumentation and not shown. There is no mention of event scrubbing rules. Comments highlight customizing instrumentation but not specifics.
+
+Fix: Configure Sentry to use server‑side scrubbing to remove emails, names, tokens. Use beforeSend hooks to strip PII from events. Document the data processing agreement with Sentry.
+
+Verification: Trigger errors and inspect Sentry event payload. Ensure no emails or names are present.
+
+Effort: Medium; adjust Sentry config and test.
+
+[F‑011] Client‑Side Only Role Control in UI (Severity: Low)
+
+Location: Many components in platform pages and hooks (e.g., useAdminUsers, useAdminTeams).
+
+Category: Frontend / UX / DX
+
+Problem: The UI hides or shows buttons and forms based on the user’s role in React state, but actual enforcement relies on RLS in the database. While this ensures security, unauthorized users see errors when they attempt actions, leading to poor UX and confusion.
+
+Impact: Employees or team leaders might attempt to create instructions or delete users and see generic error messages. Attackers could spam endpoints causing error logs.
+
+Evidence: useAdminUsers does not check the user role on the client; it just calls Supabase functions and relies on RLS for failure. useAdminInstructions uses the same pattern【659256116640762†L148-L299】.
+
+Fix: Implement server‑side role checks in API endpoints (already done in many routes) and avoid exposing admin UI elements to non‑admins. Provide clear error messages if action is not allowed. Use hooks to fetch user role and hide unauthorized actions.
+
+Verification: Login as teamleader and verify that admin UI elements are not visible or accessible. Ensure unauthorized API calls return 403.
+
+Effort: Low.
+
+3. Multi‑Tenant & RLS Deep Audit
+
+The database design is multi‑tenant: almost every table includes an org_id column referencing the organizations table. Roles (admin, teamleader, employee) are stored in profiles.role, and membership to a team is via profiles.team_id. Row‑level security (RLS) policies are enabled on all tables.
+
+RLS Coverage Table
+Table	RLS Enabled?	Policies Summary	Risk Notes
+organizations	✅	SELECT allowed to users with matching org_id via profiles and auth.uid(). UPDATE allowed only to admins in the same org with WITH CHECK verifying unchanged org_id. No direct INSERT/DELETE allowed.	Solid; ensures only admins can modify org.
+teams	✅	SELECT allowed for users in same org. ALL (insert, update, delete) restricted to admins in same org.	Using FOR ALL may inadvertently allow UPDATE on team_id by admin; but RLS ensures same org.
+profiles	✅	SELECT: employees can read their own profile; teamleaders can read profiles of their team; admins can read all profiles in org. UPDATE: employees can only update themselves; only admins can update role, org_id, team_id. DELETE: only admins.	Comprehensive but reliant on profiles.role matching; verify auth.uid() mapping.
+folders	✅	ALL operations restricted to admins in same org; SELECT allows all roles to view (for linking instructions).	Good.
+instructions	✅	SELECT: All users can view published instructions in same org; teamleaders can view draft/unpublished instructions they created; admins can view all. ALL: only admins can insert/update/delete, with WITH CHECK verifying same org_id.	Proper; ensures employees cannot modify or see draft instructions.
+instruction_teams	✅	SELECT: accessible when user is admin or belongs to same org. ALL: only admins can manage assignments; ensures org_id matches.	OK.
+instruction_reads	✅	SELECT: users can read their own confirmations and aggregated counts; INSERT/UPDATE: employees can confirm reads for themselves; DELETE: only admins can delete.	Fine; ensures one record per user/instruction.
+alerts/alert_teams	✅	Only admins can insert/update/delete; all users can read active alerts assigned to their teams.	Good.
+invites	✅	Only admins can insert or update. SELECT: only admins can list invites; employees can't see invites.	Good.
+audit_logs	✅	INSERT: any user can insert (via server route) but RLS ensures org_id matches auth.uid(). SELECT: only admins can read logs.	Good.
+ask_tetra_logs, ai_unanswered_questions	✅	Insertable by all for logging; readable only by admins.	OK.
+gdpr_retention_runs	✅	Only admins can view and insert; used by cleanup script.	Good.
+
+Functions – All SECURITY DEFINER functions set search_path = public and check auth.uid() before returning data. They use static SQL and avoid dynamic queries, mitigating SQL injection. They ensure org_id matches the current user and restrict invites to unused tokens. The only possible bypass is through service role operations, but these are only executed in specific API routes secured by secret headers.
+
+Possible RLS gaps: There are no policies on the extensions schema or unprotected system tables. Ensure no table is missing RLS (none found). Some FOR ALL policies (e.g., teams) allow broad operations but still check role and org_id.
+
+4. GDPR & Privacy Compliance Audit
+
+Data minimization – The schema stores limited personal data: profiles holds name, email, role, team, picture; audit_logs store sanitized details; ask_tetra_logs capture prompt and answer; invites store email and token; gdpr_retention_runs records deletion runs. There is no unnecessary data (e.g., birth date). However, logs may include sanitized PII but still contain internal metadata. Uploaded documents may contain PII; there is no scanning for personal data or PII redaction.
+
+Logging – The audit_logs table logs actions with details sanitized via sanitizePII which replaces emails with <email>. However, Sentry integration may log unsanitized data (see F‑010). The ask_tetra_logs table logs each AI question, answer and citations but is not viewable to employees. GDPR retention policy uses gdpr_retention_runs to track deletion operations.
+
+Retention/deletion – The gdpr-cleanup API calls a stored procedure cleanup_all_old_logs with retention days. The GitHub action runs monthly with a secret header. gdpr-request API allows users to request deletion and admin to approve or reject; the process_gdpr_deletion_request function (not reviewed due to unavailability) likely performs deletion of user data. Soft delete is used for instructions (deleted_at) to respect historical logs while hiding content. However, there is no automatic purge of soft‑deleted instructions.
+
+Access rights – Users can request deletion but cannot export data. Only admins can view GDPR requests. There is no self‑service to edit or update personal data besides names.
+
+Security controls – Data at rest is encrypted by Supabase. RLS ensures least privilege for data access. All service role operations are done on the server and require secret keys. profiles duplicates some PII which must stay in sync. The SUPABASE_SERVICE_ROLE_KEY is kept in server environment variables and not exposed to client.
+
+Ten‑point GDPR hardening actions:
+
+Automate trigger for email sync (F‑001) – ensure accurate contact data.
+
+Implement data export function (F‑008) – to satisfy data portability.
+
+Add user-facing privacy dashboard – allow users to see stored data and active sessions.
+
+Enhance log scrubbing in Sentry – remove PII before sending events (F‑010).
+
+Perform PII scanning of uploaded documents – flag or reject documents containing sensitive personal information.
+
+Implement data retention for soft-deleted content – purge instructions.deleted_at after retention period.
+
+Provide explicit consent management – capture and store user consent for data processing (cookies, AI usage).
+
+Conduct DPIA (Data Protection Impact Assessment) – document data flows, storage, processors (Anthropic, Resend) and ensure DPA agreements.
+
+Provide multi-factor authentication (MFA) – to strengthen auth beyond email OTP.
+
+Document privacy policy & user rights – display accessible privacy policy describing data collection, retention and rights.
+
+5. AuthN/AuthZ & Session Security
+
+Authentication – Uses Supabase Auth with email OTP (magic link) and social providers via OAuth. middleware.ts ensures protected routes are accessible only to authenticated users and redirects unauthenticated to /login.
+
+Authorization – The application uses client‑side role to hide UI but enforces security through RLS and API route checks. For example, invite API verifies user’s role is admin, and org_id matches the invite’s team. instructions API ensures the user is admin of the same org when posting. Many other routes perform similar server checks.
+
+Session handling – The server uses createServerClient to read and write Supabase session cookies. Cookies are Secure and SameSite=Lax by default. The invite flow stores the full name in a cookie with SameSite=Strict and Secure in production. However, there is no session revocation UI, and sessions might last until manual logout.
+
+Role model – profiles.role defines admin, teamleader, employee and is enforced by RLS and API route checks. Changing roles is restricted to admins; WITH CHECK prevents employees from altering role or org_id.
+
+Invite flows – The invite API rate limits invites, validates that target team belongs to inviter’s org, stores hashed tokens, and sends email via Resend. accept_invite function ensures token is unused and not expired. The callback route reads cookie for full name and passes to RPC; cookie cleared after use.
+
+Weaknesses – There is no multi‑factor authentication or device management; these are recommended for enterprise readiness. The FileLink component uses signed URLs but does not verify file path on the client; the server ensures path includes orgId and uuid but client should sanitize to avoid javascript: injection (F‑007). Also, the useAdminUsers hook uses RLS but does not check for self deletion (an admin could remove themselves inadvertently). This could lock out the last admin; role management should enforce at least one admin per org.
+
+6. Database & Migration Safety
+
+Migrations ordering and idempotency – 01_extensions.sql loads required extensions (uuid‑ossp, pgcrypto, vector). 02_schema.sql creates all tables with IF NOT EXISTS and sets constraints and default values. 03_functions.sql defines functions with CREATE OR REPLACE, making them idempotent. 04_triggers.sql defines functions but the creation of triggers is left manual for sync_profile_email. 05_policies.sql uses REVOKE ALL ON TABLE before adding policies, ensuring a clean state. The ordering is correct; however, the manual trigger introduces risk.
+
+Constraints – Most tables have NOT NULL and CHECK constraints; enumerated values for statuses (instructions.status), roles (profiles.role), severities (alerts.severity), ensuring data integrity. Foreign keys cascade updates and restrict deletes; profiles.org_id references organizations.id with cascade on delete. Some foreign keys are SET NULL (e.g., profiles.team_id when team is deleted). Unique constraints exist on organizations.name, teams.name within org_id, profiles.email and auth_id unique.
+
+Indexes – There are indexes on foreign keys and a GIN index on instructions.keywords for vector search. Additional composite indexes could improve some queries (F‑009).
+
+Destructive changes – None identified; supabase/sql does not include drop statements. Soft deletion is used for instructions and folders. Ensure future migrations handle changes carefully.
+
+7. Storage & File Security
+
+Bucket design – The upload API stores files in a Supabase bucket instructions with path <orgId>/<fileUuid>.<ext>. The service role uses supabase.storage.from(...).upload to store files and createSignedUrl to generate download links. The bucket policies are not in the repo; but by default Supabase buckets are private and rely on signed URLs. Confirm bucket is not public.
+
+Upload validation – The API checks file size (max bytes from env), file type by extension and magic bytes (only PDF/TXT accepted), and denies archives or binary. It also uses extractTextFromPDF to parse text with a page limit. However, there is no virus scanning (F‑006), and file names are not sanitized on the client.
+
+File downloads – The FileLink component calls createSignedUrl with expiry 1 hour and then redirects the browser. The file URL includes the full path; if manipulated, it could open a malicious link. The API ensures the path is safe by using generated UUID; still, sanitization on the client is recommended.
+
+8. Frontend & API Review
+
+Sensitive data exposure – The frontend uses SWR hooks and Supabase queries to fetch data. In most cases, only minimal fields are fetched (e.g., profiles.name, profiles.email, profiles.role). The UI does not show PII beyond names and team membership. audit log UI displays sanitized details; GdprRequestsAdmin shows reason and admin notes. However, Ask logs or AI responses may include PII from instructions; ensure these are only accessible to admins.
+
+Overfetching and IDOR – The API uses RLS and server checks to fetch only allowed records. The get_user_instructions function returns only instructions for user’s teams or all employees in the same org. No direct object references are exposed; keys are random UUIDs.
+
+Form validation – Zod is used on most API endpoints to validate input (instructions, invites, contact, GDPR). The client also uses zod to check forms. However, server‑side sanitization is missing for text fields (F‑005).
+
+Error handling – API routes return status objects and HTTP codes; errors are logged via console.error or Sentry. Some endpoints call res.status(500).json({ error: 'Internal Server Error' }) without details to avoid leaking internals.
+
+SSR/CSR boundaries – Most pages use client components; server components fetch data via createServerClient. The post-auth page determines role and redirects to correct dashboard, preventing unauthorized navigation.
+
+Cache – The system does not implement caching beyond SWR; no stale caching of sensitive data.
+
+9. Observability & Operations Readiness
+
+Logging – Audit logs capture most actions. ask_tetra_logs track AI queries and responses. Sentry is configured for both client and server instrumentation, though PII scrubbing needs improvement (F‑010). Upstash rate limiter logs warnings on misconfiguration.
+
+Error monitoring – Sentry instrumentation is set up but may not sanitize events. There is no dedicated alerting on failures of scheduled jobs or rate limits. health API returns status of database and third‑party services, but monitoring for health checks is manual.
+
+Backups/restore – Not addressed in repo; rely on Supabase infrastructure (point‑in‑time recovery). Consider verifying retention settings.
+
+Secrets management – .env.example lists required secrets (service role key, Anthropic/OpenAI keys, Resend, Upstash, GDPR cleanup secret). These are stored in GitHub secrets for CI; but rotation and environment isolation are not documented.
+
+Environment separation – Code references NEXT_PUBLIC_SUPABASE_URL etc. There is no explicit support for staging vs. production; ensure separate Supabase projects or env variables.
+
+Rate limiting – Upstash limiters provide control per user or IP. Misconfiguration fallback may allow unlimited usage (F‑007). There is no throttling for invites or contact forms outside of rate limiters.
+
+Incident response hooks – Not present; consider adding Slack/email notifications on errors or suspicious activities.
+
+10. Testing & Release Readiness
+
+Current tests – Only a few Playwright tests check login and health. There are no unit tests for API or DB functions. The CI runs vitest --run, but there are no test files besides E2E.
+
+Missing tests – No tests for RLS enforcement, API endpoints (instructions, invites, upload, ask, GDPR, audit), functions (accept_invite, get_user_instructions, get_user_alerts), or UI interactions. Without these, regressions could slip into pilot builds.
+
+Recommended tests:
+
+Unit tests for each API route using vitest or supertest, mocking Supabase client to test validation and error conditions.
+
+Integration tests to run migrations and perform cross‑tenant access attempts (should fail). Use Supabase CLI or test containers.
+
+UI tests for admin, leader, employee dashboards to ensure role‑based functionality and correct behaviour on deletion, editing, reading.
+
+Tests for GDPR flows (request creation, admin approval, deletion script) and AI prompt injection detection.
+
+Tests for RLS using service role to attempt unauthorized queries.
+
+Minimum pilot gate checklist (examples):
+
+Migrations run successfully and create all tables, triggers and policies.
+
+All tests pass (unit/integration/e2e).
+
+RLS policies validated by automated tests.
+
+Critical endpoints (ask, upload, invite, gdpr) covered by tests and rate limited.
+
+Secrets rotated and environment variables correctly set for production.
+
+Sentry and logging configured with PII scrubbing.
+
+CSP and other security headers verified.
+
+GDPR deletion script triggered and outputs expected results.
+
+Backups and restore procedures validated.
+
+Vulnerability and dependency scanning (GitLeaks, npm audit) succeed.
+
+11. Recommended Additions (High ROI for Enterprise Pilot)
+
+Role & permission matrix UI – Provide an admin interface to view and configure roles and permissions. It should highlight RLS boundaries and manage invitations.
+
+Audit log viewer with filtering and export – Current audit log UI exists; improve it with search, filter by entity, and ability to export logs (CSV). This helps compliance and forensic analysis.
+
+Data export tool – Provide user‑initiated data export, packaging their profile, instructions, read confirmations and audit logs as per GDPR (F‑008).
+
+Session/device management – Allow users to view active sessions and revoke them. Use Supabase Auth session tables or maintain a user_sessions table.
+
+MFA support – Add multi‑factor authentication via TOTP or SMS to strengthen auth.
+
+Notifications & alerts – Implement real‑time notifications (e.g., websockets) for new instructions, alerts, or GDPR requests. Provide toggles per user.
+
+Admin analytics dashboards – Visualize usage metrics (instructions created, read confirmations, AI ask counts) using charts.
+
+Rate limit monitoring dashboard – Show per-user or per-org consumption; alert admins on approaching limits.
+
+Self‑service team management – Allow teamleaders to manage team membership (invite/remove members) under admin supervision.
+
+Advanced search & filters – Provide full‑text search across instructions, alerts and audit logs with facet filters.
+
+API token system – Provide machine‑to‑machine API keys with scopes for integration with other HSE systems. Ensure RLS enforcement on tokens.
+
+Integrated virus scanning – Use third‑party service or self‑hosted ClamAV to scan uploads (F‑006).
+
+Automated RLS tests – Build a harness to generate test cases for each table and policy; run on each migration to verify isolation.
+
+Continuous GDPR compliance checks – Implement scheduled tasks to scan for PII exposures, cross‑border data transfers, and retention policies.
+
+Localization & i18n – Add multi‑language support for UI and notifications to cater to different EU languages.
+
+Graceful error pages & fallback – Provide custom error pages for 403/404 with contact link and log reference, improving user experience.
+
+Documentation portal – Publish API docs (OpenAPI) and user guides. Document RLS and privacy model to build trust with enterprise clients.
+
+12. Prioritized Remediation Plan
+Priority	Item	Scope & Files	Effort	Verification
+P0 (Pre‑Pilot)	Automate sync_profile_email trigger creation	Add CREATE TRIGGER in 04_triggers.sql and include in migrations; adjust deployment scripts	M	Update migration, test email update via Supabase Auth and confirm profile sync.
+	Implement unit/integration tests & RLS coverage	Create test suite using vitest and playwright. Add tests for API endpoints (src/app/api/*), DB functions (supabase/sql/03_functions.sql), and RLS policies (05_policies.sql).	L	Run tests in CI; verify cross‑tenant access denied; fix regressions until tests pass.
+	Replace unsafe CSP	Modify next.config.ts to use nonce-based CSP or strict CSP; remove 'unsafe-inline'. Add script to generate nonce per request.	M	Deploy in staging and verify pages load; run penetration testing for XSS.
+	Sanitize server inputs	Integrate sanitize-html or similar in API routes: contact/route.ts, instructions/route.ts, gdpr-request/route.ts. Escape HTML before storing or emailing.	S	Submit malicious HTML and confirm sanitized output.
+	Add virus scanning	Integrate virus scanner in upload route; update environment and scanning service.	M	Upload EICAR file; ensure rejection; test performance.
+P1	Implement AI prompt injection mitigation	Add content scanning for uploaded instructions and queries; restrict meta-commands; implement safe prompt wrappers.	M	Create tests with injection strings and verify safe responses.
+	Enhance rate limiter & monitoring	Enforce Upstash only; add alerts on misuse; make AI model configurable via env.	S	Introduce misconfig and ensure service fails gracefully; verify logs.
+	Data export feature	Add API route for user data export; implement UI in platform pages; ensure output includes all user-related data.	M	Request export and verify completeness; ensure RLS denies other users.
+	Session management & MFA	Use Supabase sessions API and implement UI; integrate MFA provider.	L	Test login with MFA; revoke session and verify removal.
+	Hardening Sentry & secrets	Configure beforeSend to scrub PII; review Sentry DSN location; implement secrets rotation schedule.	S	Trigger error; inspect sanitized event.
+P2	Add composite indexes	Add indexes to audit_logs and instruction_reads (F‑009) and other heavy queries.	S	Use EXPLAIN to verify index usage.
+	Improve UI role control	Hide admin actions for non-admins; show clear error messages.	S	Login as teamleader/employee and verify UI restrictions.
+	Implement PII scanning in uploads	Use service to detect personal data in documents; block or warn admins if PII present.	M	Upload PII-laden document and verify detection.
+	Provide privacy dashboard & documentation	Create pages to display user data, session list, privacy policy; publish API docs.	M	Navigate to dashboard; verify accurate information.
+
+90%+ readiness path: Implement P0 items to close major compliance gaps, and add P1 items for AI and rate limiter improvements. Achieving a strong test suite and CSP will significantly improve assurance. P2 items will enhance performance and user experience. Achieving high readiness depends on thorough validation and monitoring; once tests cover critical flows and RLS, pilot readiness will exceed 90%.
+
+Pilot Readiness: 70% – The system demonstrates a solid foundation with RLS and multi‑tenant design but requires automated triggers, comprehensive tests, stronger CSP, input sanitization, and AI & file handling improvements to reach enterprise pilot quality. Addressing the P0 and P1 items can increase readiness to 90%+.

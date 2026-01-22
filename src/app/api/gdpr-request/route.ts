@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { Resend } from 'resend'
+import { escapeHtml } from '@/lib/sanitize-html'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -115,9 +116,9 @@ export async function POST(request: NextRequest) {
                                     <h2>Ny GDPR sletteforespørsel</h2>
                                     <p>En bruker har bedt om sletting av sin konto:</p>
                                     <ul>
-                                        <li><strong>Bruker:</strong> ${profile.full_name || 'Ukjent'}</li>
-                                        <li><strong>E-post:</strong> ${profile.email || 'Ukjent'}</li>
-                                        ${validation.data.reason ? `<li><strong>Begrunnelse:</strong> ${validation.data.reason}</li>` : ''}
+                                        <li><strong>Bruker:</strong> ${escapeHtml(profile.full_name || 'Ukjent')}</li>
+                                        <li><strong>E-post:</strong> ${escapeHtml(profile.email || 'Ukjent')}</li>
+                                        ${validation.data.reason ? `<li><strong>Begrunnelse:</strong> ${escapeHtml(validation.data.reason)}</li>` : ''}
                                     </ul>
                                     <p>Logg inn på admin-panelet for å behandle forespørselen.</p>
                                     <p><a href="${process.env.NEXT_PUBLIC_APP_URL}/instructions/admin">Gå til admin-panel</a></p>

@@ -7,6 +7,7 @@ import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { generateEmbedding, prepareTextForEmbedding } from '@/lib/embeddings'
 import { z } from 'zod'
+import { sanitizeHtml } from '@/lib/sanitize-html'
 
 // Shared schema with frontend usage in mind
 const CreateInstructionSchema = z.object({
@@ -105,12 +106,15 @@ export async function POST(request: NextRequest) {
             // Continue without embedding (will be searchable by keywords)
         }
 
-        // Insert Instruction
+        // Insert Instruction - F-005: Sanitize user input
+        const safeTitle = sanitizeHtml(title)
+        const safeContent = content ? sanitizeHtml(content) : null
+
         const { data: instruction, error: insertError } = await supabase
             .from('instructions')
             .insert({
-                title,
-                content: content || null,
+                title: safeTitle,
+                content: safeContent,
                 severity,
                 status,
                 org_id: orgId,
