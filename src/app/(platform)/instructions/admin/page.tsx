@@ -28,9 +28,9 @@ export default async function AdminPage() {
   // Role-based redirect: non-admins go to their correct dashboard
   if (profile.role !== 'admin') {
     if (profile.role === 'teamleader') {
-      redirect('/leader')
+      redirect('/instructions/leader')
     }
-    redirect('/employee')
+    redirect('/instructions/employee')
   }
 
   const { data: teams } = await supabase

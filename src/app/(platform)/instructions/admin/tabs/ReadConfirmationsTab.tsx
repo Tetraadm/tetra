@@ -9,7 +9,6 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import EmptyState from "@/components/EmptyState";
 import type { ReadReportItem, UserReadStatus } from "../hooks/useReadReport";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -208,25 +207,25 @@ export default function ReadConfirmationsTab({
                                 <TableCell className="text-muted-foreground text-sm font-mono">
                                   {user.confirmed_at
                                     ? new Date(
-                                        user.confirmed_at
-                                      ).toLocaleString("no-NO", {
-                                        year: "numeric",
-                                        month: "2-digit",
-                                        day: "2-digit",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                      })
+                                      user.confirmed_at
+                                    ).toLocaleString("no-NO", {
+                                      year: "numeric",
+                                      month: "2-digit",
+                                      day: "2-digit",
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                    })
                                     : user.read_at
                                       ? new Date(user.read_at).toLocaleString(
-                                          "no-NO",
-                                          {
-                                            year: "numeric",
-                                            month: "2-digit",
-                                            day: "2-digit",
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          }
-                                        )
+                                        "no-NO",
+                                        {
+                                          year: "numeric",
+                                          month: "2-digit",
+                                          day: "2-digit",
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                        }
+                                      )
                                       : "—"}
                                 </TableCell>
                               </TableRow>

@@ -34,9 +34,10 @@ type Props = {
   alerts: Alert[];
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function EmployeeApp({
   profile,
-  organization,
+  organization: _organization,
   instructions,
   alerts,
 }: Props) {

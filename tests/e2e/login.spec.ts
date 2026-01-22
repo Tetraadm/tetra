@@ -1,32 +1,29 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Login Page', () => {
-    test('should display login form with email input', async ({ page }) => {
+    test('should display login form with email and password inputs', async ({ page }) => {
         await page.goto('/login')
         await page.waitForLoadState('networkidle')
 
-        const magicLinkButton = page.getByRole('button', { name: /innloggingslenke/i })
-        await expect(magicLinkButton).toBeVisible()
-        await magicLinkButton.click()
-
-        // Verify email input exists (using placeholder which is stable)
+        // Verify email input exists
         const emailInput = page.getByPlaceholder('navn@bedrift.no')
         await expect(emailInput).toBeVisible({ timeout: 10000 })
 
+        // Verify password input exists
+        const passwordInput = page.getByPlaceholder('Skriv inn passord')
+        await expect(passwordInput).toBeVisible()
+
         // Verify submit button exists
-        const submitButton = page.getByRole('button', { name: /send innloggingslenke/i })
+        const submitButton = page.getByRole('button', { name: /logg inn/i })
         await expect(submitButton).toBeVisible()
     })
 
-    test('should show validation message for empty email', async ({ page }) => {
+    test('should show validation for empty form submission', async ({ page }) => {
         await page.goto('/login')
         await page.waitForLoadState('networkidle')
 
-        const magicLinkButton = page.getByRole('button', { name: /innloggingslenke/i })
-        await magicLinkButton.click()
-
-        // Click submit without entering email
-        const submitButton = page.getByRole('button', { name: /send innloggingslenke/i })
+        // Click submit without entering credentials
+        const submitButton = page.getByRole('button', { name: /logg inn/i })
         await submitButton.click()
 
         // Browser should show email validation (HTML5)
@@ -35,23 +32,19 @@ test.describe('Login Page', () => {
         expect(isValid).toBe(false)
     })
 
-    test('should accept valid email and show loading state', async ({ page }) => {
+    test('should show error for invalid credentials', async ({ page }) => {
         await page.goto('/login')
         await page.waitForLoadState('networkidle')
 
-        const magicLinkButton = page.getByRole('button', { name: /innloggingslenke/i })
-        await magicLinkButton.click()
-
-        // Enter valid email
-        const emailInput = page.getByPlaceholder('navn@bedrift.no')
-        await emailInput.fill('test@example.com')
+        // Enter invalid credentials
+        await page.getByPlaceholder('navn@bedrift.no').fill('invalid@test.com')
+        await page.getByPlaceholder('Skriv inn passord').fill('wrongpassword')
 
         // Click submit
-        const submitButton = page.getByRole('button', { name: /send innloggingslenke/i })
+        const submitButton = page.getByRole('button', { name: /logg inn/i })
         await submitButton.click()
 
-        // Should show loading text or the button should change state
-        // We give it some time to react
-        await page.waitForTimeout(1000)
+        // Should show error message
+        await expect(page.getByText(/feil e-post eller passord/i)).toBeVisible({ timeout: 10000 })
     })
 })

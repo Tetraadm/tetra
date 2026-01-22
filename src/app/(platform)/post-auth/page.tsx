@@ -22,7 +22,7 @@ export default async function PostAuthPage() {
   }
 
   if (!profile) {
-    console.error('NO_PROFILE_DB', { userId: user.id, email: user.email });
+    console.error('NO_PROFILE_DB', { userId: user.id });
     redirect('/login?error=NO_PROFILE_DB');
   }
 

@@ -345,10 +345,7 @@ ${context}`
               messages: [{ role: 'user', content: question }]
             })
 
-            let fullAnswer = ''
-
             streamResponse.on('text', (text) => {
-              fullAnswer += text
               // Send text chunk
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`))
             })

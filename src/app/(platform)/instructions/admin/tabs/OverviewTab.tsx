@@ -2,7 +2,6 @@ import {
   AlertTriangle,
   Users,
   FileText,
-  File,
   CheckCircle2,
 } from "lucide-react";
 import type { Profile, Alert, Instruction } from "@/lib/types";
@@ -33,9 +32,6 @@ export default function OverviewTab({
   const publishedInstructions = instructions.filter(
     (instruction) => instruction.status === "published"
   );
-  const draftInstructions = instructions.filter(
-    (instruction) => instruction.status === "draft"
-  );
 
   const recentActivity = [
     {
@@ -62,9 +58,9 @@ export default function OverviewTab({
 
   const completionRate = instructions.length
     ? Math.min(
-        100,
-        Math.round((publishedInstructions.length / instructions.length) * 100)
-      )
+      100,
+      Math.round((publishedInstructions.length / instructions.length) * 100)
+    )
     : 0;
 
   return (

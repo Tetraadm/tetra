@@ -17,5 +17,7 @@ export default defineConfig([
     "next-env.d.ts",
     // Antigravity agent skills and references:
     ".agent/**",
+    // Utility scripts (CommonJS):
+    "scripts/**",
   ]),
 ]);

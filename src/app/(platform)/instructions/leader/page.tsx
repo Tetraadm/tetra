@@ -23,9 +23,9 @@ export default async function LeaderPage() {
   // Role-based redirect: non-teamleaders go to their correct dashboard
   if (profile.role !== 'teamleader') {
     if (profile.role === 'admin') {
-      redirect('/admin')
+      redirect('/instructions/admin')
     }
-    redirect('/employee')
+    redirect('/instructions/employee')
   }
 
   // Fetch team members

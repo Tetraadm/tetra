@@ -9,7 +9,8 @@ type Props = {
   instructions: Instruction[];
 };
 
-export default function InsightsTab({ unansweredQuestions, instructions }: Props) {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function InsightsTab({ unansweredQuestions: _unansweredQuestions, instructions }: Props) {
   const fallbackDocs = [
     { name: "Brannverninstruks", views: 234, percent: 100 },
     { name: "Verneutstyr - bruk og vedlikehold", views: 198, percent: 85 },
@@ -19,10 +20,10 @@ export default function InsightsTab({ unansweredQuestions, instructions }: Props
   ];
   const popularDocs = instructions.length
     ? instructions.slice(0, 5).map((instruction, index) => ({
-        name: instruction.title,
-        views: Math.max(80, 240 - index * 35),
-        percent: Math.max(35, 100 - index * 15),
-      }))
+      name: instruction.title,
+      views: Math.max(80, 240 - index * 35),
+      percent: Math.max(35, 100 - index * 15),
+    }))
     : fallbackDocs;
 
   return (

@@ -24,28 +24,29 @@ export async function POST(request: NextRequest) {
 
     const { instructionId } = validation.data
 
-    // Get user's org_id
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('org_id')
-      .eq('id', user.id)
-      .single()
+    // Validate instruction access via team-scoped RPC (not just org)
+    // This ensures users can only confirm reads for instructions they have access to
+    const { data: accessibleInstructions, error: accessError } = await supabase
+      .rpc('get_user_instructions', { p_user_id: user.id })
 
-    if (!profile) {
-      return NextResponse.json({ error: 'Profil ikke funnet' }, { status: 404 })
+    if (accessError) {
+      console.error('CONFIRM_READ: get_user_instructions failed', accessError)
+      return NextResponse.json({ error: 'Kunne ikke verifisere tilgang' }, { status: 500 })
     }
 
-    // Validate instruction belongs to user's org
-    const { data: instruction, error: instructionError } = await supabase
-      .from('instructions')
-      .select('id')
-      .eq('id', instructionId)
-      .eq('org_id', profile.org_id)
-      .single()
+    // Check if the requested instruction is in the user's accessible list
+    const hasAccess = accessibleInstructions?.some(
+      (inst: { id: string }) => inst.id === instructionId
+    )
 
-    if (instructionError || !instruction) {
-      return NextResponse.json({ error: 'Instruks ikke funnet' }, { status: 404 })
+    if (!hasAccess) {
+      return NextResponse.json({ error: 'Ingen tilgang til denne instruksen' }, { status: 403 })
     }
+
+    // Get org_id from the matched instruction
+    const matchedInstruction = accessibleInstructions?.find(
+      (inst: { id: string; org_id: string }) => inst.id === instructionId
+    )
 
     // Confirm the read
     const { error } = await supabase
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
         {
           instruction_id: instructionId,
           user_id: user.id,
-          org_id: profile.org_id,
+          org_id: matchedInstruction?.org_id,
           confirmed: true,
           confirmed_at: new Date().toISOString(),
           read_at: new Date().toISOString()

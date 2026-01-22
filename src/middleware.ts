@@ -35,7 +35,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/invite/') ||
     pathname === '/api/health' ||
-    pathname === '/api/contact'
+    pathname === '/api/contact' ||
+    pathname === '/api/gdpr-cleanup'
 
   if (isPublicRoute) {
     return NextResponse.next()
