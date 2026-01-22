@@ -1,22 +1,10 @@
-'use client'
+"use client";
 
-import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
-import {
-  Home,
-  Users,
-  UsersRound,
-  FileText,
-  AlertTriangle,
-  Bot,
-  BarChart3,
-  ClipboardList,
-  CheckSquare,
-  Shield
-} from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
-import { cleanupInviteData } from '@/lib/invite-cleanup'
-import AuthWatcher from '@/components/AuthWatcher'
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { cleanupInviteData } from "@/lib/invite-cleanup";
+import AuthWatcher from "@/components/AuthWatcher";
 import type {
   Profile,
   Organization,
@@ -24,9 +12,8 @@ import type {
   Instruction,
   Folder,
   Alert,
-  UnansweredQuestion
-} from '@/lib/types'
-// Nordic Technical styles via CSS variables (no need for createAdminStyles)
+  UnansweredQuestion,
+} from "@/lib/types";
 import {
   OverviewTab,
   UsersTab,
@@ -37,8 +24,8 @@ import {
   InsightsTab,
   AuditLogTab,
   ReadConfirmationsTab,
-  GdprTab
-} from './tabs'
+  GdprTab,
+} from "./tabs";
 import {
   CreateAlertModal,
   CreateFolderModal,
@@ -47,29 +34,29 @@ import {
   DisclaimerModal,
   EditInstructionModal,
   EditUserModal,
-  InviteUserModal
-} from './components/modals/'
+  InviteUserModal,
+} from "./components/modals/";
 import {
   useAdminAlerts,
   useAdminInstructions,
   useAdminTeams,
   useAdminUsers,
   useAuditLogs,
-  useReadReport
-} from './hooks'
-import { AppHeader } from '@/components/layout/AppHeader'
-import { AppSidebar, type SidebarTab } from '@/components/layout/AppSidebar'
+  useReadReport,
+} from "./hooks";
+import { AdminSidebar } from "@/components/layout/AdminSidebar";
+import { AdminHeader } from "@/components/layout/AdminHeader";
 
 type Props = {
-  profile: Profile
-  organization: Organization
-  teams: Team[]
-  users: Profile[]
-  instructions: Instruction[]
-  folders: Folder[]
-  alerts: Alert[]
-  unansweredQuestions: UnansweredQuestion[]
-}
+  profile: Profile;
+  organization: Organization;
+  teams: Team[];
+  users: Profile[];
+  instructions: Instruction[];
+  folders: Folder[];
+  alerts: Alert[];
+  unansweredQuestions: UnansweredQuestion[];
+};
 
 export default function AdminDashboard({
   profile,
@@ -79,26 +66,37 @@ export default function AdminDashboard({
   instructions: initialInstructions,
   folders: initialFolders,
   alerts: initialAlerts,
-  unansweredQuestions
+  unansweredQuestions,
 }: Props) {
-  const router = useRouter()
-  const supabase = useMemo(() => createClient(), [])
+  const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
 
-  const [tab, setTab] = useState<'oversikt' | 'brukere' | 'team' | 'instrukser' | 'meldinger' | 'ailogg' | 'innsikt' | 'auditlog' | 'lesebekreftelser' | 'gdpr'>('oversikt')
-  const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [tab, setTab] = useState<
+    | "oversikt"
+    | "brukere"
+    | "team"
+    | "instrukser"
+    | "kunngjøringer"
+    | "ubesvarte"
+    | "innsikt"
+    | "aktivitetslogg"
+    | "lesebekreftelser"
+    | "gdpr"
+  >("oversikt");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  const [showCreateTeam, setShowCreateTeam] = useState(false)
-  const [showCreateInstruction, setShowCreateInstruction] = useState(false)
-  const [showInviteUser, setShowInviteUser] = useState(false)
-  const [showCreateAlert, setShowCreateAlert] = useState(false)
-  const [showEditUser, setShowEditUser] = useState(false)
-  const [showEditInstruction, setShowEditInstruction] = useState(false)
-  const [showCreateFolder, setShowCreateFolder] = useState(false)
-  const [showDisclaimer, setShowDisclaimer] = useState(false)
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [showCreateInstruction, setShowCreateInstruction] = useState(false);
+  const [showInviteUser, setShowInviteUser] = useState(false);
+  const [showCreateAlert, setShowCreateAlert] = useState(false);
+  const [showEditUser, setShowEditUser] = useState(false);
+  const [showEditInstruction, setShowEditInstruction] = useState(false);
+  const [showCreateFolder, setShowCreateFolder] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
 
   useEffect(() => {
-    cleanupInviteData()
-  }, [])
+    cleanupInviteData();
+  }, []);
 
   const {
     teams,
@@ -110,13 +108,13 @@ export default function AdminDashboard({
     teamsHasMore,
     teamsLoadingMore,
     loadMoreTeams,
-    teamLoading
+    teamLoading,
   } = useAdminTeams({
     profile,
     initialTeams,
     supabase,
-    onCloseCreateTeam: () => setShowCreateTeam(false)
-  })
+    onCloseCreateTeam: () => setShowCreateTeam(false),
+  });
 
   const {
     users,
@@ -138,15 +136,15 @@ export default function AdminDashboard({
     inviteUser,
     usersHasMore,
     usersLoadingMore,
-    loadMoreUsers
+    loadMoreUsers,
   } = useAdminUsers({
     profile,
     initialUsers,
     supabase,
     onInviteCompleted: () => setShowInviteUser(false),
     onEditCompleted: () => setShowEditUser(false),
-    onOpenEdit: () => setShowEditUser(true)
-  })
+    onOpenEdit: () => setShowEditUser(true),
+  });
 
   const {
     instructions,
@@ -186,7 +184,7 @@ export default function AdminDashboard({
     toggleInstructionStatus,
     openEditInstruction,
     saveEditInstruction,
-    loadMoreInstructions
+    loadMoreInstructions,
   } = useAdminInstructions({
     profile,
     initialInstructions,
@@ -195,8 +193,8 @@ export default function AdminDashboard({
     onCloseCreateInstruction: () => setShowCreateInstruction(false),
     onCloseEditInstruction: () => setShowEditInstruction(false),
     onOpenEditInstruction: () => setShowEditInstruction(true),
-    onCloseCreateFolder: () => setShowCreateFolder(false)
-  })
+    onCloseCreateFolder: () => setShowCreateFolder(false),
+  });
 
   const {
     alerts,
@@ -208,13 +206,13 @@ export default function AdminDashboard({
     deleteAlert,
     alertsHasMore,
     alertsLoadingMore,
-    loadMoreAlerts
+    loadMoreAlerts,
   } = useAdminAlerts({
     profile,
     initialAlerts,
     supabase,
-    onCloseCreateAlert: () => setShowCreateAlert(false)
-  })
+    onCloseCreateAlert: () => setShowCreateAlert(false),
+  });
 
   const {
     auditLogs,
@@ -225,8 +223,8 @@ export default function AdminDashboard({
     pagination,
     currentPage: auditCurrentPage,
     totalPages: auditTotalPages,
-    goToPage: goToAuditPage
-  } = useAuditLogs()
+    goToPage: goToAuditPage,
+  } = useAuditLogs();
 
   const {
     readReport,
@@ -238,82 +236,68 @@ export default function AdminDashboard({
     toggleInstructionExpansion,
     goToPage,
     currentPage,
-    totalPages
-  } = useReadReport()
+    totalPages,
+  } = useReadReport();
 
   useEffect(() => {
-    if (tab === 'auditlog') {
-      loadAuditLogs()
+    if (tab === "aktivitetslogg") {
+      loadAuditLogs();
     }
-  }, [tab, loadAuditLogs])
+  }, [tab, loadAuditLogs]);
 
   useEffect(() => {
-    if (tab === 'lesebekreftelser') {
-      loadReadReport()
+    if (tab === "lesebekreftelser") {
+      loadReadReport();
     }
-  }, [tab, loadReadReport])
+  }, [tab, loadReadReport]);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    router.push('/login')
-  }
-
-  const handleTabChange = (newTab: typeof tab) => {
-    setTab(newTab)
-    setShowMobileMenu(false)
-  }
-
-  /* ... inside component ... */
-
-  const adminTabs: SidebarTab[] = [
-    { id: 'oversikt', label: 'Oversikt', icon: Home },
-    { id: 'brukere', label: 'Brukere', icon: Users },
-    { id: 'team', label: 'Team', icon: UsersRound },
-    { id: 'instrukser', label: 'Instrukser', icon: FileText },
-    { id: 'meldinger', label: 'Kunngjøringer', icon: AlertTriangle },
-    { id: 'ailogg', label: 'Ubesvarte', icon: Bot },
-    { id: 'innsikt', label: 'Innsikt', icon: BarChart3 },
-    { id: 'auditlog', label: 'Aktivitetslogg', icon: ClipboardList },
-    { id: 'lesebekreftelser', label: 'Lesebekreftelser', icon: CheckSquare },
-    { id: 'gdpr', label: 'GDPR', icon: Shield },
-  ]
+    await supabase.auth.signOut();
+    router.push("/login");
+  };
 
   return (
     <>
       <AuthWatcher />
-      <div className="min-h-screen bg-background">
-        <AppHeader
-          onMenuClick={() => setShowMobileMenu(true)}
-          user={{
-            name: profile.full_name || 'Bruker',
-            email: profile.email || '',
-            image: ''
-          }}
-          organizationName={organization.name}
-          onLogout={handleLogout}
-          onDisclaimer={() => setShowDisclaimer(true)}
+      <div className="min-h-screen bg-background flex">
+        {/* Admin Sidebar */}
+        <AdminSidebar
+          activeTab={tab}
+          onTabChange={(t) => setTab(t as typeof tab)}
+          collapsed={sidebarCollapsed}
+          onCollapsedChange={setSidebarCollapsed}
+          unansweredCount={unansweredQuestions.length}
         />
-        <div className="flex h-[calc(100vh-64px)] overflow-hidden">
-          <AppSidebar
-            tabs={adminTabs}
-            activeTab={tab}
-            onTabChange={(t) => handleTabChange(t as typeof tab)}
-            open={showMobileMenu}
-            onClose={() => setShowMobileMenu(false)}
+
+        {/* Main Content Area */}
+        <div
+          className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-[72px]" : "ml-64"
+            }`}
+        >
+          {/* Admin Header */}
+          <AdminHeader
+            userName={profile.full_name || "Admin"}
+            userEmail={profile.email || ""}
+            onLogout={handleLogout}
+            sidebarCollapsed={sidebarCollapsed}
+            onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            organizationName={organization.name}
           />
 
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6 bg-secondary/30">
-            {tab === 'oversikt' && (
+          {/* Main Content */}
+          <main className="flex-1 overflow-y-auto px-6 pb-6 pt-20 bg-gradient-to-b from-background via-background to-muted/30">
+            {tab === "oversikt" && (
               <OverviewTab
                 profile={profile}
                 users={users}
                 instructions={instructions}
                 alerts={alerts}
+                unansweredCount={unansweredQuestions.length}
                 setTab={setTab}
               />
             )}
 
-            {tab === 'brukere' && (
+            {tab === "brukere" && (
               <UsersTab
                 profile={profile}
                 users={users}
@@ -327,7 +311,7 @@ export default function AdminDashboard({
               />
             )}
 
-            {tab === 'team' && (
+            {tab === "team" && (
               <TeamsTab
                 teams={teams}
                 users={users}
@@ -340,7 +324,7 @@ export default function AdminDashboard({
               />
             )}
 
-            {tab === 'instrukser' && (
+            {tab === "instrukser" && (
               <InstructionsTab
                 instructions={instructions}
                 folders={folders}
@@ -361,7 +345,7 @@ export default function AdminDashboard({
               />
             )}
 
-            {tab === 'meldinger' && (
+            {tab === "kunngjøringer" && (
               <AlertsTab
                 alerts={alerts}
                 toggleAlert={toggleAlert}
@@ -372,20 +356,19 @@ export default function AdminDashboard({
                 loadMoreAlerts={loadMoreAlerts}
               />
             )}
-            {tab === 'ailogg' && (
-              <AiLogTab
-                unansweredQuestions={unansweredQuestions}
-              />
+
+            {tab === "ubesvarte" && (
+              <AiLogTab unansweredQuestions={unansweredQuestions} />
             )}
 
-            {tab === 'innsikt' && (
+            {tab === "innsikt" && (
               <InsightsTab
                 unansweredQuestions={unansweredQuestions}
                 instructions={instructions}
               />
             )}
 
-            {tab === 'auditlog' && (
+            {tab === "aktivitetslogg" && (
               <AuditLogTab
                 auditLogs={auditLogs}
                 auditLogsLoading={auditLogsLoading}
@@ -399,7 +382,7 @@ export default function AdminDashboard({
               />
             )}
 
-            {tab === 'lesebekreftelser' && (
+            {tab === "lesebekreftelser" && (
               <ReadConfirmationsTab
                 readReport={readReport}
                 readReportLoading={readReportLoading}
@@ -413,13 +396,12 @@ export default function AdminDashboard({
               />
             )}
 
-            {tab === 'gdpr' && (
-              <GdprTab />
-            )}
+            {tab === "gdpr" && <GdprTab />}
           </main>
         </div>
       </div>
 
+      {/* Modals */}
       <CreateTeamModal
         open={showCreateTeam}
         newTeamName={newTeamName}
@@ -515,5 +497,5 @@ export default function AdminDashboard({
         onClose={() => setShowDisclaimer(false)}
       />
     </>
-  )
+  );
 }

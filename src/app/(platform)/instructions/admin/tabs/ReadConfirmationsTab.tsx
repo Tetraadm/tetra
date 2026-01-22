@@ -1,19 +1,39 @@
-import { Check, ChevronDown, ChevronRight, ChevronLeft, ClipboardList, X, Loader } from 'lucide-react'
-import EmptyState from '@/components/EmptyState'
-import type { ReadReportItem, UserReadStatus } from '../hooks/useReadReport'
+"use client";
+
+import {
+  CheckSquare,
+  FileText,
+  ChevronDown,
+  ChevronRight,
+  Check,
+  X,
+  Loader2,
+} from "lucide-react";
+import EmptyState from "@/components/EmptyState";
+import type { ReadReportItem, UserReadStatus } from "../hooks/useReadReport";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { cn } from "@/lib/utils";
 
 type Props = {
-  readReport: ReadReportItem[]
-  readReportLoading: boolean
-  expandedInstructions: Set<string>
-  userReads: Map<string, UserReadStatus[]>
-  userReadsLoading: Set<string>
-  toggleInstructionExpansion: (id: string) => void
-  // Pagination
-  currentPage: number
-  totalPages: number
-  goToPage: (page: number) => void
-}
+  readReport: ReadReportItem[];
+  readReportLoading: boolean;
+  expandedInstructions: Set<string>;
+  userReads: Map<string, UserReadStatus[]>;
+  userReadsLoading: Set<string>;
+  toggleInstructionExpansion: (id: string) => void;
+  currentPage: number;
+  totalPages: number;
+  goToPage: (page: number) => void;
+};
 
 export default function ReadConfirmationsTab({
   readReport,
@@ -24,215 +44,228 @@ export default function ReadConfirmationsTab({
   toggleInstructionExpansion,
   currentPage,
   totalPages,
-  goToPage
+  goToPage,
 }: Props) {
   return (
-    <>
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-semibold font-serif tracking-tight text-foreground">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
             Lesebekreftelser
           </h1>
-          <p className="text-muted-foreground">
-            Oversikt over hvem som har lest og bekreftet instrukser
+          <p className="text-muted-foreground mt-1">
+            Spor hvem som har lest viktige dokumenter
           </p>
         </div>
-        {/* CSV export disabled for new paginated structure - would need separate endpoint */}
+        <Button className="min-h-[44px]">
+          Send påminnelse
+        </Button>
       </div>
 
       {readReportLoading ? (
-        <div className="nt-card" style={{ padding: 48, textAlign: 'center' }}>
-          <div className="nt-skeleton nt-skeleton-title" style={{ margin: '0 auto' }}></div>
-          <div className="nt-skeleton nt-skeleton-text" style={{ margin: '16px auto 0' }}></div>
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
       ) : readReport.length === 0 ? (
-        <div className="nt-card">
-          <EmptyState
-            icon={<ClipboardList size={48} aria-hidden="true" />}
-            title="Ingen lesebekreftelser ennå"
-            description="Når ansatte begynner å lese og bekrefte instrukser, vil de vises her."
-          />
-        </div>
+        <Card className="border-dashed">
+          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+            <CheckSquare className="w-12 h-12 text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold text-foreground mb-2">
+              Ingen lesebekreftelser ennå
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Når ansatte begynner å lese og bekrefte instrukser, vil de vises
+              her.
+            </p>
+          </CardContent>
+        </Card>
       ) : (
         <>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div className="space-y-4">
             {readReport.map((instruction) => {
-              const isExpanded = expandedInstructions.has(instruction.instruction_id)
-              const isLoadingUsers = userReadsLoading.has(instruction.instruction_id)
-              const users = userReads.get(instruction.instruction_id) || []
+              const isExpanded = expandedInstructions.has(
+                instruction.instruction_id
+              );
+              const isLoadingUsers = userReadsLoading.has(
+                instruction.instruction_id
+              );
+              const users = userReads.get(instruction.instruction_id) || [];
+              const isComplete = instruction.confirmed_percentage === 100;
 
               return (
-                <div key={instruction.instruction_id} className="nt-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <Card key={instruction.instruction_id} className="overflow-hidden">
                   <div
-                    style={{
-                      cursor: 'pointer',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: 'var(--space-5) var(--space-6)',
-                      background: isExpanded ? 'var(--bg-secondary)' : 'transparent',
-                      borderBottom: isExpanded ? '1px solid var(--border-subtle)' : 'none',
-                      transition: 'background var(--transition-fast)'
-                    }}
-                    onClick={() => toggleInstructionExpansion(instruction.instruction_id)}
+                    className={cn(
+                      "cursor-pointer p-5 transition-colors hover:bg-muted/30",
+                      isExpanded && "bg-muted/20 border-b"
+                    )}
+                    onClick={() =>
+                      toggleInstructionExpansion(instruction.instruction_id)
+                    }
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {isExpanded ? (
-                        <ChevronDown size={20} style={{ color: 'var(--text-secondary)' }} />
-                      ) : (
-                        <ChevronRight size={20} style={{ color: 'var(--text-secondary)' }} />
-                      )}
-                      <span style={{
-                        fontWeight: 600,
-                        fontSize: '1.0625rem',
-                        color: 'var(--text-primary)'
-                      }}>
-                        {instruction.instruction_title}
-                      </span>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      gap: 24,
-                      fontSize: '0.875rem',
-                      flexWrap: 'wrap'
-                    }}>
-                      <div>
-                        <span style={{ color: 'var(--text-secondary)' }}>Lest: </span>
-                        <span style={{
-                          fontWeight: 600,
-                          fontFamily: 'var(--font-mono)',
-                          color: 'var(--color-primary-600)'
-                        }}>
-                          {instruction.read_count}/{instruction.total_users} ({instruction.read_percentage}%)
-                        </span>
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div
+                          className={cn(
+                            "w-10 h-10 rounded-lg flex items-center justify-center",
+                            isComplete ? "bg-success/10" : "bg-primary/10"
+                          )}
+                        >
+                          {isComplete ? (
+                            <CheckSquare className="w-5 h-5 text-success" />
+                          ) : (
+                            <FileText className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            {isExpanded ? (
+                              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                            )}
+                            <h3 className="font-semibold text-foreground truncate">
+                              {instruction.instruction_title}
+                            </h3>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Lest: {instruction.read_count}/{instruction.total_users}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <span style={{ color: 'var(--text-secondary)' }}>Bekreftet: </span>
-                        <span style={{
-                          fontWeight: 600,
-                          fontFamily: 'var(--font-mono)',
-                          color: 'var(--color-success-600)'
-                        }}>
-                          {instruction.confirmed_count}/{instruction.total_users} ({instruction.confirmed_percentage}%)
-                        </span>
+                      <div className="text-right text-xs text-muted-foreground">
+                        Bekreftet {instruction.confirmed_count}/
+                        {instruction.total_users}
+                      </div>
+                    </div>
+
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Bekreftet</span>
+                        <span>{instruction.confirmed_percentage}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            "h-full rounded-full transition-all duration-500",
+                            isComplete ? "bg-success" : "bg-primary"
+                          )}
+                          style={{ width: `${instruction.confirmed_percentage}%` }}
+                        />
                       </div>
                     </div>
                   </div>
 
                   {isExpanded && (
-                    <div style={{ padding: 'var(--space-6)' }}>
+                    <CardContent className="p-5">
                       {isLoadingUsers ? (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-secondary)' }}>
-                          <Loader size={16} className="animate-spin" />
-                          <span>Laster brukerdata...</span>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          <span className="text-sm">Laster brukerdata...</span>
                         </div>
                       ) : users.length === 0 ? (
-                        <p style={{ color: 'var(--text-tertiary)' }}>Ingen brukere funnet</p>
+                        <p className="text-sm text-muted-foreground">
+                          Ingen brukere funnet
+                        </p>
                       ) : (
-                        <div style={{ overflowX: 'auto' }}>
-                          <table className="nt-table">
-                            <thead>
-                              <tr>
-                                <th>Ansatt</th>
-                                <th>E-post</th>
-                                <th style={{ textAlign: 'center' }}>Lest</th>
-                                <th style={{ textAlign: 'center' }}>Bekreftet</th>
-                                <th>Dato</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {users.map((user) => (
-                                <tr key={user.user_id}>
-                                  <td style={{ fontWeight: 500 }}>{user.user_name}</td>
-                                  <td style={{ color: 'var(--text-tertiary)', fontSize: '0.8125rem' }}>
-                                    {user.user_email}
-                                  </td>
-                                  <td style={{ textAlign: 'center' }}>
-                                    {user.has_read ? (
-                                      <Check size={18} style={{ color: 'var(--color-primary-600)' }} aria-hidden="true" />
-                                    ) : (
-                                      <X size={18} style={{ color: 'var(--border-emphasis)' }} aria-hidden="true" />
-                                    )}
-                                  </td>
-                                  <td style={{ textAlign: 'center' }}>
-                                    {user.confirmed ? (
-                                      <Check size={18} style={{ color: 'var(--color-success-600)' }} aria-hidden="true" />
-                                    ) : (
-                                      <X size={18} style={{ color: 'var(--border-emphasis)' }} aria-hidden="true" />
-                                    )}
-                                  </td>
-                                  <td style={{
-                                    color: 'var(--text-secondary)',
-                                    fontSize: '0.8125rem',
-                                    fontFamily: 'var(--font-mono)'
-                                  }}>
-                                    {user.confirmed_at ? (
-                                      new Date(user.confirmed_at).toLocaleString('no-NO', {
-                                        year: 'numeric',
-                                        month: '2-digit',
-                                        day: '2-digit',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Ansatt</TableHead>
+                              <TableHead>E-post</TableHead>
+                              <TableHead className="text-center">Lest</TableHead>
+                              <TableHead className="text-center">
+                                Bekreftet
+                              </TableHead>
+                              <TableHead>Dato</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {users.map((user) => (
+                              <TableRow key={user.user_id}>
+                                <TableCell className="font-medium">
+                                  {user.user_name}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-sm">
+                                  {user.user_email}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {user.has_read ? (
+                                    <Check className="w-4 h-4 text-primary inline" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-muted-foreground inline" />
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {user.confirmed ? (
+                                    <Check className="w-4 h-4 text-success inline" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-muted-foreground inline" />
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground text-sm font-mono">
+                                  {user.confirmed_at
+                                    ? new Date(
+                                        user.confirmed_at
+                                      ).toLocaleString("no-NO", {
+                                        year: "numeric",
+                                        month: "2-digit",
+                                        day: "2-digit",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
                                       })
-                                    ) : user.read_at ? (
-                                      new Date(user.read_at).toLocaleString('no-NO', {
-                                        year: 'numeric',
-                                        month: '2-digit',
-                                        day: '2-digit',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                      })
-                                    ) : (
-                                      '—'
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                                    : user.read_at
+                                      ? new Date(user.read_at).toLocaleString(
+                                          "no-NO",
+                                          {
+                                            year: "numeric",
+                                            month: "2-digit",
+                                            day: "2-digit",
+                                            hour: "2-digit",
+                                            minute: "2-digit",
+                                          }
+                                        )
+                                      : "—"}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
                       )}
-                    </div>
+                    </CardContent>
                   )}
-                </div>
-              )
+                </Card>
+              );
             })}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
-            <div style={{
-              display: 'flex',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: 16,
-              marginTop: 24
-            }}>
-              <button
-                className="nt-btn nt-btn-secondary"
+            <div className="flex justify-center items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => goToPage(currentPage - 1)}
                 disabled={currentPage === 0}
-                style={{ opacity: currentPage === 0 ? 0.5 : 1 }}
               >
-                <ChevronLeft size={16} />
                 Forrige
-              </button>
-              <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
+              </Button>
+              <span className="text-sm text-muted-foreground font-mono">
                 Side {currentPage + 1} av {totalPages}
               </span>
-              <button
-                className="nt-btn nt-btn-secondary"
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => goToPage(currentPage + 1)}
                 disabled={currentPage >= totalPages - 1}
-                style={{ opacity: currentPage >= totalPages - 1 ? 0.5 : 1 }}
               >
                 Neste
-                <ChevronRight size={16} />
-              </button>
+              </Button>
             </div>
           )}
         </>
       )}
-    </>
-  )
+    </div>
+  );
 }

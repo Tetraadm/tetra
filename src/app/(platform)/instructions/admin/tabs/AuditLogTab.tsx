@@ -1,67 +1,110 @@
-import { BarChart3, Download, ChevronLeft, ChevronRight } from 'lucide-react'
-import EmptyState from '@/components/EmptyState'
-import type { AuditLogRow } from '../hooks/useAuditLogs'
+import {
+  BarChart3,
+  Download,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  FileText,
+  Shield,
+  LogIn,
+  Eye,
+  UserPlus,
+  Settings,
+} from "lucide-react";
+import EmptyState from "@/components/EmptyState";
+import type { AuditLogRow } from "../hooks/useAuditLogs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 /**
  * Translate action types to Norwegian
  */
 function formatActionType(actionType: string): string {
   const translations: Record<string, string> = {
-    'create_instruction': 'Opprettet instruks',
-    'publish_instruction': 'Publisert instruks',
-    'unpublish_instruction': 'Avpublisert instruks',
-    'delete_instruction': 'Slettet instruks',
-    'create_user': 'Opprettet bruker',
-    'edit_user': 'Redigert bruker',
-    'delete_user': 'Slettet bruker',
-    'invite_user': 'Invitert bruker',
-    'change_role': 'Endret rolle'
-  }
-  return translations[actionType] || actionType
+    create_instruction: "Opprettet instruks",
+    publish_instruction: "Publisert instruks",
+    unpublish_instruction: "Avpublisert instruks",
+    delete_instruction: "Slettet instruks",
+    create_user: "Opprettet bruker",
+    edit_user: "Redigert bruker",
+    delete_user: "Slettet bruker",
+    invite_user: "Invitert bruker",
+    change_role: "Endret rolle",
+  };
+  return translations[actionType] || actionType;
 }
 
 /**
  * Export audit logs to CSV file
  */
 function exportAuditLogsCSV(auditLogs: AuditLogRow[]): void {
-  const headers = ['Tidspunkt', 'Bruker', 'Handling', 'Entitet', 'Detaljer']
-  const rows = auditLogs.map(log => [
-    new Date(log.created_at).toLocaleString('nb-NO'),
-    log.profiles?.full_name || 'Ukjent',
+  const headers = ["Tidspunkt", "Bruker", "Handling", "Entitet", "Detaljer"];
+  const rows = auditLogs.map((log) => [
+    new Date(log.created_at).toLocaleString("nb-NO"),
+    log.profiles?.full_name || "Ukjent",
     formatActionType(log.action_type),
     log.entity_type,
-    JSON.stringify(log.details)
-  ])
+    JSON.stringify(log.details),
+  ]);
 
   const csvContent = [
-    headers.join(','),
-    ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
-  ].join('\n')
+    headers.join(","),
+    ...rows.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+  ].join("\n");
 
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-  const link = document.createElement('a')
-  link.href = URL.createObjectURL(blob)
-  link.download = `audit-log-${new Date().toISOString().split('T')[0]}.csv`
-  link.click()
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `audit-log-${new Date().toISOString().split("T")[0]}.csv`;
+  link.click();
+}
+
+function getLogVisual(actionType: string) {
+  if (actionType.includes("login")) {
+    return { Icon: LogIn, color: "text-chart-2", bg: "bg-chart-2/10" };
+  }
+  if (actionType.includes("view")) {
+    return { Icon: Eye, color: "text-primary", bg: "bg-primary/10" };
+  }
+  if (actionType.includes("invite") || actionType.includes("create_user")) {
+    return { Icon: UserPlus, color: "text-chart-4", bg: "bg-chart-4/10" };
+  }
+  if (actionType.includes("instruction")) {
+    return { Icon: FileText, color: "text-chart-3", bg: "bg-chart-3/10" };
+  }
+  if (actionType.includes("role")) {
+    return { Icon: Shield, color: "text-chart-5", bg: "bg-chart-5/10" };
+  }
+  return { Icon: Settings, color: "text-muted-foreground", bg: "bg-muted" };
 }
 
 type AuditFilter = {
-  actionType: string
-  startDate: string
-  endDate: string
-}
+  actionType: string;
+  startDate: string;
+  endDate: string;
+};
 
 type Props = {
-  auditLogs: AuditLogRow[]
-  auditLogsLoading: boolean
-  auditFilter: AuditFilter
-  setAuditFilter: (filter: AuditFilter) => void
-  loadAuditLogs: () => void
-  auditTotal: number
-  currentPage: number
-  totalPages: number
-  goToPage: (page: number) => void
-}
+  auditLogs: AuditLogRow[];
+  auditLogsLoading: boolean;
+  auditFilter: AuditFilter;
+  setAuditFilter: (filter: AuditFilter) => void;
+  loadAuditLogs: () => void;
+  auditTotal: number;
+  currentPage: number;
+  totalPages: number;
+  goToPage: (page: number) => void;
+};
 
 export default function AuditLogTab({
   auditLogs,
@@ -72,224 +115,166 @@ export default function AuditLogTab({
   auditTotal,
   currentPage,
   totalPages,
-  goToPage
+  goToPage,
 }: Props) {
   return (
-    <>
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-semibold font-serif tracking-tight text-foreground">
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
             Aktivitetslogg
           </h1>
-          <p className="text-muted-foreground">
-            Sporbar logg over kritiske admin-handlinger
+          <p className="text-muted-foreground mt-1">
+            Oversikt over all aktivitet i systemet
           </p>
         </div>
-        <button
-          className="nt-btn nt-btn-primary"
+        <Button
+          variant="outline"
+          className="min-h-[44px] bg-transparent"
           onClick={() => exportAuditLogsCSV(auditLogs)}
         >
-          <Download size={16} />
-          <span>Eksporter CSV</span>
-        </button>
+          <Download className="w-4 h-4 mr-2" />
+          Eksporter CSV
+        </Button>
       </div>
 
-      <div className="nt-card" style={{ marginBottom: 'var(--space-6)' }}>
-        <h3 style={{
-          fontSize: '1.0625rem',
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          marginBottom: 'var(--space-5)'
-        }}>
-          Filtrer aktivitetslogg
-        </h3>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: 'var(--space-4)',
-          alignItems: 'end'
-        }}>
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-2)'
-            }}>
-              Handlingstype
-            </label>
-            <select
-              style={{
-                width: '100%',
-                padding: 'var(--space-3) var(--space-4)',
-                fontSize: '0.875rem',
-                color: 'var(--text-primary)',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                outline: 'none'
-              }}
-              value={auditFilter.actionType}
-              onChange={(e) => setAuditFilter({ ...auditFilter, actionType: e.target.value })}
+      {/* Filter Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Filtrer aktivitetslogg</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div className="space-y-2">
+              <Label>Handlingstype</Label>
+              <Select
+                value={auditFilter.actionType}
+                onValueChange={(value) =>
+                  setAuditFilter({ ...auditFilter, actionType: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Alle handlinger</SelectItem>
+                  <SelectItem value="create_instruction">
+                    Opprett instruks
+                  </SelectItem>
+                  <SelectItem value="publish_instruction">
+                    Publiser instruks
+                  </SelectItem>
+                  <SelectItem value="unpublish_instruction">
+                    Avpubliser instruks
+                  </SelectItem>
+                  <SelectItem value="delete_instruction">
+                    Slett instruks
+                  </SelectItem>
+                  <SelectItem value="create_user">Opprett bruker</SelectItem>
+                  <SelectItem value="edit_user">Rediger bruker</SelectItem>
+                  <SelectItem value="delete_user">Slett bruker</SelectItem>
+                  <SelectItem value="invite_user">Inviter bruker</SelectItem>
+                  <SelectItem value="change_role">Endre rolle</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Fra dato</Label>
+              <Input
+                type="date"
+                value={auditFilter.startDate}
+                onChange={(e) =>
+                  setAuditFilter({ ...auditFilter, startDate: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Til dato</Label>
+              <Input
+                type="date"
+                value={auditFilter.endDate}
+                onChange={(e) =>
+                  setAuditFilter({ ...auditFilter, endDate: e.target.value })
+                }
+              />
+            </div>
+            <Button
+              onClick={loadAuditLogs}
+              disabled={auditLogsLoading}
+              className="w-full"
             >
-              <option value="all">Alle handlinger</option>
-              <option value="create_instruction">Opprett instruks</option>
-              <option value="publish_instruction">Publiser instruks</option>
-              <option value="unpublish_instruction">Avpubliser instruks</option>
-              <option value="delete_instruction">Slett instruks</option>
-              <option value="create_user">Opprett bruker</option>
-              <option value="edit_user">Rediger bruker</option>
-              <option value="delete_user">Slett bruker</option>
-              <option value="invite_user">Inviter bruker</option>
-              <option value="change_role">Endre rolle</option>
-            </select>
-          </div>
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-2)'
-            }}>
-              Fra dato
-            </label>
-            <input
-              type="date"
-              style={{
-                width: '100%',
-                padding: 'var(--space-3) var(--space-4)',
-                fontSize: '0.875rem',
-                color: 'var(--text-primary)',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                outline: 'none'
-              }}
-              value={auditFilter.startDate}
-              onChange={(e) => setAuditFilter({ ...auditFilter, startDate: e.target.value })}
-            />
-          </div>
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.875rem',
-              fontWeight: 600,
-              color: 'var(--text-primary)',
-              marginBottom: 'var(--space-2)'
-            }}>
-              Til dato
-            </label>
-            <input
-              type="date"
-              style={{
-                width: '100%',
-                padding: 'var(--space-3) var(--space-4)',
-                fontSize: '0.875rem',
-                color: 'var(--text-primary)',
-                background: 'var(--bg-secondary)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                outline: 'none'
-              }}
-              value={auditFilter.endDate}
-              onChange={(e) => setAuditFilter({ ...auditFilter, endDate: e.target.value })}
-            />
-          </div>
-          <button
-            className="nt-btn nt-btn-primary"
-            onClick={loadAuditLogs}
-            disabled={auditLogsLoading}
-          >
-            {auditLogsLoading ? 'Laster...' : 'Filtrer'}
-          </button>
-        </div>
-      </div>
-
-      <div className="nt-card">
-        <h3 style={{
-          fontSize: '1.0625rem',
-          fontWeight: 600,
-          color: 'var(--text-primary)',
-          marginBottom: 'var(--space-5)'
-        }}>
-          Aktivitetslogg ({auditTotal} hendelser)
-        </h3>
-
-        <div style={{ overflowX: 'auto' }}>
-          <table className="nt-table">
-            <thead>
-              <tr>
-                <th>Tidspunkt</th>
-                <th>Bruker</th>
-                <th>Handling</th>
-                <th>Detaljer</th>
-              </tr>
-            </thead>
-            <tbody>
               {auditLogsLoading ? (
-                <tr>
-                  <td colSpan={4} style={{ padding: 24, textAlign: 'center', color: 'var(--text-secondary)' }}>
-                    <div className="nt-skeleton" style={{ height: 20, width: '60%', margin: '0 auto' }}></div>
-                  </td>
-                </tr>
-              ) : auditLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={4} style={{ padding: 0 }}>
-                    <EmptyState
-                      icon={<BarChart3 size={48} aria-hidden="true" />}
-                      title="Ingen aktivitet funnet"
-                      description="Prøv å endre filtrene eller kom tilbake senere."
-                      actionLabel="Nullstill filter"
-                      onAction={() => {
-                        setAuditFilter({ actionType: 'all', startDate: '', endDate: '' })
-                        loadAuditLogs()
-                      }}
-                    />
-                  </td>
-                </tr>
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Laster...
+                </>
               ) : (
-                auditLogs.map((log) => (
-                  <tr key={log.id}>
-                    <td style={{ fontWeight: 500, fontFamily: 'var(--font-mono)', fontSize: '0.8125rem' }}>
-                      {new Date(log.created_at).toLocaleString('no-NO', {
-                        year: 'numeric',
-                        month: '2-digit',
-                        day: '2-digit',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 500 }}>{log.profiles?.full_name || 'Ukjent'}</div>
-                      <div style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)' }}>
-                        {log.profiles?.email || ''}
-                      </div>
-                    </td>
-                    <td>
-                      <span
-                        className="nt-badge"
-                        style={{
-                          background: log.action_type.includes('delete')
-                            ? 'var(--color-danger-50)'
-                            : log.action_type.includes('publish')
-                            ? 'var(--color-success-50)'
-                            : 'var(--color-primary-50)',
-                          color: log.action_type.includes('delete')
-                            ? '#991B1B'
-                            : log.action_type.includes('publish')
-                            ? '#065F46'
-                            : 'var(--color-primary-700)'
-                        }}
-                      >
-                        {formatActionType(log.action_type)}
-                      </span>
-                    </td>
-                    <td>
-                      {log.details && typeof log.details === 'object' && (
-                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                "Filtrer"
+              )}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Audit Logs */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">
+            Aktivitetslogg ({auditTotal} hendelser)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {auditLogsLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : auditLogs.length === 0 ? (
+            <EmptyState
+              icon={<BarChart3 className="w-12 h-12" />}
+              title="Ingen aktivitet funnet"
+              description="Prøv å endre filtrene eller kom tilbake senere."
+              actionLabel="Nullstill filter"
+              onAction={() => {
+                setAuditFilter({
+                  actionType: "all",
+                  startDate: "",
+                  endDate: "",
+                });
+                loadAuditLogs();
+              }}
+            />
+          ) : (
+            <div className="divide-y divide-border">
+              {auditLogs.map((log) => {
+                const { Icon, color, bg } = getLogVisual(log.action_type);
+                return (
+                  <div
+                    key={log.id}
+                    className="flex items-start gap-4 p-4 hover:bg-muted/30 transition-colors"
+                  >
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${bg}`}>
+                      <Icon className={`w-4 h-4 ${color}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-foreground">
+                        <span className="font-medium">
+                          {log.profiles?.full_name || "Ukjent"}
+                        </span>{" "}
+                        <span className="text-muted-foreground">
+                          {formatActionType(log.action_type)}
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(log.created_at).toLocaleString("no-NO", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                      {log.details && typeof log.details === "object" && (
+                        <div className="text-xs text-muted-foreground mt-2 space-y-1">
                           {Object.entries(log.details).map(([key, value]) => (
                             <div key={key}>
                               <strong>{key}:</strong> {String(value)}
@@ -297,46 +282,52 @@ export default function AuditLogTab({
                           ))}
                         </div>
                       )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                    </div>
+                    <Badge
+                      variant={
+                        log.action_type.includes("delete")
+                          ? "destructive"
+                          : log.action_type.includes("publish")
+                            ? "default"
+                            : "secondary"
+                      }
+                    >
+                      {formatActionType(log.action_type)}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-      {totalPages > 1 && (
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: 16,
-          marginTop: 24
-        }}>
-          <button
-            className="nt-btn nt-btn-secondary"
-            onClick={() => goToPage(currentPage - 1)}
-            disabled={currentPage === 0}
-            style={{ opacity: currentPage === 0 ? 0.5 : 1 }}
-          >
-            <ChevronLeft size={16} />
-            Forrige
-          </button>
-          <span style={{ color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
-            Side {currentPage + 1} av {totalPages}
-          </span>
-          <button
-            className="nt-btn nt-btn-secondary"
-            onClick={() => goToPage(currentPage + 1)}
-            disabled={currentPage >= totalPages - 1}
-            style={{ opacity: currentPage >= totalPages - 1 ? 0.5 : 1 }}
-          >
-            Neste
-            <ChevronRight size={16} />
-          </button>
-        </div>
-      )}
-    </>
-  )
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-4 mt-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 0}
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Forrige
+              </Button>
+              <span className="text-sm text-muted-foreground font-mono">
+                Side {currentPage + 1} av {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Neste
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
 }

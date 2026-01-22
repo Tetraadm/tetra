@@ -1,80 +1,210 @@
-'use client'
+"use client";
 
-import { Search, FileText } from 'lucide-react'
-import type { Instruction } from '@/lib/types'
-import { severityLabel } from '@/lib/ui-helpers'
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import { useState } from "react";
+import {
+  Search,
+  FileText,
+  CheckCircle2,
+  Clock,
+  ChevronRight,
+  Filter,
+  BookOpen,
+} from "lucide-react";
+import type { Instruction } from "@/lib/types";
+import { severityLabel } from "@/lib/ui-helpers";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
+type FilterType = "alle" | "venter" | "fullfort";
 
 type Props = {
-  searchQuery: string
-  setSearchQuery: (query: string) => void
-  filteredInstructions: Instruction[]
-  onSelectInstruction: (instruction: Instruction) => void
-}
+  instructions: Instruction[];
+  confirmedInstructions: Set<string>;
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  filteredInstructions: Instruction[];
+  onSelectInstruction: (instruction: Instruction) => void;
+};
 
 export default function InstructionsTab({
+  instructions,
+  confirmedInstructions,
   searchQuery,
   setSearchQuery,
   filteredInstructions,
-  onSelectInstruction
+  onSelectInstruction,
 }: Props) {
+  const [filter, setFilter] = useState<FilterType>("alle");
+
+  const completedCount = instructions.filter((inst) =>
+    confirmedInstructions.has(inst.id)
+  ).length;
+  const progress = instructions.length
+    ? Math.round((completedCount / instructions.length) * 100)
+    : 0;
+
+  const visibleInstructions = filteredInstructions.filter((instruction) => {
+    const isCompleted = confirmedInstructions.has(instruction.id);
+    if (filter === "venter") return !isCompleted;
+    if (filter === "fullfort") return isCompleted;
+    return true;
+  });
+
   return (
     <div className="space-y-6">
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Søk i instrukser..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                <h3 className="font-semibold text-foreground">Din fremgang</h3>
+              </div>
+              <p className="text-sm text-muted-foreground mb-3">
+                Du har fullført {completedCount} av {instructions.length} instrukser
+              </p>
+              <Progress value={progress} className="h-2" />
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-primary">{progress}%</p>
+                <p className="text-xs text-muted-foreground">Fullført</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-foreground">
+                  {instructions.length - completedCount}
+                </p>
+                <p className="text-xs text-muted-foreground">Gjenstår</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="Søk etter instrukser..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-11"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant={filter === "alle" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("alle")}
+            className="h-11 px-4"
+          >
+            <Filter className="w-4 h-4 mr-2" />
+            Alle
+          </Button>
+          <Button
+            variant={filter === "venter" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("venter")}
+            className="h-11 px-4"
+          >
+            <Clock className="w-4 h-4 mr-2" />
+            Venter
+          </Button>
+          <Button
+            variant={filter === "fullfort" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setFilter("fullfort")}
+            className="h-11 px-4"
+          >
+            <CheckCircle2 className="w-4 h-4 mr-2" />
+            Fullført
+          </Button>
+        </div>
       </div>
 
-      {filteredInstructions.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg bg-muted/5">
-          <FileText className="h-12 w-12 mb-4 opacity-50" />
-          <h3 className="font-semibold text-lg mb-2">
-            {searchQuery ? 'Ingen treff' : 'Ingen instrukser tilgjengelig'}
-          </h3>
-          <p className="max-w-sm text-sm mb-4">
-            {searchQuery
-              ? 'Prøv å søke med et annet nøkkelord eller fjern søket for å se alle instrukser.'
-              : 'Det er ingen instrukser tildelt deg for øyeblikket.'}
-          </p>
-          {searchQuery && (
-            <Badge variant="outline" className="cursor-pointer hover:bg-secondary/80" onClick={() => setSearchQuery('')}>
-              Fjern søk
-            </Badge>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Instrukser ({visibleInstructions.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {visibleInstructions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground">
+              <FileText className="h-12 w-12 mb-4 opacity-50" />
+              <h3 className="font-semibold text-lg mb-2">
+                {searchQuery ? "Ingen treff" : "Ingen instrukser tilgjengelig"}
+              </h3>
+              <p className="max-w-sm text-sm">
+                {searchQuery
+                  ? "Prøv å søke med et annet nøkkelord eller fjern søket."
+                  : "Det er ingen instrukser tildelt deg for øyeblikket."}
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {visibleInstructions.map((instruction) => {
+                const isCompleted = confirmedInstructions.has(instruction.id);
+                return (
+                  <button
+                    key={instruction.id}
+                    className="w-full flex items-center gap-4 p-4 hover:bg-muted/50 transition-all hover:-translate-y-0.5 hover:shadow-sm text-left min-h-[72px]"
+                    onClick={() => onSelectInstruction(instruction)}
+                  >
+                    <div
+                      className={`p-2 rounded-lg ${
+                        isCompleted ? "bg-green-500/10" : "bg-amber-500/10"
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                      ) : (
+                        <FileText className="w-5 h-5 text-amber-500" />
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-foreground truncate">
+                          {instruction.title}
+                        </p>
+                        {!isCompleted && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-500/10 text-blue-600 text-[10px]"
+                          >
+                            Ny
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                        <Badge
+                          variant={
+                            instruction.severity === "critical"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {severityLabel(instruction.severity)}
+                        </Badge>
+                        <span className="hidden sm:inline">•</span>
+                        <span className="hidden sm:inline">
+                          {isCompleted ? "Fullført" : "Venter"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </button>
+                );
+              })}
+            </div>
           )}
-        </div>
-      ) : (
-        <Card>
-          <CardContent className="p-0 divide-y">
-            {filteredInstructions.map(inst => (
-              <div
-                key={inst.id}
-                className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                onClick={() => onSelectInstruction(inst)}
-              >
-                <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                  <FileText size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium mb-1 truncate text-foreground">
-                    {inst.title}
-                  </div>
-                  <Badge variant={inst.severity === 'critical' ? 'destructive' : 'secondary'}>
-                    {severityLabel(inst.severity)}
-                  </Badge>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 }

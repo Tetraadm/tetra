@@ -1,49 +1,60 @@
-'use client'
+"use client";
 
 import {
   AlertTriangle,
   FileText,
-  MessageCircle,
   Zap,
+  Bell,
+  ArrowRight,
+  CheckCircle2,
   Clock,
-  Inbox
-} from 'lucide-react'
-import type { Alert, Instruction } from '@/lib/types'
-import { severityLabel } from '@/lib/ui-helpers'
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { cn } from "@/lib/utils"
+  BookOpen,
+  MessageCircle,
+} from "lucide-react";
+import type { Alert, Instruction } from "@/lib/types";
+import { severityLabel } from "@/lib/ui-helpers";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils";
 
 type Props = {
-  alerts: Alert[]
-  instructions: Instruction[]
-  criticalInstructions: Instruction[]
-  isMobile: boolean
-  onTabChange: (tab: 'instructions' | 'ask') => void
-  onSelectInstruction: (instruction: Instruction) => void
-  setSearchQuery: (query: string) => void
-}
+  userName?: string;
+  alerts: Alert[];
+  instructions: Instruction[];
+  criticalInstructions: Instruction[];
+  confirmedCount: number;
+  onTabChange: (tab: "instrukser" | "spor") => void;
+  onSelectInstruction: (instruction: Instruction) => void;
+};
 
 export default function HomeContent({
+  userName,
   alerts,
   instructions,
   criticalInstructions,
-  isMobile,
+  confirmedCount,
   onTabChange,
   onSelectInstruction,
-  setSearchQuery
 }: Props) {
+  const totalInstructions = instructions.length;
+  const progress = totalInstructions
+    ? Math.round((confirmedCount / totalInstructions) * 100)
+    : 0;
+  const firstName = userName ? userName.split(" ")[0] : "";
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {alerts.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold font-serif flex items-center gap-2 mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
             <AlertTriangle className="h-5 w-5 text-[var(--warning)]" />
             Aktive kunngjøringer
           </h2>
           <div className="space-y-3">
-            {alerts.map(alert => {
-              const isCritical = alert.severity === 'critical'
+            {alerts.map((alert) => {
+              const isCritical = alert.severity === "critical";
               return (
                 <div
                   key={alert.id}
@@ -63,7 +74,10 @@ export default function HomeContent({
                   <div className="flex-1">
                     <Badge
                       variant={isCritical ? "destructive" : "outline"}
-                      className={cn(!isCritical && "border-[var(--warning-border)] text-[var(--warning)] bg-[var(--warning-soft)]")}
+                      className={cn(
+                        !isCritical &&
+                          "border-[var(--warning-border)] text-[var(--warning)] bg-[var(--warning-soft)]"
+                      )}
                     >
                       {severityLabel(alert.severity)}
                     </Badge>
@@ -77,66 +91,174 @@ export default function HomeContent({
                     )}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </section>
       )}
 
-      <div className={cn(
-        "grid gap-4",
-        isMobile ? "grid-cols-1" : "grid-cols-3"
-      )}>
-        <Card
-          className="cursor-pointer hover:bg-muted/50 transition-colors border-primary/20 bg-primary/5"
-          onClick={() => onTabChange('instructions')}
-        >
-          <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
-            <div className="h-14 w-14 rounded-md bg-primary/10 flex items-center justify-center text-primary">
-              <FileText size={28} />
+      <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
+        <CardContent className="p-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-1">
+                Velkommen tilbake{firstName ? `, ${firstName}` : ""}!
+              </h2>
+              <p className="text-muted-foreground">
+                Du har {totalInstructions} instrukser tilgjengelig i dag.
+              </p>
             </div>
-            <span className="font-semibold text-primary">Instrukser</span>
-          </CardContent>
-        </Card>
+            <Button
+              onClick={() => onTabChange("instrukser")}
+              className="min-h-[44px]"
+            >
+              Se instrukser
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card
-          className="cursor-pointer hover:bg-accent/10 transition-colors border-accent/20 bg-accent/5"
-          onClick={() => onTabChange('ask')}
-        >
-          <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
-            <div className="h-14 w-14 rounded-md bg-accent/10 flex items-center justify-center text-accent">
-              <MessageCircle size={28} />
-            </div>
-            <span className="font-semibold text-accent">Spør Tetrivo</span>
-          </CardContent>
-        </Card>
-
-        {!isMobile && criticalInstructions.length > 0 && (
-          <Card
-            className="cursor-pointer hover:bg-muted/50 transition-colors border-destructive/20 bg-destructive/5"
-            onClick={() => { onTabChange('instructions'); setSearchQuery('') }}
-          >
-            <CardContent className="flex flex-col items-center justify-center p-6 gap-3">
-              <div className="h-14 w-14 rounded-md bg-destructive/10 flex items-center justify-center text-destructive">
-                <Zap size={28} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-primary/10">
+                <FileText className="w-5 h-5 text-primary" />
               </div>
-              <span className="font-semibold text-destructive">
-                {criticalInstructions.length} Kritiske
-              </span>
-            </CardContent>
-          </Card>
-        )}
+              <div>
+                <p className="text-2xl font-bold text-foreground">
+                  {totalInstructions}
+                </p>
+                <p className="text-xs text-muted-foreground">Totalt instrukser</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-500/10">
+                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">
+                  {confirmedCount}
+                </p>
+                <p className="text-xs text-muted-foreground">Fullført</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/10">
+                <Zap className="w-5 h-5 text-amber-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">
+                  {criticalInstructions.length}
+                </p>
+                <p className="text-xs text-muted-foreground">Kritiske</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Bell className="w-5 h-5 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-foreground">
+                  {alerts.length}
+                </p>
+                <p className="text-xs text-muted-foreground">Varsler</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              Din opplæringsstatus
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Fullførte instrukser</span>
+                <span className="font-medium text-foreground">{progress}%</span>
+              </div>
+              <Progress value={progress} className="h-2" />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {confirmedCount} av {totalInstructions} instrukser fullført.
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageCircle className="w-5 h-5 text-primary" />
+              Snarveier
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <button
+              onClick={() => onTabChange("instrukser")}
+              className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-all hover:-translate-y-0.5 hover:shadow-md text-left min-h-[60px]"
+            >
+              <div className="p-2 rounded-lg bg-primary/10">
+                <FileText className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground">Se alle instrukser</p>
+                <p className="text-sm text-muted-foreground">
+                  Bla gjennom HMS-dokumenter
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+
+            <button
+              onClick={() => onTabChange("spor")}
+              className="w-full flex items-center gap-4 p-4 rounded-lg border border-border hover:bg-muted/50 transition-all hover:-translate-y-0.5 hover:shadow-md text-left min-h-[60px]"
+            >
+              <div className="p-2 rounded-lg bg-primary/10">
+                <MessageCircle className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-foreground">Spor Tetrivo AI</p>
+                <p className="text-sm text-muted-foreground">
+                  Få svar på HMS-spørsmål
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </CardContent>
+        </Card>
       </div>
 
       {criticalInstructions.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold font-serif flex items-center gap-2 mb-4 text-destructive">
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-destructive">
             <Zap className="h-5 w-5" />
             Kritiske instrukser
           </h2>
           <Card>
             <CardContent className="p-0 divide-y">
-              {criticalInstructions.slice(0, 3).map(inst => (
+              {criticalInstructions.slice(0, 3).map((inst) => (
                 <div
                   key={inst.id}
                   className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -146,9 +268,7 @@ export default function HomeContent({
                     <FileText size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium mb-1 truncate">
-                      {inst.title}
-                    </div>
+                    <div className="font-medium mb-1 truncate">{inst.title}</div>
                     <Badge variant="destructive">
                       {severityLabel(inst.severity)}
                     </Badge>
@@ -161,22 +281,25 @@ export default function HomeContent({
       )}
 
       <section>
-        <h2 className="text-lg font-semibold font-serif flex items-center gap-2 mb-4 text-muted-foreground">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4 text-muted-foreground">
           <Clock className="h-5 w-5" />
           Siste instrukser
         </h2>
         {instructions.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-12 text-center text-muted-foreground border rounded-lg bg-muted/5">
-            <Inbox className="h-12 w-12 mb-4 opacity-50" />
-            <h3 className="font-semibold text-lg mb-2">Ingen instrukser tilgjengelig</h3>
+            <FileText className="h-12 w-12 mb-4 opacity-50" />
+            <h3 className="font-semibold text-lg mb-2">
+              Ingen instrukser tilgjengelig
+            </h3>
             <p className="max-w-sm text-sm">
-              Det er ingen instrukser tildelt deg for øyeblikket. Instrukser vil vises her når de blir publisert.
+              Det er ingen instrukser tildelt deg for øyeblikket. Instrukser vil
+              vises her når de blir publisert.
             </p>
           </div>
         ) : (
           <Card>
             <CardContent className="p-0 divide-y">
-              {instructions.slice(0, 5).map(inst => (
+              {instructions.slice(0, 5).map((inst) => (
                 <div
                   key={inst.id}
                   className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
@@ -186,10 +309,12 @@ export default function HomeContent({
                     <FileText size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium mb-1 truncate">
-                      {inst.title}
-                    </div>
-                    <Badge variant={inst.severity === 'critical' ? 'destructive' : 'secondary'}>
+                    <div className="font-medium mb-1 truncate">{inst.title}</div>
+                    <Badge
+                      variant={
+                        inst.severity === "critical" ? "destructive" : "secondary"
+                      }
+                    >
                       {severityLabel(inst.severity)}
                     </Badge>
                   </div>
@@ -200,5 +325,5 @@ export default function HomeContent({
         )}
       </section>
     </div>
-  )
+  );
 }
