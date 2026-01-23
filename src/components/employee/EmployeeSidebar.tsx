@@ -22,7 +22,7 @@ interface EmployeeSidebarProps {
 const navItems: { id: EmployeeTab; label: string; icon: React.ElementType }[] = [
   { id: "hjem", label: "Hjem", icon: Home },
   { id: "instrukser", label: "Instrukser", icon: FileText },
-  { id: "spor", label: "Spor Tetrivo", icon: MessageCircle },
+  { id: "spor", label: "Spør Tetrivo", icon: MessageCircle },
 ];
 
 export function EmployeeSidebar({

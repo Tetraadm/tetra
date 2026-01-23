@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
 import { cleanupInviteData } from "@/lib/invite-cleanup";
 import AuthWatcher from "@/components/AuthWatcher";
@@ -46,6 +47,16 @@ import {
 } from "./hooks";
 import { AdminSidebar } from "@/components/layout/AdminSidebar";
 import { AdminHeader } from "@/components/layout/AdminHeader";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { roleLabel } from "@/lib/ui-helpers";
 
 type Props = {
   profile: Profile;
@@ -56,6 +67,11 @@ type Props = {
   folders: Folder[];
   alerts: Alert[];
   unansweredQuestions: UnansweredQuestion[];
+  insightStats: {
+    instructionsOpened: number;
+    aiQuestions: number;
+    unanswered: number;
+  };
 };
 
 export default function AdminDashboard({
@@ -67,6 +83,7 @@ export default function AdminDashboard({
   folders: initialFolders,
   alerts: initialAlerts,
   unansweredQuestions,
+  insightStats,
 }: Props) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -84,6 +101,9 @@ export default function AdminDashboard({
     | "gdpr"
   >("oversikt");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showProfile, setShowProfile] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const [showCreateTeam, setShowCreateTeam] = useState(false);
   const [showCreateInstruction, setShowCreateInstruction] = useState(false);
@@ -97,6 +117,8 @@ export default function AdminDashboard({
   useEffect(() => {
     cleanupInviteData();
   }, []);
+
+  const searchValue = searchQuery.trim().toLowerCase();
 
   const {
     teams,
@@ -251,8 +273,47 @@ export default function AdminDashboard({
     }
   }, [tab, loadReadReport]);
 
+  const searchedInstructions = useMemo(() => {
+    if (!searchValue) return filteredInstructions;
+    return filteredInstructions.filter((instruction) => {
+      const haystack = [
+        instruction.title,
+        instruction.content,
+        instruction.folders?.name,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(searchValue);
+    });
+  }, [filteredInstructions, searchValue]);
+
+  const searchedAlerts = useMemo(() => {
+    if (!searchValue) return alerts;
+    return alerts.filter((alert) => {
+      const haystack = `${alert.title} ${alert.description || ""}`.toLowerCase();
+      return haystack.includes(searchValue);
+    });
+  }, [alerts, searchValue]);
+
+  const searchedTeams = useMemo(() => {
+    if (!searchValue) return teams;
+    return teams.filter((team) => team.name.toLowerCase().includes(searchValue));
+  }, [teams, searchValue]);
+
+  const searchedUnansweredQuestions = useMemo(() => {
+    if (!searchValue) return unansweredQuestions;
+    return unansweredQuestions.filter((question) => {
+      const haystack = `${question.question} ${question.profiles?.full_name || ""}`.toLowerCase();
+      return haystack.includes(searchValue);
+    });
+  }, [unansweredQuestions, searchValue]);
+
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      toast.error("Din sesjon er utløpt. Vennligst logg inn på nytt.");
+    }
     router.push("/login");
   };
 
@@ -282,6 +343,10 @@ export default function AdminDashboard({
             sidebarCollapsed={sidebarCollapsed}
             onMenuClick={() => setSidebarCollapsed(!sidebarCollapsed)}
             organizationName={organization.name}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            onOpenProfile={() => setShowProfile(true)}
+            onOpenSettings={() => setShowSettings(true)}
           />
 
           {/* Main Content */}
@@ -305,6 +370,8 @@ export default function AdminDashboard({
                 openEditUser={openEditUser}
                 deleteUser={deleteUser}
                 setShowInviteUser={setShowInviteUser}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
                 usersHasMore={usersHasMore}
                 usersLoadingMore={usersLoadingMore}
                 loadMoreUsers={loadMoreUsers}
@@ -313,7 +380,7 @@ export default function AdminDashboard({
 
             {tab === "team" && (
               <TeamsTab
-                teams={teams}
+                teams={searchedTeams}
                 users={users}
                 deleteTeam={deleteTeam}
                 setShowCreateTeam={setShowCreateTeam}
@@ -328,7 +395,7 @@ export default function AdminDashboard({
               <InstructionsTab
                 instructions={instructions}
                 folders={folders}
-                filteredInstructions={filteredInstructions}
+                filteredInstructions={searchedInstructions}
                 selectedFolder={selectedFolder}
                 statusFilter={statusFilter}
                 setSelectedFolder={setSelectedFolder}
@@ -347,7 +414,7 @@ export default function AdminDashboard({
 
             {tab === "kunngjøringer" && (
               <AlertsTab
-                alerts={alerts}
+                alerts={searchedAlerts}
                 toggleAlert={toggleAlert}
                 deleteAlert={deleteAlert}
                 setShowCreateAlert={setShowCreateAlert}
@@ -358,13 +425,13 @@ export default function AdminDashboard({
             )}
 
             {tab === "ubesvarte" && (
-              <AiLogTab unansweredQuestions={unansweredQuestions} />
+              <AiLogTab unansweredQuestions={searchedUnansweredQuestions} />
             )}
 
             {tab === "innsikt" && (
               <InsightsTab
-                unansweredQuestions={unansweredQuestions}
                 instructions={instructions}
+                insightStats={insightStats}
               />
             )}
 
@@ -402,6 +469,70 @@ export default function AdminDashboard({
       </div>
 
       {/* Modals */}
+      <Dialog open={showProfile} onOpenChange={setShowProfile}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Profil</DialogTitle>
+            <DialogDescription>
+              Oversikt over kontoen din i Tetrivo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">Navn</span>
+              <span className="font-medium text-foreground">
+                {profile.full_name || "Administrator"}
+              </span>
+            </div>
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">E-post</span>
+              <span className="font-medium text-foreground">{profile.email || ""}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Rolle</span>
+              <span className="font-medium text-foreground">
+                {roleLabel(profile.role)}
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowProfile(false)}>
+              Lukk
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showSettings} onOpenChange={setShowSettings}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Innstillinger</DialogTitle>
+            <DialogDescription>
+              Organisasjonsdata og grunninnstillinger.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 text-sm">
+            <div className="flex items-center justify-between border-b border-border pb-2">
+              <span className="text-muted-foreground">Organisasjon</span>
+              <span className="font-medium text-foreground">
+                {organization.name}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">Org-ID</span>
+              <span className="font-medium text-foreground">
+                {organization.id}
+              </span>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSettings(false)}>
+              Lukk
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <CreateTeamModal
         open={showCreateTeam}
         newTeamName={newTeamName}

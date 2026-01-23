@@ -12,12 +12,11 @@ import {
   MessageCircle,
 } from "lucide-react";
 import type { Alert, Instruction } from "@/lib/types";
-import { severityLabel } from "@/lib/ui-helpers";
+import { severityColor, severityLabel } from "@/lib/ui-helpers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { cn } from "@/lib/utils";
 
 type Props = {
   userName?: string;
@@ -54,30 +53,28 @@ export default function HomeContent({
           </h2>
           <div className="space-y-3">
             {alerts.map((alert) => {
-              const isCritical = alert.severity === "critical";
+              const severityStyles = severityColor(alert.severity);
               return (
                 <div
                   key={alert.id}
-                  className={cn(
-                    "flex gap-4 p-5 rounded-lg border-2",
-                    isCritical
-                      ? "bg-gradient-to-br from-destructive/5 to-destructive/10 border-destructive/20"
-                      : "bg-[var(--warning-soft)] border-[var(--warning-border)]"
-                  )}
+                  className="flex gap-4 p-5 rounded-lg border"
+                  style={{
+                    backgroundColor: severityStyles.bg,
+                    borderColor: severityStyles.border,
+                  }}
                 >
                   <AlertTriangle
-                    className={cn(
-                      "h-5 w-5 mt-0.5 shrink-0",
-                      isCritical ? "text-destructive" : "text-[var(--warning)]"
-                    )}
+                    className="h-5 w-5 mt-0.5 shrink-0"
+                    style={{ color: severityStyles.color }}
                   />
                   <div className="flex-1">
                     <Badge
-                      variant={isCritical ? "destructive" : "outline"}
-                      className={cn(
-                        !isCritical &&
-                          "border-[var(--warning-border)] text-[var(--warning)] bg-[var(--warning-soft)]"
-                      )}
+                      variant="outline"
+                      style={{
+                        backgroundColor: severityStyles.bg,
+                        color: severityStyles.color,
+                        borderColor: severityStyles.border,
+                      }}
                     >
                       {severityLabel(alert.severity)}
                     </Badge>
@@ -239,7 +236,7 @@ export default function HomeContent({
                 <MessageCircle className="w-5 h-5 text-primary" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-foreground">Spor Tetrivo AI</p>
+                <p className="font-medium text-foreground">Spør Tetrivo AI</p>
                 <p className="text-sm text-muted-foreground">
                   Få svar på HMS-spørsmål
                 </p>

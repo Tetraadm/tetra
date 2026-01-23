@@ -24,24 +24,43 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 
 /**
  * Translate action types to Norwegian
  */
 function formatActionType(actionType: string): string {
+  const normalized = actionType.replace(/\./g, "_");
   const translations: Record<string, string> = {
+    instruction_publish: "Publisert instruks",
+    instruction_create: "Opprettet instruks",
+    instruction_update: "Oppdatert instruks",
+    instruction_delete: "Slettet instruks",
+    team_create: "Opprettet team",
+    team_delete: "Slettet team",
     create_instruction: "Opprettet instruks",
+    update_instruction: "Oppdatert instruks",
     publish_instruction: "Publisert instruks",
     unpublish_instruction: "Avpublisert instruks",
     delete_instruction: "Slettet instruks",
+    create_alert: "Opprettet kunngjøring",
+    toggle_alert: "Oppdatert kunngjøring",
+    delete_alert: "Slettet kunngjøring",
+    create_folder: "Opprettet mappe",
+    delete_folder: "Slettet mappe",
+    create_team: "Opprettet team",
+    delete_team: "Slettet team",
     create_user: "Opprettet bruker",
     edit_user: "Redigert bruker",
     delete_user: "Slettet bruker",
     invite_user: "Invitert bruker",
     change_role: "Endret rolle",
   };
-  return translations[actionType] || actionType;
+
+  if (translations[normalized]) return translations[normalized];
+  if (translations[actionType]) return translations[actionType];
+
+  const cleaned = normalized.replace(/_/g, " ");
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 /**
@@ -70,22 +89,43 @@ function exportAuditLogsCSV(auditLogs: AuditLogRow[]): void {
 }
 
 function getLogVisual(actionType: string) {
-  if (actionType.includes("login")) {
+  const normalized = actionType.replace(/\./g, "_");
+  if (normalized.includes("login")) {
     return { Icon: LogIn, color: "text-chart-2", bg: "bg-chart-2/10" };
   }
-  if (actionType.includes("view")) {
+  if (normalized.includes("view")) {
     return { Icon: Eye, color: "text-primary", bg: "bg-primary/10" };
   }
-  if (actionType.includes("invite") || actionType.includes("create_user")) {
+  if (normalized.includes("invite") || normalized.includes("create_user")) {
     return { Icon: UserPlus, color: "text-chart-4", bg: "bg-chart-4/10" };
   }
-  if (actionType.includes("instruction")) {
+  if (normalized.includes("instruction")) {
     return { Icon: FileText, color: "text-chart-3", bg: "bg-chart-3/10" };
   }
-  if (actionType.includes("role")) {
+  if (normalized.includes("role")) {
     return { Icon: Shield, color: "text-chart-5", bg: "bg-chart-5/10" };
   }
   return { Icon: Settings, color: "text-muted-foreground", bg: "bg-muted" };
+}
+
+function getLogSubject(log: AuditLogRow): string | null {
+  if (!log.details || typeof log.details !== "object") return null;
+  const details = log.details as Record<string, unknown>;
+  const candidates = [
+    details.instruction_title,
+    details.alert_title,
+    details.folder_name,
+    details.team_name,
+    details.user_name,
+    details.title,
+    details.name,
+  ];
+
+  const subject = candidates.find((value) => typeof value === "string") as
+    | string
+    | undefined;
+
+  return subject || null;
 }
 
 type AuditFilter = {
@@ -247,6 +287,8 @@ export default function AuditLogTab({
             <div className="divide-y divide-border">
               {auditLogs.map((log) => {
                 const { Icon, color, bg } = getLogVisual(log.action_type);
+                const subject = getLogSubject(log);
+                const actor = log.profiles?.full_name || "System";
                 return (
                   <div
                     key={log.id}
@@ -256,44 +298,30 @@ export default function AuditLogTab({
                       <Icon className={`w-4 h-4 ${color}`} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground">
-                        <span className="font-medium">
-                          {log.profiles?.full_name || "Ukjent"}
-                        </span>{" "}
-                        <span className="text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-medium text-foreground">
                           {formatActionType(log.action_type)}
                         </span>
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {new Date(log.created_at).toLocaleString("no-NO", {
-                          year: "numeric",
-                          month: "2-digit",
-                          day: "2-digit",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                      {log.details && typeof log.details === "object" && (
-                        <div className="text-xs text-muted-foreground mt-2 space-y-1">
-                          {Object.entries(log.details).map(([key, value]) => (
-                            <div key={key}>
-                              <strong>{key}:</strong> {String(value)}
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                        {subject && (
+                          <span className="text-sm text-muted-foreground truncate">
+                            • {subject}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <span>{actor}</span>
+                        <span aria-hidden="true">•</span>
+                        <span>
+                          {new Date(log.created_at).toLocaleString("no-NO", {
+                            year: "numeric",
+                            month: "2-digit",
+                            day: "2-digit",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      </div>
                     </div>
-                    <Badge
-                      variant={
-                        log.action_type.includes("delete")
-                          ? "destructive"
-                          : log.action_type.includes("publish")
-                            ? "default"
-                            : "secondary"
-                      }
-                    >
-                      {formatActionType(log.action_type)}
-                    </Badge>
                   </div>
                 );
               })}

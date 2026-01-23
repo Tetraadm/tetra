@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { Plus, Inbox, Search, Mail, Shield, UserCheck, MoreHorizontal } from "lucide-react";
 import type { Profile, Team } from "@/lib/types";
 import { roleLabel } from "@/lib/ui-helpers";
@@ -24,6 +24,8 @@ type Props = {
   openEditUser: (user: Profile) => void;
   deleteUser: (userId: string) => void;
   setShowInviteUser: (show: boolean) => void;
+  searchQuery: string;
+  onSearchChange: (value: string) => void;
   usersHasMore: boolean;
   usersLoadingMore: boolean;
   loadMoreUsers: () => void;
@@ -36,12 +38,12 @@ export default function UsersTab({
   openEditUser,
   deleteUser,
   setShowInviteUser,
+  searchQuery,
+  onSearchChange,
   usersHasMore,
   usersLoadingMore,
   loadMoreUsers,
 }: Props) {
-  const [searchQuery, setSearchQuery] = useState("");
-
   const filteredUsers = useMemo(() => {
     const query = searchQuery.toLowerCase();
     return users.filter((user) => {
@@ -74,7 +76,7 @@ export default function UsersTab({
           type="text"
           placeholder="Søk etter brukere..."
           value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
+          onChange={(event) => onSearchChange(event.target.value)}
           className="bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground flex-1 min-h-[32px]"
         />
       </div>

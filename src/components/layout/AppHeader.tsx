@@ -26,9 +26,11 @@ interface AppHeaderProps {
     organizationName?: string
     onLogout?: () => void
     onDisclaimer?: () => void
+    onProfile?: () => void
+    onSettings?: () => void
 }
 
-export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDisclaimer }: AppHeaderProps) {
+export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDisclaimer, onProfile, onSettings }: AppHeaderProps) {
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/70 backdrop-blur-lg">
             <div className="flex h-16 items-center justify-between px-4 lg:px-6">
@@ -89,11 +91,11 @@ export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDis
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={onProfile}>
                                 <User className="mr-2 h-4 w-4" />
                                 Min profil
                             </DropdownMenuItem>
-                            <DropdownMenuItem>Innstillinger</DropdownMenuItem>
+                            <DropdownMenuItem onClick={onSettings}>Innstillinger</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="text-destructive" onClick={onLogout}>
                                 <LogOut className="mr-2 h-4 w-4" />

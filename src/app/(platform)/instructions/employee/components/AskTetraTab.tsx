@@ -80,7 +80,7 @@ export default function AskTetraTab({
             />
           </div>
           <h2 className="text-xl font-semibold text-foreground mb-2 text-center">
-            Spor Tetrivo AI
+            Spør Tetrivo AI
           </h2>
           <p className="text-muted-foreground text-center mb-8 max-w-md">
             Jeg kan hjelpe deg med spørsmål om HMS, sikkerhet og
@@ -180,8 +180,8 @@ export default function AskTetraTab({
                         <HelpCircle className="w-4 h-4 text-amber-500" />
                       </AvatarFallback>
                     </Avatar>
-                    <div className="max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 bg-[var(--warning-soft)] text-foreground border border-[var(--warning-border)]">
-                      <strong className="block mb-1 text-[var(--warning)]">
+                    <div className="max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 bg-warning/10 text-foreground border border-warning/30">
+                      <strong className="block mb-1 text-warning">
                         {notFoundMessage || "Fant ikke relevant instruks."}
                       </strong>
                       {!notFoundMessage && (

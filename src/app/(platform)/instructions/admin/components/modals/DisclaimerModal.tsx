@@ -20,7 +20,7 @@ export function DisclaimerModal({ open, onClose }: DisclaimerModalProps) {
                 Om AI-assistenten
             </h2>
 
-            <div className="rounded-2xl border border-[var(--warning-border)] bg-[var(--warning-soft)] p-4 mb-6">
+            <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4 mb-6">
                 <h3 className="text-sm font-semibold text-foreground mb-2">
                     Ansvarsfraskrivelse
                 </h3>
@@ -30,7 +30,7 @@ export function DisclaimerModal({ open, onClose }: DisclaimerModalProps) {
                 <p className="text-sm text-muted-foreground leading-relaxed mb-3">
                     AI-assistenten svarer <strong>kun basert på publiserte dokumenter</strong> i systemet. Den bruker ikke ekstern kunnskap eller generell informasjon.
                 </p>
-                <p className="text-sm leading-relaxed text-[var(--warning)]">
+                <p className="text-sm leading-relaxed text-warning">
                     <strong>Viktig:</strong> AI-svar er ikke juridisk bindende eller operativ fasit. Ved tvil, kontakt alltid ansvarlig leder.
                 </p>
             </div>

@@ -45,33 +45,33 @@ export const colors = {
   borderSubtle: 'var(--border-subtle)',
 
   // Semantic - Danger/Critical
-  danger: 'var(--danger)',
-  dangerHover: 'var(--danger-hover)',
-  dangerLight: 'var(--danger-soft)',
-  dangerBorder: 'var(--danger-border)',
+  danger: 'var(--destructive)',
+  dangerHover: 'color-mix(in oklch, var(--destructive) 85%, var(--foreground))',
+  dangerLight: 'color-mix(in oklch, var(--destructive) 12%, transparent)',
+  dangerBorder: 'color-mix(in oklch, var(--destructive) 35%, transparent)',
 
-  // Semantic - Warning/High
+  // Semantic - Warning/Medium
   warning: 'var(--warning)',
-  warningHover: 'var(--warning-hover)',
-  warningLight: 'var(--warning-soft)',
-  warningBorder: 'var(--warning-border)',
+  warningHover: 'color-mix(in oklch, var(--warning) 85%, var(--foreground))',
+  warningLight: 'color-mix(in oklch, var(--warning) 14%, transparent)',
+  warningBorder: 'color-mix(in oklch, var(--warning) 35%, transparent)',
 
   // Semantic - High Priority (Orange)
-  high: 'var(--high)',
-  highLight: 'var(--high-soft)',
-  highBorder: 'var(--high-border)',
+  high: 'var(--chart-4)',
+  highLight: 'color-mix(in oklch, var(--chart-4) 14%, transparent)',
+  highBorder: 'color-mix(in oklch, var(--chart-4) 35%, transparent)',
 
-  // Semantic - Success/Low
+  // Semantic - Success
   success: 'var(--success)',
-  successHover: 'var(--success-hover)',
-  successLight: 'var(--success-soft)',
-  successBorder: 'var(--success-border)',
+  successHover: 'color-mix(in oklch, var(--success) 85%, var(--foreground))',
+  successLight: 'color-mix(in oklch, var(--success) 12%, transparent)',
+  successBorder: 'color-mix(in oklch, var(--success) 35%, transparent)',
 
-  // Semantic - Info
-  info: 'var(--info)',
-  infoHover: 'var(--info-hover)',
-  infoLight: 'var(--info-soft)',
-  infoBorder: 'var(--info-border)',
+  // Semantic - Info/Low
+  info: 'var(--chart-2)',
+  infoHover: 'color-mix(in oklch, var(--chart-2) 85%, var(--foreground))',
+  infoLight: 'color-mix(in oklch, var(--chart-2) 12%, transparent)',
+  infoBorder: 'color-mix(in oklch, var(--chart-2) 35%, transparent)',
 
   // Accent colors
   auroraGreen: 'var(--primary)',
@@ -158,9 +158,9 @@ export function severityColor(severity: string): ColorSet {
     case 'low':
     default:
       return {
-        bg: colors.successLight,
-        color: colors.success,
-        border: colors.successBorder
+        bg: colors.infoLight,
+        color: colors.info,
+        border: colors.infoBorder
       }
   }
 }

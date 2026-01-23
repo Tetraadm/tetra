@@ -34,6 +34,10 @@ interface AdminHeaderProps {
   onMenuClick?: () => void;
   organizationName?: string;
   organizationNumber?: string;
+  searchQuery?: string;
+  onSearchChange?: (value: string) => void;
+  onOpenProfile?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export function AdminHeader({
@@ -44,6 +48,10 @@ export function AdminHeader({
   onMenuClick,
   organizationName,
   organizationNumber,
+  searchQuery = "",
+  onSearchChange,
+  onOpenProfile,
+  onOpenSettings,
 }: AdminHeaderProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -101,6 +109,8 @@ export function AdminHeader({
             <input
               type="text"
               placeholder="Søk..."
+              value={searchQuery}
+              onChange={(event) => onSearchChange?.(event.target.value)}
               className="bg-transparent border-none outline-none text-sm text-foreground placeholder:text-muted-foreground flex-1"
             />
             <kbd className="hidden lg:inline-flex h-5 select-none items-center gap-1 rounded border border-border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
@@ -162,11 +172,11 @@ export function AdminHeader({
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={onOpenProfile}>
                 <User className="w-4 h-4 mr-2" />
                 Profil
               </DropdownMenuItem>
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={onOpenSettings}>
                 <Settings className="w-4 h-4 mr-2" />
                 Innstillinger
               </DropdownMenuItem>

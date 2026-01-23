@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { cleanupInviteData } from "@/lib/invite-cleanup";
 import { cn } from "@/lib/utils";
 import AuthWatcher from "@/components/AuthWatcher";
+import { GdprDeleteRequest } from "@/components/GdprDeleteRequest";
 import type {
   Profile,
   Organization,
@@ -21,6 +22,13 @@ import InstructionModal from "./components/InstructionModal";
 import AccountTab from "./components/AccountTab";
 import { EmployeeHeader } from "@/components/employee/EmployeeHeader";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   EmployeeSidebar,
   type EmployeeTab,
 } from "@/components/employee/EmployeeSidebar";
@@ -34,10 +42,8 @@ type Props = {
   alerts: Alert[];
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export default function EmployeeApp({
   profile,
-  organization: _organization,
   instructions,
   alerts,
 }: Props) {
@@ -46,6 +52,7 @@ export default function EmployeeApp({
     "hjem" | "instrukser" | "spor" | "account"
   >("hjem");
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [showDeleteRequest, setShowDeleteRequest] = useState(false);
   const router = useRouter();
 
   const {
@@ -126,13 +133,15 @@ export default function EmployeeApp({
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col">
-          <EmployeeHeader
-            activeTab={(tab === "account" ? "hjem" : tab) as EmployeeTab}
-            userName={profile.full_name || "Bruker"}
-            userEmail={profile.email || ""}
-            onLogout={handleLogout}
-            onMenuClick={() => setMobileSidebarOpen(true)}
-          />
+            <EmployeeHeader
+              activeTab={(tab === "account" ? "hjem" : tab) as EmployeeTab}
+              userName={profile.full_name || "Bruker"}
+              userEmail={profile.email || ""}
+              onLogout={handleLogout}
+              onMenuClick={() => setMobileSidebarOpen(true)}
+              alerts={alerts}
+              onOpenDeleteRequest={() => setShowDeleteRequest(true)}
+            />
 
           <main
             className={cn(
@@ -208,6 +217,18 @@ export default function EmployeeApp({
           onConfirmRead={handleConfirmRead}
           supabase={supabase}
         />
+
+        <Dialog open={showDeleteRequest} onOpenChange={setShowDeleteRequest}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Be om sletting</DialogTitle>
+              <DialogDescription>
+                Send en forespørsel om å slette kontoen din.
+              </DialogDescription>
+            </DialogHeader>
+            <GdprDeleteRequest userName={profile.full_name || "Bruker"} />
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   );

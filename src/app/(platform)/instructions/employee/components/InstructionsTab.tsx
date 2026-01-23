@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Search,
   FileText,
@@ -11,14 +11,14 @@ import {
   BookOpen,
 } from "lucide-react";
 import type { Instruction } from "@/lib/types";
-import { severityLabel } from "@/lib/ui-helpers";
+import { severityColor, severityLabel } from "@/lib/ui-helpers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
-type FilterType = "alle" | "venter" | "fullfort";
+type SortMode = "newest" | "severity";
 
 type Props = {
   instructions: Instruction[];
@@ -37,7 +37,7 @@ export default function InstructionsTab({
   filteredInstructions,
   onSelectInstruction,
 }: Props) {
-  const [filter, setFilter] = useState<FilterType>("alle");
+  const [sortMode, setSortMode] = useState<SortMode>("newest");
 
   const completedCount = instructions.filter((inst) =>
     confirmedInstructions.has(inst.id)
@@ -46,12 +46,33 @@ export default function InstructionsTab({
     ? Math.round((completedCount / instructions.length) * 100)
     : 0;
 
-  const visibleInstructions = filteredInstructions.filter((instruction) => {
-    const isCompleted = confirmedInstructions.has(instruction.id);
-    if (filter === "venter") return !isCompleted;
-    if (filter === "fullfort") return isCompleted;
-    return true;
-  });
+  const visibleInstructions = useMemo(() => {
+    const items = [...filteredInstructions];
+    if (sortMode === "severity") {
+      const severityRank: Record<string, number> = {
+        critical: 0,
+        medium: 1,
+        low: 2,
+      };
+      items.sort((a, b) => {
+        const rankDiff =
+          (severityRank[a.severity] ?? 99) - (severityRank[b.severity] ?? 99);
+        if (rankDiff !== 0) return rankDiff;
+        const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bDate - aDate;
+      });
+      return items;
+    }
+
+    items.sort((a, b) => {
+      const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bDate - aDate;
+    });
+
+    return items;
+  }, [filteredInstructions, sortMode]);
 
   return (
     <div className="space-y-6">
@@ -96,31 +117,22 @@ export default function InstructionsTab({
         </div>
         <div className="flex gap-2">
           <Button
-            variant={filter === "alle" ? "default" : "outline"}
+            variant={sortMode === "newest" ? "default" : "outline"}
             size="sm"
-            onClick={() => setFilter("alle")}
-            className="h-11 px-4"
-          >
-            <Filter className="w-4 h-4 mr-2" />
-            Alle
-          </Button>
-          <Button
-            variant={filter === "venter" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilter("venter")}
+            onClick={() => setSortMode("newest")}
             className="h-11 px-4"
           >
             <Clock className="w-4 h-4 mr-2" />
-            Venter
+            Nyeste
           </Button>
           <Button
-            variant={filter === "fullfort" ? "default" : "outline"}
+            variant={sortMode === "severity" ? "default" : "outline"}
             size="sm"
-            onClick={() => setFilter("fullfort")}
+            onClick={() => setSortMode("severity")}
             className="h-11 px-4"
           >
-            <CheckCircle2 className="w-4 h-4 mr-2" />
-            Fullført
+            <Filter className="w-4 h-4 mr-2" />
+            Viktighetsgrad
           </Button>
         </div>
       </div>
@@ -148,6 +160,7 @@ export default function InstructionsTab({
             <div className="divide-y divide-border">
               {visibleInstructions.map((instruction) => {
                 const isCompleted = confirmedInstructions.has(instruction.id);
+                const severityStyles = severityColor(instruction.severity);
                 return (
                   <button
                     key={instruction.id}
@@ -182,11 +195,12 @@ export default function InstructionsTab({
                       </div>
                       <div className="flex items-center gap-3 text-sm text-muted-foreground">
                         <Badge
-                          variant={
-                            instruction.severity === "critical"
-                              ? "destructive"
-                              : "secondary"
-                          }
+                          variant="outline"
+                          style={{
+                            backgroundColor: severityStyles.bg,
+                            color: severityStyles.color,
+                            borderColor: severityStyles.border,
+                          }}
                         >
                           {severityLabel(instruction.severity)}
                         </Badge>

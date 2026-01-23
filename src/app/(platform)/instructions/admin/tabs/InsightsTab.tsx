@@ -1,16 +1,19 @@
 "use client";
 
-import { Eye, Clock, Users } from "lucide-react";
-import type { UnansweredQuestion, Instruction } from "@/lib/types";
+import { Eye, MessageCircleQuestion, FileText } from "lucide-react";
+import type { Instruction } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/stat-card";
 
 type Props = {
-  unansweredQuestions: UnansweredQuestion[];
   instructions: Instruction[];
+  insightStats: {
+    instructionsOpened: number;
+    aiQuestions: number;
+    unanswered: number;
+  };
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export default function InsightsTab({ unansweredQuestions: _unansweredQuestions, instructions }: Props) {
+export default function InsightsTab({ instructions, insightStats }: Props) {
   const fallbackDocs = [
     { name: "Brannverninstruks", views: 234, percent: 100 },
     { name: "Verneutstyr - bruk og vedlikehold", views: 198, percent: 85 },
@@ -26,6 +29,11 @@ export default function InsightsTab({ unansweredQuestions: _unansweredQuestions,
     }))
     : fallbackDocs;
 
+  const statusItems = [
+    { label: "Lesebekreftelser", value: 87, color: "bg-chart-2" },
+    { label: "Dokumenter oppdatert", value: 100, color: "bg-chart-4" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -39,53 +47,29 @@ export default function InsightsTab({ unansweredQuestions: _unansweredQuestions,
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <StatCard
-          title="Aktive brukere denne uken"
-          value={42}
-          trend={{ value: 8, isPositive: true }}
-          icon={Users}
-        />
-        <StatCard
-          title="Dokumentvisninger"
-          value="1,234"
-          trend={{ value: 15, isPositive: true }}
+          title="Instrukser åpnet"
+          value={insightStats.instructionsOpened}
+          description="Totalt åpnet av ansatte"
           icon={Eye}
         />
         <StatCard
-          title="Gjennomsnittlig lesetid"
-          value="4.2 min"
-          trend={{ value: 5, isPositive: false }}
-          icon={Clock}
+          title="Spørsmål stilt til AI"
+          value={insightStats.aiQuestions}
+          description="Siste 90 dager"
+          icon={MessageCircleQuestion}
+        />
+        <StatCard
+          title="Ubesvarte spørsmål"
+          value={insightStats.unanswered}
+          description="Venter på oppfølging"
+          icon={FileText}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-card rounded-xl border border-border p-5">
           <h3 className="font-semibold text-foreground mb-4">
-            Brukeraktivitet siste 7 dager
-          </h3>
-          <div className="h-48 flex items-end justify-between gap-2 px-2">
-            {[65, 45, 80, 55, 90, 70, 85].map((height, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-2">
-                <div
-                  className="w-full bg-primary/20 rounded-t-md transition-all duration-500 hover:bg-primary/40"
-                  style={{ height: `${height}%` }}
-                >
-                  <div
-                    className="w-full bg-primary rounded-t-md transition-all duration-500"
-                    style={{ height: `${height * 0.7}%` }}
-                  />
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  {["Man", "Tir", "Ons", "Tor", "Fre", "Lør", "Søn"][i]}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="font-semibold text-foreground mb-4">
-            Mest leste dokumenter
+            Mest leste instrukser
           </h3>
           <div className="space-y-4">
             {popularDocs.map((doc, index) => (
@@ -108,55 +92,28 @@ export default function InsightsTab({ unansweredQuestions: _unansweredQuestions,
             ))}
           </div>
         </div>
-      </div>
-
-      <div className="bg-card rounded-xl border border-border p-5">
-        <h3 className="font-semibold text-foreground mb-4">Samsvarsoversikt</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { label: "Kurs fullført", value: 94, color: "bg-primary" },
-            { label: "Lesebekreftelser", value: 87, color: "bg-chart-2" },
-            { label: "Dokumenter oppdatert", value: 100, color: "bg-chart-4" },
-            { label: "GDPR-samsvar", value: 100, color: "bg-chart-3" },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="flex flex-col items-center p-4 rounded-lg bg-muted/30"
-            >
-              <div className="relative w-20 h-20 mb-3">
-                <svg className="w-full h-full -rotate-90">
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="36"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    className="text-muted"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="36"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="8"
-                    strokeDasharray={`${item.value * 2.26} 226`}
-                    className={item.color.replace("bg-", "text-")}
-                    strokeLinecap="round"
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-foreground">
+        <div className="bg-card rounded-xl border border-border p-5">
+          <h3 className="font-semibold text-foreground mb-4">Status</h3>
+          <div className="space-y-4">
+            {statusItems.map((item) => (
+              <div key={item.label} className="flex items-center justify-between">
+                <span className="text-sm text-muted-foreground">
+                  {item.label}
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full ${item.color} rounded-full`}
+                      style={{ width: `${item.value}%` }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium text-foreground">
                     {item.value}%
                   </span>
                 </div>
               </div>
-              <span className="text-sm text-muted-foreground text-center">
-                {item.label}
-              </span>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>

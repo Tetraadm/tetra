@@ -32,7 +32,7 @@ const navItems: NavItem[] = [
     { id: "team", label: "Team", icon: UsersRound },
     { id: "instrukser", label: "Instrukser", icon: FileText },
     { id: "kunngjøringer", label: "Kunngjøringer", icon: Megaphone },
-    { id: "ubesvarte", label: "Ubesvarte", icon: MessageCircleQuestion },
+    { id: "ubesvarte", label: "Ubesvarte AI-spørsmål", icon: MessageCircleQuestion },
     { id: "innsikt", label: "Innsikt", icon: BarChart3 },
     { id: "aktivitetslogg", label: "Aktivitetslogg", icon: ScrollText },
     { id: "lesebekreftelser", label: "Lesebekreftelser", icon: CheckSquare },

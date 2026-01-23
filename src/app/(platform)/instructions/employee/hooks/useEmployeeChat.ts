@@ -42,6 +42,13 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
       })
 
       if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          setMessages(prev => [...prev, {
+            type: 'notfound',
+            text: 'Din sesjon er utløpt. Vennligst logg inn på nytt.'
+          }])
+          return
+        }
         // Try to parse error JSON
         try {
           const errorData = await response.json()

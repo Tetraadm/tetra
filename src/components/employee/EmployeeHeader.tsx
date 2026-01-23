@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTheme } from "next-themes";
-import { Bell, Moon, Sun, Menu, LogOut } from "lucide-react";
+import { Bell, Moon, Sun, Menu, LogOut, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -13,7 +13,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 import type { EmployeeTab } from "./EmployeeSidebar";
+import type { Alert } from "@/lib/types";
+import { severityColor, severityLabel } from "@/lib/ui-helpers";
 
 interface EmployeeHeaderProps {
   activeTab: EmployeeTab;
@@ -21,12 +24,14 @@ interface EmployeeHeaderProps {
   userEmail?: string;
   onLogout: () => void;
   onMenuClick: () => void;
+  alerts?: Alert[];
+  onOpenDeleteRequest?: () => void;
 }
 
 const tabTitles: Record<EmployeeTab, string> = {
   hjem: "Hjem",
   instrukser: "Instrukser",
-  spor: "Spor Tetrivo",
+  spor: "Spør Tetrivo",
 };
 
 export function EmployeeHeader({
@@ -35,6 +40,8 @@ export function EmployeeHeader({
   userEmail,
   onLogout,
   onMenuClick,
+  alerts = [],
+  onOpenDeleteRequest,
 }: EmployeeHeaderProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -56,6 +63,11 @@ export function EmployeeHeader({
     if (!userName) return "";
     return userName.split(" ")[0];
   }, [userName]);
+
+  const activeAlerts = useMemo(
+    () => alerts.filter((alert) => alert.active),
+    [alerts]
+  );
 
   return (
     <header className="h-16 bg-card border-b border-border flex items-center justify-between px-4 md:px-6">
@@ -81,10 +93,68 @@ export function EmployeeHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="relative h-11 w-11">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative h-11 w-11">
+              <Bell className="w-5 h-5" />
+              {activeAlerts.length > 0 && (
+                <span className="absolute top-2 right-2 min-w-[10px] h-[10px] rounded-full bg-primary" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>Varsler</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {activeAlerts.length === 0 ? (
+              <div className="px-3 py-3 text-sm text-muted-foreground">
+                Ingen aktive kunngjøringer.
+              </div>
+            ) : (
+              <div className="max-h-72 overflow-y-auto">
+                {activeAlerts.map((alert) => {
+                  const colors = severityColor(alert.severity);
+                  const createdAt = new Date(alert.created_at).toLocaleDateString(
+                    "nb-NO",
+                    {
+                      day: "numeric",
+                      month: "short",
+                    }
+                  );
+                  return (
+                    <div
+                      key={alert.id}
+                      className="px-3 py-3 border-b border-border/60 last:border-0"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <Badge
+                          variant="outline"
+                          style={{
+                            backgroundColor: colors.bg,
+                            color: colors.color,
+                            borderColor: colors.border,
+                          }}
+                        >
+                          {severityLabel(alert.severity)}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          {createdAt}
+                        </span>
+                      </div>
+                      <p className="mt-2 text-sm font-medium text-foreground">
+                        {alert.title}
+                      </p>
+                      {alert.description && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {alert.description}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         {mounted && (
           <Button
@@ -126,7 +196,16 @@ export function EmployeeHeader({
                 </span>
               </div>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            {onOpenDeleteRequest && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onOpenDeleteRequest}>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Be om sletting
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             <DropdownMenuItem onClick={onLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logg ut

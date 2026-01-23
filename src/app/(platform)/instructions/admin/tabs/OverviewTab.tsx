@@ -5,7 +5,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import type { Profile, Alert, Instruction } from "@/lib/types";
-import { severityLabel } from "@/lib/ui-helpers";
+import { severityColor, severityLabel } from "@/lib/ui-helpers";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -115,26 +115,29 @@ export default function OverviewTab({
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {activeAlerts.slice(0, 3).map((alert) => (
-                <div
-                  key={alert.id}
-                  className="flex items-center justify-between p-3 rounded-lg bg-background border border-destructive/20"
-                >
-                  <div className="flex items-center gap-3">
-                    <Badge
-                      variant="outline"
-                      className={
-                        alert.severity === "critical"
-                          ? "border-destructive text-destructive"
-                          : "border-[var(--warning-border)] text-[var(--warning)]"
-                      }
-                    >
-                      {severityLabel(alert.severity)}
-                    </Badge>
-                    <span className="font-medium">{alert.title}</span>
+              {activeAlerts.slice(0, 3).map((alert) => {
+                const severityStyles = severityColor(alert.severity);
+                return (
+                  <div
+                    key={alert.id}
+                    className="flex items-center justify-between p-3 rounded-lg bg-background border border-destructive/20"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        variant="outline"
+                        style={{
+                          backgroundColor: severityStyles.bg,
+                          color: severityStyles.color,
+                          borderColor: severityStyles.border,
+                        }}
+                      >
+                        {severityLabel(alert.severity)}
+                      </Badge>
+                      <span className="font-medium">{alert.title}</span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               <Button
                 variant="outline"
                 onClick={() => setTab("kunngjøringer")}
@@ -224,4 +227,3 @@ export default function OverviewTab({
     </div>
   );
 }
-

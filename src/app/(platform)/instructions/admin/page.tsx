@@ -76,6 +76,27 @@ export default async function AdminPage() {
     .order('created_at', { ascending: false })
     .limit(UNANSWERED_PAGE_SIZE)
 
+  const { count: openedInstructionCount } = await supabase
+    .from('instruction_reads')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', profile.org_id)
+
+  const { count: aiQuestionCount } = await supabase
+    .from('ask_tetra_logs')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', profile.org_id)
+
+  const { count: unansweredCount } = await supabase
+    .from('ai_unanswered_questions')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', profile.org_id)
+
+  const insightStats = {
+    instructionsOpened: openedInstructionCount ?? 0,
+    aiQuestions: aiQuestionCount ?? 0,
+    unanswered: unansweredCount ?? unansweredQuestions?.length ?? 0
+  }
+
   return (
     <AdminDashboard
       profile={profile}
@@ -86,6 +107,7 @@ export default async function AdminPage() {
       folders={folders || []}
       alerts={alerts || []}
       unansweredQuestions={unansweredQuestions || []}
+      insightStats={insightStats}
     />
   )
 }

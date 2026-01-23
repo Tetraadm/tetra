@@ -3,7 +3,7 @@
 import { X, CheckCircle } from 'lucide-react'
 import type { Instruction } from '@/lib/types'
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { severityLabel } from '@/lib/ui-helpers'
+import { severityColor, severityLabel } from '@/lib/ui-helpers'
 import FileLink from '@/components/FileLink'
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,7 @@ export default function InstructionModal({
   supabase
 }: Props) {
   if (!instruction) return null
+  const severityStyles = severityColor(instruction.severity)
 
   return (
     <div
@@ -38,7 +39,14 @@ export default function InstructionModal({
       >
         <div className="p-6 border-b flex justify-between items-start bg-card">
           <div className="flex-1 pr-4">
-            <Badge variant={instruction.severity === 'critical' ? 'destructive' : 'secondary'}>
+            <Badge
+              variant="outline"
+              style={{
+                backgroundColor: severityStyles.bg,
+                color: severityStyles.color,
+                borderColor: severityStyles.border,
+              }}
+            >
               {severityLabel(instruction.severity)}
             </Badge>
             <h2 className="text-xl font-semibold font-serif mt-3 tracking-tight text-foreground leading-tight">
@@ -71,8 +79,8 @@ export default function InstructionModal({
 
           <div className="mt-8 pt-5 border-t">
             {isConfirmed ? (
-              <div className="flex items-center gap-3 p-4 bg-[var(--success-soft)] border border-[var(--success-border)] rounded-md text-[var(--success)] text-sm font-medium">
-                <CheckCircle size={20} className="text-[var(--success)]" />
+              <div className="flex items-center gap-3 p-4 rounded-md border border-success/20 bg-success/10 text-success text-sm font-medium">
+                <CheckCircle size={20} className="text-success" />
                 Du har bekreftet at du har lest og forstått denne instruksen
               </div>
             ) : (

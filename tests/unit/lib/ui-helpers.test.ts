@@ -32,6 +32,7 @@ describe('severityColor', () => {
         const result = severityColor('critical')
         expect(result.bg).toBe(colors.dangerLight)
         expect(result.color).toBe(colors.danger)
+        expect(result.border).toBe(colors.dangerBorder)
     })
 
 
@@ -39,18 +40,21 @@ describe('severityColor', () => {
         const result = severityColor('medium')
         expect(result.bg).toBe(colors.warningLight)
         expect(result.color).toBe(colors.warning)
+        expect(result.border).toBe(colors.warningBorder)
     })
 
-    it('should return success colors for low severity', () => {
+    it('should return info colors for low severity', () => {
         const result = severityColor('low')
-        expect(result.bg).toBe(colors.successLight)
-        expect(result.color).toBe(colors.success)
+        expect(result.bg).toBe(colors.infoLight)
+        expect(result.color).toBe(colors.info)
+        expect(result.border).toBe(colors.infoBorder)
     })
 
-    it('should return success colors for unknown severity (default)', () => {
+    it('should return info colors for unknown severity (default)', () => {
         const result = severityColor('unknown')
-        expect(result.bg).toBe(colors.successLight)
-        expect(result.color).toBe(colors.success)
+        expect(result.bg).toBe(colors.infoLight)
+        expect(result.color).toBe(colors.info)
+        expect(result.border).toBe(colors.infoBorder)
     })
 })
 
@@ -77,17 +81,20 @@ describe('statusColor', () => {
         const result = statusColor('published')
         expect(result.bg).toBe(colors.successLight)
         expect(result.color).toBe(colors.success)
+        expect(result.border).toBe(colors.successBorder)
     })
 
     it('should return warning colors for draft status', () => {
         const result = statusColor('draft')
         expect(result.bg).toBe(colors.warningLight)
         expect(result.color).toBe(colors.warning)
+        expect(result.border).toBe(colors.warningBorder)
     })
 
     it('should return warning colors for unknown status (default to draft styling)', () => {
         const result = statusColor('unknown')
         expect(result.bg).toBe(colors.warningLight)
         expect(result.color).toBe(colors.warning)
+        expect(result.border).toBe(colors.warningBorder)
     })
 })

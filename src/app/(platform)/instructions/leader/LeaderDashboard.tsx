@@ -12,6 +12,15 @@ import { AppHeader } from '@/components/layout/AppHeader'
 import { AppSidebar, type SidebarTab } from '@/components/layout/AppSidebar'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '@/components/ui/dialog'
 
 type Instruction = {
   id: string
@@ -38,6 +47,8 @@ export default function LeaderDashboard({
 }: Props) {
   const [tab, setTab] = useState<'oversikt' | 'team' | 'instrukser'>('oversikt')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -76,6 +87,8 @@ export default function LeaderDashboard({
           }}
           organizationName={organization.name}
           onLogout={handleLogout}
+          onProfile={() => setShowProfile(true)}
+          onSettings={() => setShowSettings(true)}
         />
         <div className="flex h-[calc(100vh-64px)] overflow-hidden">
           <AppSidebar
@@ -90,7 +103,7 @@ export default function LeaderDashboard({
             {tab === 'oversikt' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-semibold font-serif tracking-tight">Oversikt</h1>
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight">Oversikt</h1>
                   <p className="text-muted-foreground">Velkommen tilbake, {profile.full_name}</p>
                 </div>
 
@@ -158,7 +171,7 @@ export default function LeaderDashboard({
             {tab === 'team' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-semibold font-serif tracking-tight">Mitt team</h1>
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight">Mitt team</h1>
                   <p className="text-muted-foreground">{team?.name || 'Ingen team'}</p>
                 </div>
 
@@ -196,7 +209,7 @@ export default function LeaderDashboard({
             {tab === 'instrukser' && (
               <div className="space-y-6">
                 <div>
-                  <h1 className="text-2xl font-semibold font-serif tracking-tight">Instrukser</h1>
+                  <h1 className="text-2xl font-bold text-foreground tracking-tight">Instrukser</h1>
                   <p className="text-muted-foreground">Instrukser for {team?.name}</p>
                 </div>
 
@@ -234,6 +247,70 @@ export default function LeaderDashboard({
             )}
           </main>
         </div>
+
+        <Dialog open={showProfile} onOpenChange={setShowProfile}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Min profil</DialogTitle>
+              <DialogDescription>
+                Kontoinformasjon og tilgangsrolle.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <span className="text-muted-foreground">Navn</span>
+                <span className="font-medium text-foreground">
+                  {profile.full_name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <span className="text-muted-foreground">E-post</span>
+                <span className="font-medium text-foreground">{profile.email}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Rolle</span>
+                <span className="font-medium text-foreground">
+                  {roleLabel(profile.role)}
+                </span>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowProfile(false)}>
+                Lukk
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showSettings} onOpenChange={setShowSettings}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Innstillinger</DialogTitle>
+              <DialogDescription>
+                Organisasjonsinnstillinger for teamleder.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3 text-sm">
+              <div className="flex items-center justify-between border-b border-border pb-2">
+                <span className="text-muted-foreground">Organisasjon</span>
+                <span className="font-medium text-foreground">
+                  {organization.name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Team</span>
+                <span className="font-medium text-foreground">
+                  {team?.name || 'Ingen team'}
+                </span>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowSettings(false)}>
+                Lukk
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </>
   )

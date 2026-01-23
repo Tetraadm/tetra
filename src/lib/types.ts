@@ -35,6 +35,7 @@ export type Instruction = {
   folder_id: string | null
   file_path: string | null
   folders: { name: string } | null
+  created_at?: string | null
 }
 
 export type Folder = {
