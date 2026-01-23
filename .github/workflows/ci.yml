@@ -10,19 +10,14 @@ jobs:
   quality:
     runs-on: ubuntu-latest
     
-    # Dummy environment variables for build step
-    # These are NOT real secrets - just placeholders to allow Next.js build to complete
-    # Real values are set in Vercel deployment
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder_anon_key
       SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
       ANTHROPIC_API_KEY: placeholder_anthropic_key
       RESEND_API_KEY: placeholder_resend_key
-      # Sentry - disable during CI build
       SENTRY_ORG: placeholder
       SENTRY_PROJECT: placeholder
-      # Skip Sentry source map upload in CI
       SENTRY_AUTH_TOKEN: ""
     
     steps:

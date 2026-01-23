@@ -37,10 +37,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # pg is needed for the test infrastructure script
-      - name: Install pg driver
-        run: npm install --no-save pg @types/pg dotenv
-
       - name: Run RLS Tests
         env:
           TEST_DB_URL: postgres://postgres:postgres@localhost:5432/postgres
