@@ -45,6 +45,7 @@ interface AdminSidebarProps {
     collapsed: boolean;
     onCollapsedChange: (collapsed: boolean) => void;
     unansweredCount?: number;
+    gdprPendingCount?: number;
 }
 
 export function AdminSidebar({
@@ -53,11 +54,14 @@ export function AdminSidebar({
     collapsed,
     onCollapsedChange,
     unansweredCount = 0,
+    gdprPendingCount = 0,
 }: AdminSidebarProps) {
     const items = navItems.map((item) =>
         item.id === "ubesvarte" && unansweredCount > 0
             ? { ...item, badge: unansweredCount }
-            : item
+            : item.id === "gdpr" && gdprPendingCount > 0
+              ? { ...item, badge: gdprPendingCount }
+              : item
     );
 
     return (

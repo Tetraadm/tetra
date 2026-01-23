@@ -136,8 +136,8 @@ export default function HomeContent({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-green-500/10">
-                <CheckCircle2 className="w-5 h-5 text-green-500" />
+              <div className="p-2 rounded-lg bg-success/10">
+                <CheckCircle2 className="w-5 h-5 text-success" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
@@ -152,8 +152,8 @@ export default function HomeContent({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-amber-500/10">
-                <Zap className="w-5 h-5 text-amber-500" />
+              <div className="p-2 rounded-lg bg-destructive/10">
+                <Zap className="w-5 h-5 text-destructive" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
@@ -168,8 +168,8 @@ export default function HomeContent({
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-blue-500/10">
-                <Bell className="w-5 h-5 text-blue-500" />
+              <div className="p-2 rounded-lg bg-chart-2/10">
+                <Bell className="w-5 h-5 text-chart-2" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
@@ -255,23 +255,33 @@ export default function HomeContent({
           </h2>
           <Card>
             <CardContent className="p-0 divide-y">
-              {criticalInstructions.slice(0, 3).map((inst) => (
-                <div
-                  key={inst.id}
-                  className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => onSelectInstruction(inst)}
-                >
-                  <div className="h-10 w-10 rounded-md bg-destructive/10 flex items-center justify-center text-destructive shrink-0">
-                    <FileText size={20} />
+              {criticalInstructions.slice(0, 3).map((inst) => {
+                const severityStyles = severityColor(inst.severity);
+                return (
+                  <div
+                    key={inst.id}
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => onSelectInstruction(inst)}
+                  >
+                    <div className="h-10 w-10 rounded-md bg-destructive/10 flex items-center justify-center text-destructive shrink-0">
+                      <FileText size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium mb-1 truncate">{inst.title}</div>
+                      <Badge
+                        variant="outline"
+                        style={{
+                          backgroundColor: severityStyles.bg,
+                          color: severityStyles.color,
+                          borderColor: severityStyles.border,
+                        }}
+                      >
+                        {severityLabel(inst.severity)}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium mb-1 truncate">{inst.title}</div>
-                    <Badge variant="destructive">
-                      {severityLabel(inst.severity)}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </section>
@@ -296,27 +306,33 @@ export default function HomeContent({
         ) : (
           <Card>
             <CardContent className="p-0 divide-y">
-              {instructions.slice(0, 5).map((inst) => (
-                <div
-                  key={inst.id}
-                  className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
-                  onClick={() => onSelectInstruction(inst)}
-                >
-                  <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
-                    <FileText size={20} />
+              {instructions.slice(0, 5).map((inst) => {
+                const severityStyles = severityColor(inst.severity);
+                return (
+                  <div
+                    key={inst.id}
+                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                    onClick={() => onSelectInstruction(inst)}
+                  >
+                    <div className="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                      <FileText size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium mb-1 truncate">{inst.title}</div>
+                      <Badge
+                        variant="outline"
+                        style={{
+                          backgroundColor: severityStyles.bg,
+                          color: severityStyles.color,
+                          borderColor: severityStyles.border,
+                        }}
+                      >
+                        {severityLabel(inst.severity)}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium mb-1 truncate">{inst.title}</div>
-                    <Badge
-                      variant={
-                        inst.severity === "critical" ? "destructive" : "secondary"
-                      }
-                    >
-                      {severityLabel(inst.severity)}
-                    </Badge>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         )}

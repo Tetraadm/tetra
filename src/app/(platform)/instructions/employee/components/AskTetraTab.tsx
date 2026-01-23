@@ -176,8 +176,8 @@ export default function AskTetraTab({
                 {message.type === "notfound" && (
                   <div className="flex gap-3">
                     <Avatar className="w-8 h-8 flex-shrink-0">
-                      <AvatarFallback className="bg-amber-500/10">
-                        <HelpCircle className="w-4 h-4 text-amber-500" />
+                      <AvatarFallback className="bg-warning/10">
+                        <HelpCircle className="w-4 h-4 text-warning" />
                       </AvatarFallback>
                     </Avatar>
                     <div className="max-w-[85%] md:max-w-[70%] rounded-2xl px-4 py-3 bg-warning/10 text-foreground border border-warning/30">

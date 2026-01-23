@@ -169,13 +169,13 @@ export default function InstructionsTab({
                   >
                     <div
                       className={`p-2 rounded-lg ${
-                        isCompleted ? "bg-green-500/10" : "bg-amber-500/10"
+                        isCompleted ? "bg-success/10" : "bg-warning/10"
                       }`}
                     >
                       {isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                        <CheckCircle2 className="w-5 h-5 text-success" />
                       ) : (
-                        <FileText className="w-5 h-5 text-amber-500" />
+                        <FileText className="w-5 h-5 text-warning" />
                       )}
                     </div>
 
@@ -187,7 +187,7 @@ export default function InstructionsTab({
                         {!isCompleted && (
                           <Badge
                             variant="secondary"
-                            className="bg-blue-500/10 text-blue-600 text-[10px]"
+                            className="bg-chart-2/10 text-chart-2 text-[10px]"
                           >
                             Ny
                           </Badge>

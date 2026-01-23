@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { Trash2, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -43,8 +45,8 @@ export function GdprDeleteRequest({ userName }: GdprDeleteRequestProps) {
 
     if (hasSubmitted) {
         return (
-            <div className="rounded-lg border border-yellow-200 bg-yellow-50 dark:border-yellow-900 dark:bg-yellow-950/20 p-4">
-                <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            <div className="rounded-lg border border-warning/30 bg-warning/10 p-4">
+                <p className="text-sm text-warning">
                     ⏳ Din sletteforespørsel er sendt og venter på behandling av administrator.
                 </p>
             </div>
@@ -52,8 +54,8 @@ export function GdprDeleteRequest({ userName }: GdprDeleteRequestProps) {
     }
 
     return (
-        <div className="rounded-lg border border-red-200 dark:border-red-900 p-4">
-            <h3 className="font-medium text-red-600 dark:text-red-400 mb-2 flex items-center gap-2">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+            <h3 className="font-medium text-destructive mb-2 flex items-center gap-2">
                 <Trash2 className="h-4 w-4" />
                 Slett min konto
             </h3>
@@ -67,21 +69,22 @@ export function GdprDeleteRequest({ userName }: GdprDeleteRequestProps) {
                         variant="outline"
                         size="sm"
                         onClick={() => setIsOpen(true)}
-                        className="text-red-600 border-red-200 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+                        className="text-destructive border-destructive/30 hover:bg-destructive/10"
                     >
                         Be om sletting
                     </Button>
                 </>
             ) : (
                 <div className="space-y-3">
-                    <p className="text-sm text-muted-foreground">
+                    <Label htmlFor="gdpr-delete-reason" className="text-sm text-muted-foreground">
                         Er du sikker, {userName}? Skriv gjerne en begrunnelse (valgfritt):
-                    </p>
-                    <textarea
+                    </Label>
+                    <Textarea
+                        id="gdpr-delete-reason"
                         value={reason}
                         onChange={(e) => setReason(e.target.value)}
                         placeholder="Hvorfor vil du slette kontoen? (valgfritt)"
-                        className="w-full p-2 text-sm border rounded-md resize-none h-20 bg-background"
+                        className="min-h-[80px] resize-none"
                         maxLength={1000}
                     />
                     <div className="flex gap-2">

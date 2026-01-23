@@ -67,6 +67,7 @@ type Props = {
   folders: Folder[];
   alerts: Alert[];
   unansweredQuestions: UnansweredQuestion[];
+  gdprPendingCount: number;
   insightStats: {
     instructionsOpened: number;
     aiQuestions: number;
@@ -83,6 +84,7 @@ export default function AdminDashboard({
   folders: initialFolders,
   alerts: initialAlerts,
   unansweredQuestions,
+  gdprPendingCount,
   insightStats,
 }: Props) {
   const router = useRouter();
@@ -117,6 +119,17 @@ export default function AdminDashboard({
   useEffect(() => {
     cleanupInviteData();
   }, []);
+
+  useEffect(() => {
+    if (gdprPendingCount > 0) {
+      const label = gdprPendingCount === 1
+        ? "1 sletteforespørsel"
+        : `${gdprPendingCount} sletteforespørsler`
+      toast(`Du har ${label} som venter på behandling.`, {
+        id: "gdpr-pending",
+      })
+    }
+  }, [gdprPendingCount])
 
   const searchValue = searchQuery.trim().toLowerCase();
 
@@ -328,6 +341,7 @@ export default function AdminDashboard({
           collapsed={sidebarCollapsed}
           onCollapsedChange={setSidebarCollapsed}
           unansweredCount={unansweredQuestions.length}
+          gdprPendingCount={gdprPendingCount}
         />
 
         {/* Main Content Area */}

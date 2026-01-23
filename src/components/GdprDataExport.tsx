@@ -47,8 +47,8 @@ export function GdprDataExport() {
     }
 
     return (
-        <div className="rounded-lg border border-blue-200 dark:border-blue-900 p-4">
-            <h3 className="font-medium text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-2">
+        <div className="rounded-lg border border-chart-2/30 bg-chart-2/5 p-4">
+            <h3 className="font-medium text-chart-2 mb-2 flex items-center gap-2">
                 <Download className="h-4 w-4" />
                 Eksporter mine data
             </h3>
@@ -60,7 +60,7 @@ export function GdprDataExport() {
                 size="sm"
                 onClick={handleExport}
                 disabled={isExporting}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:hover:bg-blue-950"
+                className="text-chart-2 border-chart-2/30 hover:bg-chart-2/10"
             >
                 {isExporting ? (
                     <>

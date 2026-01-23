@@ -91,6 +91,12 @@ export default async function AdminPage() {
     .select('id', { count: 'exact', head: true })
     .eq('org_id', profile.org_id)
 
+  const { count: gdprPendingCount } = await supabase
+    .from('gdpr_requests')
+    .select('id', { count: 'exact', head: true })
+    .eq('org_id', profile.org_id)
+    .eq('status', 'pending')
+
   const insightStats = {
     instructionsOpened: openedInstructionCount ?? 0,
     aiQuestions: aiQuestionCount ?? 0,
@@ -107,6 +113,7 @@ export default async function AdminPage() {
       folders={folders || []}
       alerts={alerts || []}
       unansweredQuestions={unansweredQuestions || []}
+      gdprPendingCount={gdprPendingCount ?? 0}
       insightStats={insightStats}
     />
   )

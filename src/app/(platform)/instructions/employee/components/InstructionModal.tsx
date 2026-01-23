@@ -49,7 +49,7 @@ export default function InstructionModal({
             >
               {severityLabel(instruction.severity)}
             </Badge>
-            <h2 className="text-xl font-semibold font-serif mt-3 tracking-tight text-foreground leading-tight">
+            <h2 className="text-xl font-semibold mt-3 tracking-tight text-foreground leading-tight">
               {instruction.title}
             </h2>
           </div>

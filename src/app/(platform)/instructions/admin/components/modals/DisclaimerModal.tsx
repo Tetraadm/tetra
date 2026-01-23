@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { Button } from '@/components/ui/button'
 import { ModalShell } from './ModalShell'
 
 type DisclaimerModalProps = {
@@ -15,7 +16,7 @@ export function DisclaimerModal({ open, onClose }: DisclaimerModalProps) {
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
+                className="text-xl font-semibold tracking-tight text-foreground mb-6"
             >
                 Om AI-assistenten
             </h2>
@@ -40,9 +41,9 @@ export function DisclaimerModal({ open, onClose }: DisclaimerModalProps) {
                 Alle spørsmål og svar logges for kvalitetssikring. Loggene er kun tilgjengelige for administratorer.
             </p>
 
-            <button className="nt-btn nt-btn-primary w-full" onClick={onClose}>
+            <Button className="w-full" onClick={onClose}>
                 Lukk
-            </button>
+            </Button>
         </ModalShell>
     )
 }

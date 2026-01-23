@@ -1,6 +1,19 @@
 import { useId, type Dispatch, type SetStateAction } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Team } from '@/lib/types'
 import type { NewAlertState } from '../../hooks/useAdminAlerts'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { ModalShell } from './ModalShell'
 
 type CreateAlertModalProps = {
@@ -28,95 +41,110 @@ export function CreateAlertModal({
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
+                className="text-xl font-semibold tracking-tight text-foreground mb-6"
             >
                 Opprett kunngjøring
             </h2>
-
-            <label className="nt-label">Tittel</label>
-            <input
-                className="nt-input"
-                value={newAlert.title}
-                onChange={(e) => setNewAlert({ ...newAlert, title: e.target.value })}
-                placeholder="F.eks. Viktig melding til alle ansatte"
-            />
-
-            <label className="nt-label">Beskrivelse</label>
-            <textarea
-                className="nt-textarea"
-                value={newAlert.description}
-                onChange={(e) => setNewAlert({ ...newAlert, description: e.target.value })}
-                rows={4}
-            />
-
-            <label className="nt-label">Alvorlighet</label>
-            <select
-                className="nt-select"
-                value={newAlert.severity}
-                onChange={(e) => setNewAlert({ ...newAlert, severity: e.target.value })}
-            >
-                <option value="critical">Kritisk</option>
-                <option value="medium">Middels</option>
-                <option value="low">Lav</option>
-            </select>
-
-            <label className="nt-label">Synlig for</label>
-            <div className="mb-4">
-                <label className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-                    <input
-                        type="checkbox"
-                        checked={newAlert.allTeams}
-                        onChange={(e) => setNewAlert({ ...newAlert, allTeams: e.target.checked, teamIds: [] })}
-                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor={`${titleId}-title`}>Tittel</Label>
+                    <Input
+                        id={`${titleId}-title`}
+                        value={newAlert.title}
+                        onChange={(e) => setNewAlert({ ...newAlert, title: e.target.value })}
+                        placeholder="F.eks. Viktig melding til alle ansatte"
                     />
-                    <span>Alle team</span>
-                </label>
-                {!newAlert.allTeams && (
-                    <div className="flex flex-wrap gap-2">
-                        {teams.map((team) => {
-                            const isSelected = newAlert.teamIds.includes(team.id)
-                            return (
-                                <button
-                                    key={team.id}
-                                    type="button"
-                                    onClick={() => {
-                                        const ids = isSelected
-                                            ? newAlert.teamIds.filter((id) => id !== team.id)
-                                            : [...newAlert.teamIds, team.id]
-                                        setNewAlert({ ...newAlert, teamIds: ids })
-                                    }}
-                                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
-                                        isSelected
-                                            ? 'border-primary bg-primary/10 text-primary'
-                                            : 'border-border/70 bg-card/70 text-muted-foreground hover:border-primary/40'
-                                    }`}
-                                >
-                                    {team.name}
-                                </button>
-                            )
-                        })}
-                    </div>
-                )}
-            </div>
+                </div>
 
-            <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
-                <button className="nt-btn nt-btn-secondary" onClick={onClose}>
-                    Avbryt
-                </button>
-                <button
-                    className="nt-btn nt-btn-primary"
-                    onClick={createAlert}
-                    disabled={alertLoading}
-                >
-                    {alertLoading ? (
-                        <>
-                            <div className="spinner spinner-sm spinner-white" />
-                            Oppretter...
-                        </>
-                    ) : (
-                        'Opprett'
+                <div className="space-y-2">
+                    <Label htmlFor={`${titleId}-description`}>Beskrivelse</Label>
+                    <Textarea
+                        id={`${titleId}-description`}
+                        value={newAlert.description}
+                        onChange={(e) => setNewAlert({ ...newAlert, description: e.target.value })}
+                        rows={4}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label>Alvorlighet</Label>
+                    <Select
+                        value={newAlert.severity}
+                        onValueChange={(value) =>
+                            setNewAlert({ ...newAlert, severity: value })
+                        }
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="critical">Kritisk</SelectItem>
+                            <SelectItem value="medium">Middels</SelectItem>
+                            <SelectItem value="low">Lav</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-3">
+                    <Label>Synlig for</Label>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Checkbox
+                            checked={newAlert.allTeams}
+                            onCheckedChange={(checked) =>
+                                setNewAlert({
+                                    ...newAlert,
+                                    allTeams: checked === true,
+                                    teamIds: [],
+                                })
+                            }
+                            id={`${titleId}-all-teams`}
+                        />
+                        <Label
+                            htmlFor={`${titleId}-all-teams`}
+                            className="text-sm text-muted-foreground"
+                        >
+                            Alle team
+                        </Label>
+                    </div>
+                    {!newAlert.allTeams && (
+                        <div className="flex flex-wrap gap-2">
+                            {teams.map((team) => {
+                                const isSelected = newAlert.teamIds.includes(team.id)
+                                return (
+                                    <button
+                                        key={team.id}
+                                        type="button"
+                                        onClick={() => {
+                                            const ids = isSelected
+                                                ? newAlert.teamIds.filter((id) => id !== team.id)
+                                                : [...newAlert.teamIds, team.id]
+                                            setNewAlert({ ...newAlert, teamIds: ids })
+                                        }}
+                                        className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                                            isSelected
+                                                ? 'border-primary bg-primary/10 text-primary'
+                                                : 'border-border/70 bg-card/70 text-muted-foreground hover:border-primary/40'
+                                        }`}
+                                    >
+                                        {team.name}
+                                    </button>
+                                )
+                            })}
+                        </div>
                     )}
-                </button>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                    <Button variant="outline" onClick={onClose}>
+                        Avbryt
+                    </Button>
+                    <Button onClick={createAlert} disabled={alertLoading}>
+                        {alertLoading && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {alertLoading ? 'Oppretter...' : 'Opprett'}
+                    </Button>
+                </div>
             </div>
         </ModalShell>
     )

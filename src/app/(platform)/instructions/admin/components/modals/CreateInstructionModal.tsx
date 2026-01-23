@@ -1,6 +1,19 @@
 import { useId, type Dispatch, type SetStateAction } from 'react'
+import { Loader2 } from 'lucide-react'
 import { Folder, Team } from '@/lib/types'
 import type { NewInstructionState } from '../../hooks/useAdminInstructions'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
 import { ModalShell } from './ModalShell'
 
 type CreateInstructionModalProps = {
@@ -34,136 +47,174 @@ export function CreateInstructionModal({
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
             <h2
                 id={titleId}
-                className="text-xl font-semibold font-serif tracking-tight text-foreground mb-6"
+                className="text-xl font-semibold tracking-tight text-foreground mb-6"
             >
                 Opprett instruks
             </h2>
-
-            <label className="nt-label">Tittel</label>
-            <input
-                className="nt-input"
-                value={newInstruction.title}
-                onChange={(e) => setNewInstruction({ ...newInstruction, title: e.target.value })}
-                placeholder="F.eks. Brannrutiner"
-            />
-
-            <label className="nt-label">Mappe</label>
-            <select
-                className="nt-select"
-                value={newInstruction.folderId}
-                onChange={(e) => setNewInstruction({ ...newInstruction, folderId: e.target.value })}
-            >
-                <option value="">Ingen mappe</option>
-                {folders.map((folder) => (
-                    <option key={folder.id} value={folder.id}>{folder.name}</option>
-                ))}
-            </select>
-
-            <label className="nt-label">Status</label>
-            <select
-                className="nt-select"
-                value={newInstruction.status}
-                onChange={(e) => setNewInstruction({ ...newInstruction, status: e.target.value })}
-            >
-                <option value="draft">Utkast (ikke synlig for ansatte)</option>
-                <option value="published">Publisert (synlig for ansatte og AI)</option>
-            </select>
-
-            <label className="nt-label">
-                Innhold (brukes av AI)
-                <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                    Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
-                </span>
-            </label>
-            <textarea
-                className="nt-textarea"
-                value={newInstruction.content}
-                onChange={(e) => setNewInstruction({ ...newInstruction, content: e.target.value })}
-                placeholder="Skriv eller lim inn tekst fra PDF her for at AI skal kunne svare på spørsmål om denne instruksen..."
-                rows={8}
-            />
-
-            <label className="nt-label">Alvorlighet</label>
-            <select
-                className="nt-select"
-                value={newInstruction.severity}
-                onChange={(e) => setNewInstruction({ ...newInstruction, severity: e.target.value })}
-            >
-                <option value="critical">Kritisk</option>
-                <option value="medium">Middels</option>
-                <option value="low">Lav</option>
-            </select>
-
-            <label className="nt-label">Vedlegg (PDF)</label>
-            <input
-                type="file"
-                accept=".pdf"
-                onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                className="mb-4 block w-full text-sm text-muted-foreground file:mr-3 file:rounded-md file:border-0 file:bg-secondary/70 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-foreground hover:file:bg-secondary"
-            />
-            {selectedFile && (
-                <p className="mb-4 text-xs font-semibold text-[var(--success)]">
-                    Valgt fil: {selectedFile.name}
-                </p>
-            )}
-
-            <label className="nt-label">Team</label>
-            <div className="mb-4">
-                <label className="mb-3 flex items-center gap-2 text-sm text-muted-foreground">
-                    <input
-                        type="checkbox"
-                        checked={newInstruction.allTeams}
-                        onChange={(e) => setNewInstruction({ ...newInstruction, allTeams: e.target.checked, teamIds: [] })}
-                        className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+            <div className="space-y-4">
+                <div className="space-y-2">
+                    <Label htmlFor={`${titleId}-title`}>Tittel</Label>
+                    <Input
+                        id={`${titleId}-title`}
+                        value={newInstruction.title}
+                        onChange={(e) => setNewInstruction({ ...newInstruction, title: e.target.value })}
+                        placeholder="F.eks. Brannrutiner"
                     />
-                    <span>Alle team</span>
-                </label>
-                {!newInstruction.allTeams && (
-                    <div className="flex flex-wrap gap-2">
-                        {teams.map((team) => {
-                            const isSelected = newInstruction.teamIds.includes(team.id)
-                            return (
-                                <button
-                                    key={team.id}
-                                    type="button"
-                                    onClick={() => {
-                                        const ids = isSelected
-                                            ? newInstruction.teamIds.filter((id) => id !== team.id)
-                                            : [...newInstruction.teamIds, team.id]
-                                        setNewInstruction({ ...newInstruction, teamIds: ids })
-                                    }}
-                                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
-                                        isSelected
-                                            ? 'border-primary bg-primary/10 text-primary'
-                                            : 'border-border/70 bg-card/70 text-muted-foreground hover:border-primary/40'
-                                    }`}
-                                >
-                                    {team.name}
-                                </button>
-                            )
-                        })}
-                    </div>
-                )}
-            </div>
+                </div>
 
-            <div style={{ display: 'flex', gap: 'var(--space-3)', justifyContent: 'flex-end' }}>
-                <button className="nt-btn nt-btn-secondary" onClick={onClose}>
-                    Avbryt
-                </button>
-                <button
-                    className="nt-btn nt-btn-primary"
-                    onClick={createInstruction}
-                    disabled={instructionLoading}
-                >
-                    {instructionLoading ? (
-                        <>
-                            <div className="spinner spinner-sm spinner-white" />
-                            Oppretter...
-                        </>
-                    ) : (
-                        'Opprett'
+                <div className="space-y-2">
+                    <Label>Mappe</Label>
+                    <Select
+                        value={newInstruction.folderId || 'none'}
+                        onValueChange={(value) =>
+                            setNewInstruction({
+                                ...newInstruction,
+                                folderId: value === 'none' ? '' : value,
+                            })
+                        }
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Ingen mappe" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">Ingen mappe</SelectItem>
+                            {folders.map((folder) => (
+                                <SelectItem key={folder.id} value={folder.id}>
+                                    {folder.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label>Status</Label>
+                    <Select
+                        value={newInstruction.status}
+                        onValueChange={(value) =>
+                            setNewInstruction({ ...newInstruction, status: value })
+                        }
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="draft">Utkast (ikke synlig for ansatte)</SelectItem>
+                            <SelectItem value="published">Publisert (synlig for ansatte og AI)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor={`${titleId}-content`}>
+                        Innhold (brukes av AI)
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                        Valgfritt hvis du laster opp PDF. AI kan kun svare basert på tekst du skriver her.
+                    </p>
+                    <Textarea
+                        id={`${titleId}-content`}
+                        value={newInstruction.content}
+                        onChange={(e) => setNewInstruction({ ...newInstruction, content: e.target.value })}
+                        placeholder="Skriv eller lim inn tekst fra PDF her for at AI skal kunne svare på spørsmål om denne instruksen..."
+                        rows={8}
+                    />
+                </div>
+
+                <div className="space-y-2">
+                    <Label>Alvorlighet</Label>
+                    <Select
+                        value={newInstruction.severity}
+                        onValueChange={(value) =>
+                            setNewInstruction({ ...newInstruction, severity: value })
+                        }
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="critical">Kritisk</SelectItem>
+                            <SelectItem value="medium">Middels</SelectItem>
+                            <SelectItem value="low">Lav</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="space-y-2">
+                    <Label htmlFor={`${titleId}-file`}>Vedlegg (PDF)</Label>
+                    <Input
+                        id={`${titleId}-file`}
+                        type="file"
+                        accept=".pdf"
+                        onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    />
+                    {selectedFile && (
+                        <p className="text-xs font-medium text-success">
+                            Valgt fil: {selectedFile.name}
+                        </p>
                     )}
-                </button>
+                </div>
+
+                <div className="space-y-3">
+                    <Label>Team</Label>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Checkbox
+                            checked={newInstruction.allTeams}
+                            onCheckedChange={(checked) =>
+                                setNewInstruction({
+                                    ...newInstruction,
+                                    allTeams: checked === true,
+                                    teamIds: [],
+                                })
+                            }
+                            id={`${titleId}-all-teams`}
+                        />
+                        <Label
+                            htmlFor={`${titleId}-all-teams`}
+                            className="text-sm text-muted-foreground"
+                        >
+                            Alle team
+                        </Label>
+                    </div>
+                    {!newInstruction.allTeams && (
+                        <div className="flex flex-wrap gap-2">
+                            {teams.map((team) => {
+                                const isSelected = newInstruction.teamIds.includes(team.id)
+                                return (
+                                    <button
+                                        key={team.id}
+                                        type="button"
+                                        onClick={() => {
+                                            const ids = isSelected
+                                                ? newInstruction.teamIds.filter((id) => id !== team.id)
+                                                : [...newInstruction.teamIds, team.id]
+                                            setNewInstruction({ ...newInstruction, teamIds: ids })
+                                        }}
+                                        className={`rounded-full border px-4 py-2 text-xs font-semibold transition-colors ${
+                                            isSelected
+                                                ? 'border-primary bg-primary/10 text-primary'
+                                                : 'border-border/70 bg-card/70 text-muted-foreground hover:border-primary/40'
+                                        }`}
+                                    >
+                                        {team.name}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 pt-2">
+                    <Button variant="outline" onClick={onClose}>
+                        Avbryt
+                    </Button>
+                    <Button onClick={createInstruction} disabled={instructionLoading}>
+                        {instructionLoading && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {instructionLoading ? 'Oppretter...' : 'Opprett'}
+                    </Button>
+                </div>
             </div>
         </ModalShell>
     )

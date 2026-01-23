@@ -117,7 +117,7 @@ export function GdprRequestsAdmin() {
                         {pendingRequests.map((request) => (
                             <div
                                 key={request.id}
-                                className="border rounded-lg p-4 bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900"
+                                className="border rounded-lg p-4 bg-warning/10 border-warning/30"
                             >
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="flex-1">
@@ -187,8 +187,8 @@ export function GdprRequestsAdmin() {
                                         {request.user?.full_name || 'Slettet bruker'}
                                     </span>
                                     <span className={`px-2 py-1 rounded text-xs ${request.status === 'completed'
-                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                                            ? 'bg-success/10 text-success'
+                                            : 'bg-destructive/10 text-destructive'
                                         }`}>
                                         {request.status === 'completed' ? 'Slettet' : 'Avslått'}
                                     </span>
