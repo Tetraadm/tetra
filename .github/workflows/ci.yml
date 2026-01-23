@@ -19,6 +19,11 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: placeholder_service_role_key
       ANTHROPIC_API_KEY: placeholder_anthropic_key
       RESEND_API_KEY: placeholder_resend_key
+      # Sentry - disable during CI build
+      SENTRY_ORG: placeholder
+      SENTRY_PROJECT: placeholder
+      # Skip Sentry source map upload in CI
+      SENTRY_AUTH_TOKEN: ""
     
     steps:
       - name: Checkout code
