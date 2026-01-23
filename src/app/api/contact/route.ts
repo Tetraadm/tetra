@@ -22,11 +22,36 @@ const contactRatelimit = (UPSTASH_URL && UPSTASH_TOKEN)
     })
     : null
 
+// In-memory rate limit fallback for when Upstash is not configured
+// Simple implementation: track IPs with timestamps
+const memoryRateLimits = new Map<string, { count: number; resetAt: number }>()
+const MEMORY_LIMIT = 10 // requests per hour
+const MEMORY_WINDOW = 60 * 60 * 1000 // 1 hour in ms
+
+function checkMemoryRateLimit(ip: string): { success: boolean; remaining: number } {
+    const now = Date.now()
+    const record = memoryRateLimits.get(ip)
+
+    if (!record || now > record.resetAt) {
+        memoryRateLimits.set(ip, { count: 1, resetAt: now + MEMORY_WINDOW })
+        return { success: true, remaining: MEMORY_LIMIT - 1 }
+    }
+
+    if (record.count >= MEMORY_LIMIT) {
+        return { success: false, remaining: 0 }
+    }
+
+    record.count++
+    return { success: true, remaining: MEMORY_LIMIT - record.count }
+}
+
 export async function POST(request: Request) {
     try {
         // Rate limiting check
+        const ip = getClientIp(request)
+
         if (contactRatelimit) {
-            const ip = getClientIp(request)
+            // Use Upstash rate limiter
             const { success, remaining, reset } = await contactRatelimit.limit(ip)
             if (!success) {
                 return NextResponse.json(
@@ -36,6 +61,20 @@ export async function POST(request: Request) {
                         headers: {
                             'X-RateLimit-Remaining': remaining.toString(),
                             'X-RateLimit-Reset': reset.toString(),
+                        }
+                    }
+                )
+            }
+        } else {
+            // Fallback to in-memory rate limiter
+            const { success, remaining } = checkMemoryRateLimit(ip)
+            if (!success) {
+                return NextResponse.json(
+                    { error: 'For mange henvendelser. Prøv igjen senere.' },
+                    {
+                        status: 429,
+                        headers: {
+                            'X-RateLimit-Remaining': remaining.toString(),
                         }
                     }
                 )

@@ -220,6 +220,12 @@ Alle tabeller har RLS-policyer som sikrer:
 - DSAR-støtte (Data Subject Access Request)
 - Audit trail for alle handlinger
 
+### Compliance og Sertifiseringer
+Vi arbeider kontinuerlig etter strenge internasjonale standarder:
+- **GDPR i EU:** Full etterlevelse av personvernforordningen med innebygd "Privacy by Design".
+- **ISO-sertifisering:** Plattformen og prosesser er utformet med mål om å møte kravene i **ISO 27001** (Informasjonssikkerhet) og **ISO 9001** (Kvalitetsstyring).
+- **Datasupverenitet:** Alle data lagres innenfor EØS (Sverige/Irland) for å sikre compliance.
+
 ---
 
 ## 📧 Varsling

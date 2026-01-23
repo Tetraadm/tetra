@@ -239,6 +239,7 @@ DECLARE
   v_ai_log_count INT;
   v_read_count INT;
   v_unanswered_count INT;
+  v_gdpr_requests_count INT;
 BEGIN
   v_caller_id := auth.uid();
   
@@ -280,12 +281,19 @@ BEGIN
   SELECT COUNT(*) INTO v_ai_log_count FROM public.ask_tetra_logs WHERE user_id = p_user_id;
   SELECT COUNT(*) INTO v_read_count FROM public.instruction_reads WHERE user_id = p_user_id;
   SELECT COUNT(*) INTO v_unanswered_count FROM public.ai_unanswered_questions WHERE user_id = p_user_id;
+  SELECT COUNT(*) INTO v_gdpr_requests_count FROM public.gdpr_requests WHERE user_id = p_user_id;
 
-  -- Delete from public schema (CASCADE will handle FKs)
+  -- Delete from public schema in correct order (FK dependencies)
+  -- 1. Delete GDPR requests first (references profiles)
+  DELETE FROM public.gdpr_requests WHERE user_id = p_user_id;
+  
+  -- 2. Delete activity logs
   DELETE FROM public.instruction_reads WHERE user_id = p_user_id;
   DELETE FROM public.ask_tetra_logs WHERE user_id = p_user_id;
   DELETE FROM public.ai_unanswered_questions WHERE user_id = p_user_id;
   DELETE FROM public.audit_logs WHERE user_id = p_user_id;
+  
+  -- 3. Delete profile last (CASCADE will handle any remaining FKs)
   DELETE FROM public.profiles WHERE id = p_user_id;
 
   GET DIAGNOSTICS v_profile_count = ROW_COUNT;
@@ -304,7 +312,8 @@ BEGIN
       'audit_logs_deleted', v_audit_count,
       'ai_logs_deleted', v_ai_log_count,
       'instruction_reads_deleted', v_read_count,
-      'unanswered_questions_deleted', v_unanswered_count
+      'unanswered_questions_deleted', v_unanswered_count,
+      'gdpr_requests_deleted', v_gdpr_requests_count
     )
   );
 
@@ -316,6 +325,7 @@ BEGIN
     'ai_logs_deleted', v_ai_log_count,
     'instruction_reads_deleted', v_read_count,
     'unanswered_questions_deleted', v_unanswered_count,
+    'gdpr_requests_deleted', v_gdpr_requests_count,
     'note', 'IMPORTANT: auth.users entry must be deleted separately via Supabase Dashboard or Admin API'
   );
 

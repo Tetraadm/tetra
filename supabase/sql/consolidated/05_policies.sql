@@ -176,8 +176,25 @@ CREATE POLICY "Admins manage folders"
 CREATE POLICY "Users view published instructions"
   ON public.instructions FOR SELECT
   USING (
-    org_id IN (SELECT org_id FROM public.profiles WHERE id = (SELECT auth.uid()))
-    AND status = 'published'
+    status = 'published'
+    AND deleted_at IS NULL
+    AND EXISTS (
+      SELECT 1
+      FROM public.profiles p
+      WHERE p.id = (SELECT auth.uid())
+        AND p.org_id = instructions.org_id
+        AND (
+          (p.team_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.instruction_teams it
+            WHERE it.instruction_id = instructions.id
+              AND it.team_id = p.team_id
+          ))
+          OR NOT EXISTS (
+            SELECT 1 FROM public.instruction_teams it
+            WHERE it.instruction_id = instructions.id
+          )
+        )
+    )
   );
 
 CREATE POLICY "Admins view all instructions"

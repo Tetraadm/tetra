@@ -24,6 +24,18 @@ export async function POST(request: NextRequest) {
 
     const { instructionId } = validation.data
 
+    // Get user's profile for org_id (source of truth)
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('org_id')
+      .eq('id', user.id)
+      .single()
+
+    if (profileError || !profile?.org_id) {
+      console.error('CONFIRM_READ: Failed to get user profile', profileError)
+      return NextResponse.json({ error: 'Kunne ikke verifisere bruker' }, { status: 500 })
+    }
+
     // Validate instruction access via team-scoped RPC (not just org)
     // This ensures users can only confirm reads for instructions they have access to
     const { data: accessibleInstructions, error: accessError } = await supabase
@@ -43,19 +55,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Ingen tilgang til denne instruksen' }, { status: 403 })
     }
 
-    // Get org_id from the matched instruction
-    const matchedInstruction = accessibleInstructions?.find(
-      (inst: { id: string; org_id: string }) => inst.id === instructionId
-    )
-
-    // Confirm the read
+    // Confirm the read using profile.org_id (guaranteed non-null)
     const { error } = await supabase
       .from('instruction_reads')
       .upsert(
         {
           instruction_id: instructionId,
           user_id: user.id,
-          org_id: matchedInstruction?.org_id,
+          org_id: profile.org_id,
           confirmed: true,
           confirmed_at: new Date().toISOString(),
           read_at: new Date().toISOString()

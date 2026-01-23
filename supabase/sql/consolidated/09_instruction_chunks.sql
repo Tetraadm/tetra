@@ -35,10 +35,24 @@ ON public.instruction_chunks
 FOR SELECT
 USING (
   EXISTS (
-    SELECT 1 FROM public.instructions i
+    SELECT 1
+    FROM public.instructions i
+    JOIN public.profiles p ON p.id = auth.uid()
     WHERE i.id = instruction_chunks.instruction_id
     AND i.status = 'published'
-    AND i.org_id = (SELECT org_id FROM public.profiles WHERE id = auth.uid())
+    AND i.deleted_at IS NULL
+    AND i.org_id = p.org_id
+    AND (
+      (p.team_id IS NOT NULL AND EXISTS (
+        SELECT 1 FROM public.instruction_teams it
+        WHERE it.instruction_id = i.id
+          AND it.team_id = p.team_id
+      ))
+      OR NOT EXISTS (
+        SELECT 1 FROM public.instruction_teams it
+        WHERE it.instruction_id = i.id
+      )
+    )
   )
 );
 
@@ -48,6 +62,15 @@ CREATE POLICY "Admins can manage chunks for their org instructions"
 ON public.instruction_chunks
 FOR ALL
 USING (
+  EXISTS (
+    SELECT 1 FROM public.instructions i
+    JOIN public.profiles p ON p.org_id = i.org_id
+    WHERE i.id = instruction_chunks.instruction_id
+    AND p.id = auth.uid()
+    AND p.role = 'admin'
+  )
+)
+WITH CHECK (
   EXISTS (
     SELECT 1 FROM public.instructions i
     JOIN public.profiles p ON p.org_id = i.org_id
@@ -83,10 +106,19 @@ SECURITY DEFINER
 SET search_path = public, extensions
 AS $$
 DECLARE
-  v_org_id uuid;
+  v_profile public.profiles%ROWTYPE;
   k constant int := 60;
 BEGIN
-  SELECT org_id INTO v_org_id FROM public.profiles WHERE id = p_user_id;
+  -- SECURITY: Prevent cross-user data access
+  IF auth.uid() IS NULL OR auth.uid() <> p_user_id THEN
+    RAISE EXCEPTION 'forbidden';
+  END IF;
+
+  SELECT * INTO v_profile FROM public.profiles WHERE id = p_user_id;
+
+  IF NOT FOUND THEN
+    RETURN;
+  END IF;
 
   RETURN QUERY
   WITH 
@@ -99,7 +131,19 @@ BEGIN
     FROM public.instruction_chunks c
     JOIN public.instructions i ON i.id = c.instruction_id
     WHERE i.status = 'published'
-      AND i.org_id = v_org_id
+      AND i.deleted_at IS NULL
+      AND i.org_id = v_profile.org_id
+      AND (
+        (v_profile.team_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM public.instruction_teams it
+          WHERE it.instruction_id = i.id
+            AND it.team_id = v_profile.team_id
+        ))
+        OR NOT EXISTS (
+          SELECT 1 FROM public.instruction_teams it
+          WHERE it.instruction_id = i.id
+        )
+      )
       AND c.embedding IS NOT NULL
       AND 1 - (c.embedding <=> query_embedding) > 0.2
     LIMIT match_count * 3
@@ -113,7 +157,19 @@ BEGIN
     FROM public.instruction_chunks c
     JOIN public.instructions i ON i.id = c.instruction_id
     WHERE i.status = 'published'
-      AND i.org_id = v_org_id
+      AND i.deleted_at IS NULL
+      AND i.org_id = v_profile.org_id
+      AND (
+        (v_profile.team_id IS NOT NULL AND EXISTS (
+          SELECT 1 FROM public.instruction_teams it
+          WHERE it.instruction_id = i.id
+            AND it.team_id = v_profile.team_id
+        ))
+        OR NOT EXISTS (
+          SELECT 1 FROM public.instruction_teams it
+          WHERE it.instruction_id = i.id
+        )
+      )
       AND c.fts @@ websearch_to_tsquery('norwegian', query_text)
     LIMIT match_count * 3
   ),
@@ -151,5 +207,7 @@ BEGIN
 END;
 $$;
 
--- Grant execute permission
-GRANT EXECUTE ON FUNCTION public.match_chunks_hybrid TO authenticated;
+-- Restrict execution permissions
+REVOKE EXECUTE ON FUNCTION public.match_chunks_hybrid(vector(1536), text, int, uuid) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.match_chunks_hybrid(vector(1536), text, int, uuid) FROM anon;
+GRANT EXECUTE ON FUNCTION public.match_chunks_hybrid(vector(1536), text, int, uuid) TO authenticated;

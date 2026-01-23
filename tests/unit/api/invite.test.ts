@@ -42,13 +42,16 @@ describe('Invite API', () => {
             const email = 'test.user@example.com'
             const sanitized = sanitizeEmail(email)
 
-            expect(sanitized).toBe('t***@example.com')
+            // New behavior: masks both local part AND domain
+            expect(sanitized).toBe('t***@e***.com')
             expect(sanitized).not.toContain('test.user')
+            expect(sanitized).not.toContain('example')
         })
 
         it('should handle various email formats', () => {
-            expect(sanitizeEmail('a@b.com')).toBe('a***@b.com')
-            expect(sanitizeEmail('long.email.address@domain.com')).toBe('l***@domain.com')
+            // New format: first char of local + *** @ first char of domain + *** . tld
+            expect(sanitizeEmail('a@b.com')).toBe('a***@b***.com')
+            expect(sanitizeEmail('long.email.address@domain.com')).toBe('l***@d***.com')
             expect(sanitizeEmail('')).toBe('***')
             expect(sanitizeEmail('invalid')).toBe('***')
         })

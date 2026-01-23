@@ -58,6 +58,35 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
         }
 
+        // Profile check
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role, org_id')
+            .eq('id', user.id)
+            .single()
+
+        if (!profile || profile.org_id !== orgId || profile.role !== 'admin') {
+            return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 })
+        }
+
+        // SECURITY: Validate that all teamIds belong to the user's org
+        if (teamIds.length > 0) {
+            const { count, error: teamCountError } = await supabase
+                .from('teams')
+                .select('*', { count: 'exact', head: true })
+                .eq('org_id', orgId)
+                .in('id', teamIds)
+
+            if (teamCountError) {
+                console.error('TEAM_VALIDATION_ERROR:', teamCountError)
+                return NextResponse.json({ error: 'Kunne ikke validere team' }, { status: 500 })
+            }
+
+            if (count !== teamIds.length) {
+                return NextResponse.json({ error: 'Ugyldige team-IDer (tilhører ikke din organisasjon)' }, { status: 400 })
+            }
+        }
+
         // Rate limiting
         const rateLimitKey = `user:${user.id}`
         const { success, isMisconfigured } = await uploadRatelimit.limit(rateLimitKey)
@@ -78,16 +107,7 @@ export async function POST(request: NextRequest) {
             )
         }
 
-        // Profile check
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('role, org_id')
-            .eq('id', user.id)
-            .single()
 
-        if (!profile || profile.org_id !== orgId || profile.role !== 'admin') {
-            return NextResponse.json({ error: 'Ingen tilgang' }, { status: 403 })
-        }
 
         // Keyword extraction
         const textForKeywords = `${title} ${content}`.trim()

@@ -38,6 +38,7 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 - **🔔 Varsling** – Automatiske varsler ved nye dokumenter
 - **👥 Multi-tenant** – Full isolasjon med Row Level Security
 - **📊 Audit Log** – GDPR-kompatibel aktivitetslogging
+- **🛡️ Compliance** – Bygget for EU GDPR og ISO 27001-krav
 
 ---
 

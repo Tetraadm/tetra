@@ -7,13 +7,30 @@ import { SupabaseClient } from '@supabase/supabase-js'
 
 /**
  * Sanitizes an email address for audit logging.
- * Converts "user@example.com" to "u***@example.com"
+ * GDPR-compliant: Masks both local and domain parts.
+ * Converts "user@example.com" to "u***@e***.com"
  */
 export function sanitizeEmail(email: string): string {
   if (!email || !email.includes('@')) return '***'
   const [local, domain] = email.split('@')
-  if (local.length <= 1) return `${local}***@${domain}`
-  return `${local[0]}***@${domain}`
+
+  // Mask local part
+  const maskedLocal = local.length <= 1 ? `${local}***` : `${local[0]}***`
+
+  // Mask domain part (keep TLD for context)
+  const domainParts = domain.split('.')
+  if (domainParts.length >= 2) {
+    const tld = domainParts[domainParts.length - 1]
+    const domainName = domainParts.slice(0, -1).join('.')
+    const maskedDomain = domainName.length <= 1
+      ? `${domainName}***`
+      : `${domainName[0]}***`
+    return `${maskedLocal}@${maskedDomain}.${tld}`
+  }
+
+  // Fallback for unusual domains
+  const maskedDomain = domain.length <= 1 ? `${domain}***` : `${domain[0]}***`
+  return `${maskedLocal}@${maskedDomain}`
 }
 
 /**

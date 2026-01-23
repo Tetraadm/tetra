@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
 // Types for RPC responses
@@ -25,7 +25,10 @@ type UserReadStatus = {
 
 export async function GET(request: NextRequest) {
   try {
+    // Use regular client for auth
     const supabase = await createClient()
+    // Use service-role client for RPC calls (only GRANTed to service_role)
+    const supabaseAdmin = createServiceRoleClient()
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -51,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // If instruction_id is provided, return user-level read status for that instruction
     if (instructionId) {
-      const { data: userReads, error: userReadsError } = await supabase
+      const { data: userReads, error: userReadsError } = await supabaseAdmin
         .rpc('get_instruction_user_reads', {
           p_instruction_id: instructionId,
           p_org_id: profile.org_id,
@@ -71,7 +74,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Otherwise, return aggregated instruction stats
-    const { data: stats, error: statsError } = await supabase
+    const { data: stats, error: statsError } = await supabaseAdmin
       .rpc('get_instruction_read_stats', {
         p_org_id: profile.org_id,
         p_limit: limit,
@@ -84,7 +87,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get total count for pagination
-    const { data: totalCount, error: countError } = await supabase
+    const { data: totalCount, error: countError } = await supabaseAdmin
       .rpc('count_org_instructions', { p_org_id: profile.org_id })
 
     if (countError) {

@@ -48,9 +48,23 @@ CREATE POLICY "Org members read instruction files"
     bucket_id = 'instructions'
     AND EXISTS (
       SELECT 1
-      FROM public.profiles p
-      WHERE p.id = (SELECT auth.uid())
-        AND p.org_id::TEXT = split_part(name, '/', 1)
+      FROM public.instructions i
+      JOIN public.profiles p ON p.id = (SELECT auth.uid())
+      WHERE i.file_path = storage.objects.name
+        AND i.status = 'published'
+        AND i.deleted_at IS NULL
+        AND i.org_id = p.org_id
+        AND (
+          (p.team_id IS NOT NULL AND EXISTS (
+            SELECT 1 FROM public.instruction_teams it
+            WHERE it.instruction_id = i.id
+              AND it.team_id = p.team_id
+          ))
+          OR NOT EXISTS (
+            SELECT 1 FROM public.instruction_teams it
+            WHERE it.instruction_id = i.id
+          )
+        )
     )
   );
 

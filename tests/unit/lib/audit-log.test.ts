@@ -3,11 +3,12 @@ import { sanitizeEmail, sanitizePII } from '@/lib/audit-log'
 
 describe('sanitizeEmail', () => {
     it('should redact email address correctly', () => {
-        expect(sanitizeEmail('john.doe@example.com')).toBe('j***@example.com')
+        // New behavior: masks both local part AND domain for GDPR compliance
+        expect(sanitizeEmail('john.doe@example.com')).toBe('j***@e***.com')
     })
 
     it('should handle single character local part', () => {
-        expect(sanitizeEmail('a@example.com')).toBe('a***@example.com')
+        expect(sanitizeEmail('a@example.com')).toBe('a***@e***.com')
     })
 
     it('should handle empty/invalid email', () => {
@@ -15,9 +16,11 @@ describe('sanitizeEmail', () => {
         expect(sanitizeEmail('invalid')).toBe('***')
     })
 
-    it('should preserve domain', () => {
+    it('should mask domain for privacy', () => {
         const result = sanitizeEmail('user@tetrivo.com')
-        expect(result).toContain('@tetrivo.com')
+        // Domain is now masked, only first char + *** + tld visible
+        expect(result).toBe('u***@t***.com')
+        expect(result).not.toContain('tetrivo')
     })
 })
 
@@ -31,7 +34,7 @@ describe('sanitizePII', () => {
         const result = sanitizePII(input)
 
         expect(result.name).toBe('John Doe')
-        expect(result.email).toBe('j***@example.com')
+        expect(result.email).toBe('j***@e***.com')
         expect(result.role).toBe('admin')
     })
 
@@ -45,7 +48,7 @@ describe('sanitizePII', () => {
         }
         const result = sanitizePII(input)
 
-        expect((result.details as Record<string, unknown>).inviteeEmail).toBe('i***@example.com')
+        expect((result.details as Record<string, unknown>).inviteeEmail).toBe('i***@e***.com')
         expect((result.details as Record<string, unknown>).teamId).toBe('123')
     })
 
@@ -59,10 +62,10 @@ describe('sanitizePII', () => {
         }
         const result = sanitizePII(input)
 
-        expect(result.email).toBe('a***@b.com')
-        expect(result.inviteeEmail).toBe('c***@d.com')
-        expect(result.user_email).toBe('e***@f.com')
-        expect(result.userEmail).toBe('g***@h.com')
+        expect(result.email).toBe('a***@b***.com')
+        expect(result.inviteeEmail).toBe('c***@d***.com')
+        expect(result.user_email).toBe('e***@f***.com')
+        expect(result.userEmail).toBe('g***@h***.com')
         expect(result.unrelated).toBe('safe')
     })
 
