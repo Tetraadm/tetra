@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { pool, applyMigrations, queryAsUser } from './infra'
-import { v4 as uuidv4 } from 'uuid'
+import { randomUUID } from 'crypto'
 
 // Test Data
-const orgA_id = uuidv4()
-const orgB_id = uuidv4()
+const orgA_id = randomUUID()
+const orgB_id = randomUUID()
 
-const userAdminA_id = uuidv4()
-const userMemberA_id = uuidv4()
-const userAdminB_id = uuidv4()
+const userAdminA_id = randomUUID()
+const userMemberA_id = randomUUID()
+const userAdminB_id = randomUUID()
 
-const teamA1_id = uuidv4()
-const teamB1_id = uuidv4()
+const teamA1_id = randomUUID()
+const teamB1_id = randomUUID()
 
 describe('Multi-tenant RLS', () => {
     beforeAll(async () => {
@@ -59,7 +59,7 @@ describe('Multi-tenant RLS', () => {
     it('should isolate instructions between organizations', async () => {
         const client = await pool.connect()
         try {
-            const instructionA_id = uuidv4()
+            const instructionA_id = randomUUID()
 
             // Admin A creates instruction
             await queryAsUser(client, userAdminA_id, 'authenticated', `
@@ -88,8 +88,8 @@ describe('Multi-tenant RLS', () => {
     it('should enforce team access logic for published instructions', async () => {
         const client = await pool.connect()
         try {
-            const openInstructionId = uuidv4()
-            const teamInstructionId = uuidv4()
+            const openInstructionId = randomUUID()
+            const teamInstructionId = randomUUID()
 
             // Insert as Admin A (bypassing RLS or using admin RLS which allows insert)
             // Note: Admin insert usually requires specifying org_id matching profile.
@@ -122,7 +122,7 @@ describe('Multi-tenant RLS', () => {
             expect(ids).toContain(teamInstructionId)
 
             // Now remove Member A from team A1 (simulate another user Member A2 who is teamless)
-            const userMemberA2_id = uuidv4()
+            const userMemberA2_id = randomUUID()
             await client.query(`INSERT INTO auth.users (id, email) VALUES ($1, 'a2@t.com')`, [userMemberA2_id])
             await client.query(`INSERT INTO public.profiles (id, full_name, role, org_id) VALUES ($1, 'A2', 'employee', $2)`, [userMemberA2_id, orgA_id])
 
@@ -153,7 +153,7 @@ describe('Multi-tenant RLS', () => {
     it('should filter soft-deleted instructions', async () => {
         const client = await pool.connect()
         try {
-            const deletedId = uuidv4()
+            const deletedId = randomUUID()
 
             await queryAsUser(client, userAdminA_id, 'authenticated', `
         INSERT INTO public.instructions (id, title, status, severity, org_id, deleted_at)

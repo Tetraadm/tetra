@@ -1,5 +1,12 @@
--- Mock Supabase Auth environment
+-- Mock Supabase environment for RLS testing
+-- This file is run BEFORE consolidated migrations
+
+-- Create extensions schema (Supabase puts extensions here)
+CREATE SCHEMA IF NOT EXISTS extensions;
+
+-- Mock auth schema
 CREATE SCHEMA IF NOT EXISTS auth;
+
 CREATE TABLE IF NOT EXISTS auth.users (
     id uuid PRIMARY KEY,
     email text UNIQUE,
@@ -10,7 +17,6 @@ CREATE TABLE IF NOT EXISTS auth.users (
 
 -- Mock session variables functions
 -- In Supabase, these are provided by the GoTrue/PostgREST environment.
--- In standard Postgres, we can simulate them using specific settings or a mock function.
 
 -- Mock auth.uid() to read from a transaction-local setting 'request.jwt.claim.sub'
 CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid AS $$
@@ -25,5 +31,8 @@ CREATE OR REPLACE FUNCTION auth.role() RETURNS text AS $$
     )::text;
 $$ LANGUAGE SQL STABLE;
 
--- Mock basic extensions if they are expected (pgcrypto usually handled by 01_extensions)
--- vector is handled by 01_extensions too.
+-- Enable pgcrypto for gen_random_uuid() (already in pgvector image)
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+-- Grant usage on extensions schema
+GRANT USAGE ON SCHEMA extensions TO PUBLIC;
