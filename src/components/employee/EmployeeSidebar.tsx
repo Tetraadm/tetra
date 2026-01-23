@@ -42,7 +42,7 @@ export function EmployeeSidebar({
         <div className="flex items-center gap-3 min-w-0">
           <div className="relative w-9 h-9 flex-shrink-0">
             <Image
-              src="/tetrivo-logo.png"
+              src="/tetrivo-logo.svg"
               alt="Tetrivo"
               fill
               className="object-contain"

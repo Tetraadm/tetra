@@ -45,7 +45,7 @@ export function EmployeeMobileSidebar({
           <div className="flex items-center gap-3">
             <div className="relative w-9 h-9">
               <Image
-                src="/tetrivo-logo.png"
+                src="/tetrivo-logo.svg"
                 alt="Tetrivo"
                 fill
                 className="object-contain"

@@ -116,7 +116,7 @@ export default function LoginPage() {
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 rounded-xl blur-lg group-hover:blur-xl transition-all" />
                 <Image
-                  src="/tetrivo-logo.png"
+                  src="/tetrivo-logo.svg"
                   alt="Tetrivo"
                   width={48}
                   height={48}
@@ -187,7 +187,7 @@ export default function LoginPage() {
         <div className="flex items-center justify-between p-6 lg:p-8">
           <Link href="/" className="flex items-center gap-2 lg:hidden">
             <Image
-              src="/tetrivo-logo.png"
+              src="/tetrivo-logo.svg"
               alt="Tetrivo"
               width={36}
               height={36}

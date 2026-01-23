@@ -260,7 +260,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       <div style={styles.decorShape2} />
       <div style={styles.card}>
         <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'center' }}>
-          <TetraLogo variant="full" />
+          <TetraLogo />
         </div>
         <h1 style={styles.title}>Du er invitert!</h1>
         <p style={styles.subtitle}>

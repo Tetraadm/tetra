@@ -60,8 +60,8 @@ export function AdminSidebar({
         item.id === "ubesvarte" && unansweredCount > 0
             ? { ...item, badge: unansweredCount }
             : item.id === "gdpr" && gdprPendingCount > 0
-              ? { ...item, badge: gdprPendingCount }
-              : item
+                ? { ...item, badge: gdprPendingCount }
+                : item
     );
 
     return (
@@ -75,7 +75,7 @@ export function AdminSidebar({
             <div className="flex items-center gap-3 px-4 h-16 border-b border-sidebar-border">
                 <div className="relative w-10 h-10 flex-shrink-0">
                     <Image
-                        src="/tetrivo-logo.png"
+                        src="/tetrivo-logo.svg"
                         alt="Tetrivo"
                         fill
                         className="object-contain"

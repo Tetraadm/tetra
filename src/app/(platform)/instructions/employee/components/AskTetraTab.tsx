@@ -72,7 +72,7 @@ export default function AskTetraTab({
         <div className="flex-1 flex flex-col items-center justify-center p-6">
           <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
             <Image
-              src="/tetrivo-logo.png"
+              src="/tetrivo-logo.svg"
               alt="Tetrivo AI"
               width={40}
               height={40}

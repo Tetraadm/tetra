@@ -35,7 +35,7 @@ export function AppSidebar({ tabs, activeTab, onTabChange, open, onClose }: AppS
                 )}
             >
                 <div className="flex h-16 items-center justify-between px-4 border-b border-border lg:hidden">
-                    <TetraLogo variant="logo-only" size={48} />
+                    <TetraLogo size={48} />
                     <Button variant="ghost" size="icon" onClick={onClose}>
                         <X className="h-5 w-5" />
                     </Button>
