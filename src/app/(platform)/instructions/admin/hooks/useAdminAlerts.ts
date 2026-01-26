@@ -13,6 +13,8 @@ type UseAdminAlertsOptions = {
   initialAlerts: Alert[]
   supabase: SupabaseClient
   onCloseCreateAlert?: () => void
+  onCloseEditAlert?: () => void
+  onOpenEditAlert?: () => void
 }
 
 export type NewAlertState = {
@@ -27,7 +29,9 @@ export function useAdminAlerts({
   profile,
   initialAlerts,
   supabase,
-  onCloseCreateAlert
+  onCloseCreateAlert,
+  onCloseEditAlert,
+  onOpenEditAlert
 }: UseAdminAlertsOptions) {
   const [alerts, setAlerts] = useState<Alert[]>(initialAlerts)
   const [alertsHasMore, setAlertsHasMore] = useState(initialAlerts.length >= PAGE_SIZE)
@@ -40,6 +44,14 @@ export function useAdminAlerts({
     allTeams: true
   })
   const [alertLoading, setAlertLoading] = useState(false)
+  
+  // Edit alert state
+  const [editingAlert, setEditingAlert] = useState<Alert | null>(null)
+  const [editAlertTitle, setEditAlertTitle] = useState('')
+  const [editAlertDescription, setEditAlertDescription] = useState('')
+  const [editAlertSeverity, setEditAlertSeverity] = useState('')
+  const [editAlertTeams, setEditAlertTeams] = useState<string[]>([])
+  const [editAlertAllTeams, setEditAlertAllTeams] = useState(true)
 
   const createAlert = useCallback(async () => {
     if (!newAlert.title.trim()) return
@@ -169,7 +181,99 @@ export function useAdminAlerts({
     }
   }, [alerts, profile.id, profile.org_id, supabase])
 
+  const openEditAlert = useCallback(async (alert: Alert) => {
+    setEditingAlert(alert)
+    setEditAlertTitle(alert.title)
+    setEditAlertDescription(alert.description || '')
+    setEditAlertSeverity(alert.severity)
 
+    // Load current team mappings
+    const { data: teamMappings } = await supabase
+      .from('alert_teams')
+      .select('team_id')
+      .eq('alert_id', alert.id)
+
+    const teamIds = teamMappings?.map(t => t.team_id) || []
+    setEditAlertTeams(teamIds)
+    setEditAlertAllTeams(teamIds.length === 0)
+    onOpenEditAlert?.()
+  }, [onOpenEditAlert, supabase])
+
+  const saveEditAlert = useCallback(async () => {
+    if (!editingAlert || !editAlertTitle.trim()) return
+    if (!editAlertAllTeams && editAlertTeams.length === 0) {
+      toast.error('Velg minst ett team eller bruk Alle team')
+      return
+    }
+    setAlertLoading(true)
+
+    try {
+      const { data, error } = await supabase
+        .from('alerts')
+        .update({
+          title: editAlertTitle,
+          description: editAlertDescription,
+          severity: editAlertSeverity
+        })
+        .eq('id', editingAlert.id)
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Update team mappings
+      // First delete existing mappings
+      await supabase
+        .from('alert_teams')
+        .delete()
+        .eq('alert_id', editingAlert.id)
+
+      // Then insert new mappings (if not all teams)
+      const teamIdsToLink = editAlertAllTeams ? [] : editAlertTeams
+      if (teamIdsToLink.length > 0) {
+        const { error: teamError } = await supabase.from('alert_teams').insert(
+          teamIdsToLink.map(teamId => ({
+            alert_id: editingAlert.id,
+            team_id: teamId
+          }))
+        )
+        if (teamError) console.error('Alert teams link error:', teamError)
+      }
+
+      setAlerts(prev => prev.map(a => a.id === editingAlert.id ? data : a))
+      setEditingAlert(null)
+      onCloseEditAlert?.()
+      toast.success('Kunngjøring oppdatert')
+
+      await logAuditEventClient(supabase, {
+        orgId: profile.org_id,
+        userId: profile.id,
+        actionType: 'update_alert',
+        entityType: 'alert',
+        entityId: data.id,
+        details: {
+          alert_title: data.title,
+          severity: data.severity
+        }
+      })
+    } catch (error) {
+      console.error('Save edit alert error:', error)
+      toast.error('Kunne ikke lagre endringer. Prøv igjen.')
+    } finally {
+      setAlertLoading(false)
+    }
+  }, [
+    editAlertAllTeams,
+    editAlertDescription,
+    editAlertSeverity,
+    editAlertTeams,
+    editAlertTitle,
+    editingAlert,
+    onCloseEditAlert,
+    profile.id,
+    profile.org_id,
+    supabase
+  ])
 
 const loadMoreAlerts = useCallback(async () => {
   if (alertsLoadingMore || !alertsHasMore) return
@@ -206,6 +310,19 @@ const loadMoreAlerts = useCallback(async () => {
     createAlert,
     toggleAlert,
     deleteAlert,
+    openEditAlert,
+    saveEditAlert,
+    editingAlert,
+    editAlertTitle,
+    setEditAlertTitle,
+    editAlertDescription,
+    setEditAlertDescription,
+    editAlertSeverity,
+    setEditAlertSeverity,
+    editAlertTeams,
+    setEditAlertTeams,
+    editAlertAllTeams,
+    setEditAlertAllTeams,
     alertsHasMore,
     alertsLoadingMore,
     loadMoreAlerts

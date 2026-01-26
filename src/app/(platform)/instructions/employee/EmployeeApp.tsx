@@ -100,6 +100,8 @@ export default function EmployeeApp({
   }, []);
 
   const handleLogout = async () => {
+    // Signal intentional logout to prevent "session expired" error message
+    window.dispatchEvent(new CustomEvent('intentional-logout'));
     await supabase.auth.signOut();
     router.push("/login");
   };

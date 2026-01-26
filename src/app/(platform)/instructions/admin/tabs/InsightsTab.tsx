@@ -1,8 +1,9 @@
 "use client";
 
-import { Eye, MessageCircleQuestion, FileText } from "lucide-react";
+import { Eye, MessageCircleQuestion, FileText, HelpCircle } from "lucide-react";
 import type { Instruction } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Props = {
   instructions: Instruction[];
@@ -14,25 +15,9 @@ type Props = {
 };
 
 export default function InsightsTab({ instructions, insightStats }: Props) {
-  const fallbackDocs = [
-    { name: "Brannverninstruks", views: 234, percent: 100 },
-    { name: "Verneutstyr - bruk og vedlikehold", views: 198, percent: 85 },
-    { name: "Rutiner for farlig avfall", views: 156, percent: 67 },
-    { name: "Førstehjelpsprosedyrer", views: 134, percent: 57 },
-    { name: "Ergonomi på arbeidsplassen", views: 89, percent: 38 },
-  ];
-  const popularDocs = instructions.length
-    ? instructions.slice(0, 5).map((instruction, index) => ({
-      name: instruction.title,
-      views: Math.max(80, 240 - index * 35),
-      percent: Math.max(35, 100 - index * 15),
-    }))
-    : fallbackDocs;
-
-  const statusItems = [
-    { label: "Lesebekreftelser", value: 87, color: "bg-chart-2" },
-    { label: "Dokumenter oppdatert", value: 100, color: "bg-chart-4" },
-  ];
+  // Use real instruction data for "popular docs" display
+  const publishedInstructions = instructions.filter(i => i.status === "published");
+  const topInstructions = publishedInstructions.slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -55,66 +40,93 @@ export default function InsightsTab({ instructions, insightStats }: Props) {
         <StatCard
           title="Spørsmål stilt til AI"
           value={insightStats.aiQuestions}
-          description="Siste 90 dager"
+          description="Totalt antall spørsmål"
           icon={MessageCircleQuestion}
         />
         <StatCard
           title="Ubesvarte spørsmål"
           value={insightStats.unanswered}
           description="Venter på oppfølging"
-          icon={FileText}
+          icon={HelpCircle}
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="font-semibold text-foreground mb-4">
-            Mest leste instrukser
-          </h3>
-          <div className="space-y-4">
-            {popularDocs.map((doc, index) => (
-              <div key={`${doc.name}-${index}`} className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground truncate pr-4">
-                    {doc.name}
-                  </span>
-                  <span className="text-muted-foreground flex-shrink-0">
-                    {doc.views}
-                  </span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Publiserte instrukser
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {topInstructions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Ingen publiserte instrukser ennå.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {topInstructions.map((instruction) => (
                   <div
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{ width: `${doc.percent}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="bg-card rounded-xl border border-border p-5">
-          <h3 className="font-semibold text-foreground mb-4">Status</h3>
-          <div className="space-y-4">
-            {statusItems.map((item) => (
-              <div key={item.label} className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {item.label}
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${item.color} rounded-full`}
-                      style={{ width: `${item.value}%` }}
-                    />
+                    key={instruction.id}
+                    className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                  >
+                    <span className="text-sm text-foreground truncate pr-4">
+                      {instruction.title}
+                    </span>
+                    <span className="text-xs text-muted-foreground capitalize">
+                      {instruction.severity === "critical"
+                        ? "Kritisk"
+                        : instruction.severity === "medium"
+                        ? "Middels"
+                        : "Lav"}
+                    </span>
                   </div>
-                  <span className="text-sm font-medium text-foreground">
-                    {item.value}%
-                  </span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Sammendrag</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Totalt instrukser
+              </span>
+              <span className="text-sm font-medium text-foreground">
+                {instructions.length}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Publiserte
+              </span>
+              <span className="text-sm font-medium text-foreground">
+                {publishedInstructions.length}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Totalt lesetall
+              </span>
+              <span className="text-sm font-medium text-foreground">
+                {insightStats.instructionsOpened}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                AI-interaksjoner
+              </span>
+              <span className="text-sm font-medium text-foreground">
+                {insightStats.aiQuestions}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

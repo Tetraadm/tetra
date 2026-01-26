@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { createClient } from "@/lib/supabase/client";
 import { cleanupInviteData } from "@/lib/invite-cleanup";
@@ -33,6 +33,7 @@ import {
   CreateInstructionModal,
   CreateTeamModal,
   DisclaimerModal,
+  EditAlertModal,
   EditInstructionModal,
   EditUserModal,
   InviteUserModal,
@@ -111,6 +112,7 @@ export default function AdminDashboard({
   const [showCreateInstruction, setShowCreateInstruction] = useState(false);
   const [showInviteUser, setShowInviteUser] = useState(false);
   const [showCreateAlert, setShowCreateAlert] = useState(false);
+  const [showEditAlert, setShowEditAlert] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [showEditInstruction, setShowEditInstruction] = useState(false);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
@@ -239,6 +241,19 @@ export default function AdminDashboard({
     createAlert,
     toggleAlert,
     deleteAlert,
+    openEditAlert,
+    saveEditAlert,
+    editingAlert,
+    editAlertTitle,
+    setEditAlertTitle,
+    editAlertDescription,
+    setEditAlertDescription,
+    editAlertSeverity,
+    setEditAlertSeverity,
+    editAlertTeams,
+    setEditAlertTeams,
+    editAlertAllTeams,
+    setEditAlertAllTeams,
     alertsHasMore,
     alertsLoadingMore,
     loadMoreAlerts,
@@ -247,6 +262,8 @@ export default function AdminDashboard({
     initialAlerts,
     supabase,
     onCloseCreateAlert: () => setShowCreateAlert(false),
+    onCloseEditAlert: () => setShowEditAlert(false),
+    onOpenEditAlert: () => setShowEditAlert(true),
   });
 
   const {
@@ -326,6 +343,73 @@ export default function AdminDashboard({
     });
   }, [unansweredQuestions, searchValue]);
 
+  // Global search results for dropdown
+  const globalSearchResults = useMemo(() => {
+    if (!searchValue || searchValue.length < 2) return [];
+
+    const results: Array<{
+      id: string;
+      title: string;
+      type: "instruction" | "user" | "alert" | "team";
+      tab: string;
+    }> = [];
+
+    // Search instructions
+    instructions.forEach((instruction) => {
+      if (instruction.title.toLowerCase().includes(searchValue)) {
+        results.push({
+          id: instruction.id,
+          title: instruction.title,
+          type: "instruction",
+          tab: "instrukser",
+        });
+      }
+    });
+
+    // Search users
+    users.forEach((user) => {
+      const name = user.full_name || user.email || "";
+      if (name.toLowerCase().includes(searchValue)) {
+        results.push({
+          id: user.id,
+          title: name,
+          type: "user",
+          tab: "brukere",
+        });
+      }
+    });
+
+    // Search alerts
+    alerts.forEach((alert) => {
+      if (alert.title.toLowerCase().includes(searchValue)) {
+        results.push({
+          id: alert.id,
+          title: alert.title,
+          type: "alert",
+          tab: "kunngjøringer",
+        });
+      }
+    });
+
+    // Search teams
+    teams.forEach((team) => {
+      if (team.name.toLowerCase().includes(searchValue)) {
+        results.push({
+          id: team.id,
+          title: team.name,
+          type: "team",
+          tab: "team",
+        });
+      }
+    });
+
+    return results;
+  }, [searchValue, instructions, users, alerts, teams]);
+
+  const handleSearchResultClick = useCallback((result: { tab: string }) => {
+    setTab(result.tab as typeof tab);
+  }, []);
+
   const isMissingSessionError = (error: { name?: string; message?: string }) => {
     if (error.name === "AuthSessionMissingError") {
       return true;
@@ -335,6 +419,8 @@ export default function AdminDashboard({
   };
 
   const handleLogout = async () => {
+    // Signal intentional logout to prevent "session expired" error message
+    window.dispatchEvent(new CustomEvent('intentional-logout'));
     const { error } = await supabase.auth.signOut();
     if (error && !isMissingSessionError(error)) {
       toast.error("Kunne ikke logge ut. Prøv igjen.");
@@ -372,6 +458,8 @@ export default function AdminDashboard({
             organizationName={organization.name}
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
+            searchResults={globalSearchResults}
+            onSearchResultClick={handleSearchResultClick}
             onOpenProfile={() => setShowProfile(true)}
             onOpenSettings={() => setShowSettings(true)}
             onOpenNotifications={() => setTab("kunngjøringer")}
@@ -446,6 +534,7 @@ export default function AdminDashboard({
                 alerts={searchedAlerts}
                 toggleAlert={toggleAlert}
                 deleteAlert={deleteAlert}
+                openEditAlert={openEditAlert}
                 setShowCreateAlert={setShowCreateAlert}
                 alertsHasMore={alertsHasMore}
                 alertsLoadingMore={alertsLoadingMore}
@@ -650,6 +739,25 @@ export default function AdminDashboard({
         alertLoading={alertLoading}
         createAlert={createAlert}
         onClose={() => setShowCreateAlert(false)}
+      />
+
+      <EditAlertModal
+        open={showEditAlert}
+        editingAlert={editingAlert}
+        editAlertTitle={editAlertTitle}
+        setEditAlertTitle={setEditAlertTitle}
+        editAlertDescription={editAlertDescription}
+        setEditAlertDescription={setEditAlertDescription}
+        editAlertSeverity={editAlertSeverity}
+        setEditAlertSeverity={setEditAlertSeverity}
+        editAlertTeams={editAlertTeams}
+        setEditAlertTeams={setEditAlertTeams}
+        editAlertAllTeams={editAlertAllTeams}
+        setEditAlertAllTeams={setEditAlertAllTeams}
+        teams={teams}
+        alertLoading={alertLoading}
+        saveEditAlert={saveEditAlert}
+        onClose={() => setShowEditAlert(false)}
       />
 
       <DisclaimerModal

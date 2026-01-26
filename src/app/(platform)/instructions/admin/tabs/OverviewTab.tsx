@@ -2,7 +2,7 @@ import {
   AlertTriangle,
   Users,
   FileText,
-  CheckCircle2,
+  Activity,
 } from "lucide-react";
 import type { Profile, Alert, Instruction } from "@/lib/types";
 import { severityColor, severityLabel } from "@/lib/ui-helpers";
@@ -17,11 +17,10 @@ type Props = {
   instructions: Instruction[];
   alerts: Alert[];
   unansweredCount: number;
-  setTab: (tab: "kunngjøringer" | "aktivitetslogg") => void;
+  setTab: (tab: "kunngjøringer" | "aktivitetslogg" | "innsikt") => void;
 };
 
 export default function OverviewTab({
-  profile,
   users,
   instructions,
   alerts,
@@ -32,36 +31,9 @@ export default function OverviewTab({
   const publishedInstructions = instructions.filter(
     (instruction) => instruction.status === "published"
   );
-
-  const recentActivity = [
-    {
-      action: "Ny bruker registrert",
-      user: profile.full_name || "Administrator",
-      time: "2 min siden",
-    },
-    {
-      action: "Instruks oppdatert",
-      user: "HMS-team",
-      time: "15 min siden",
-    },
-    {
-      action: "Kunngjøring publisert",
-      user: profile.full_name || "Administrator",
-      time: "1 time siden",
-    },
-    {
-      action: "Nye lesebekreftelser",
-      user: "Organisasjon",
-      time: "2 timer siden",
-    },
-  ];
-
-  const completionRate = instructions.length
-    ? Math.min(
-      100,
-      Math.round((publishedInstructions.length / instructions.length) * 100)
-    )
-    : 0;
+  const draftInstructions = instructions.filter(
+    (instruction) => instruction.status === "draft"
+  );
 
   return (
     <div className="space-y-6">
@@ -70,7 +42,7 @@ export default function OverviewTab({
           Oversikt
         </h1>
         <p className="text-muted-foreground mt-1">
-          Velkommen tilbake! Her er en oversikt over din HMS-status.
+          Velkommen tilbake! Her er en oversikt over din organisasjon.
         </p>
       </div>
 
@@ -78,30 +50,26 @@ export default function OverviewTab({
         <StatCard
           title="Totalt antall brukere"
           value={users.length}
-          trend={{ value: 12, isPositive: true }}
-          description="Siste 30 dager"
+          description="I organisasjonen"
           icon={Users}
         />
         <StatCard
-          title="Aktive instrukser"
+          title="Publiserte instrukser"
           value={publishedInstructions.length}
-          trend={{ value: 8, isPositive: true }}
-          description="Totalt dokumenter"
+          description={`${draftInstructions.length} i kladd`}
           icon={FileText}
         />
         <StatCard
-          title="Fullførte kurs"
-          value={`${completionRate}%`}
-          trend={{ value: 3, isPositive: true }}
-          description="Gjennomføringsrate"
-          icon={CheckCircle2}
+          title="Aktive kunngjøringer"
+          value={activeAlerts.length}
+          description={`${alerts.length} totalt`}
+          icon={AlertTriangle}
         />
         <StatCard
           title="Ubesvarte spørsmål"
           value={unansweredCount}
-          trend={{ value: 2, isPositive: false }}
-          description="Venter på svar"
-          icon={AlertTriangle}
+          description="Venter på oppfølging"
+          icon={Activity}
         />
       </div>
 
@@ -154,7 +122,7 @@ export default function OverviewTab({
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Nylig aktivitet</CardTitle>
+              <CardTitle className="text-base">Aktivitetslogg</CardTitle>
               <button
                 type="button"
                 className="text-sm text-primary hover:underline"
@@ -164,64 +132,44 @@ export default function OverviewTab({
               </button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {recentActivity.map((item, index) => (
-              <div
-                key={`${item.action}-${index}`}
-                className="flex items-center gap-3 py-2 border-b border-border last:border-0"
-              >
-                <div className="w-2 h-2 rounded-full bg-primary" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {item.action}
-                  </p>
-                  <p className="text-xs text-muted-foreground">{item.user}</p>
-                </div>
-                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                  {item.time}
-                </span>
-              </div>
-            ))}
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Gå til aktivitetsloggen for å se nylige hendelser i organisasjonen.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setTab("aktivitetslogg")}
+              className="w-full mt-4"
+            >
+              Åpne aktivitetslogg
+            </Button>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">HMS-status</CardTitle>
-              <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full font-medium">
-                God
-              </span>
+              <CardTitle className="text-base">Innsikt</CardTitle>
+              <button
+                type="button"
+                className="text-sm text-primary hover:underline"
+                onClick={() => setTab("innsikt")}
+              >
+                Se detaljer
+              </button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {[
-              { label: "Lesebekreftelser", value: 87, color: "bg-primary" },
-              { label: "Kurs fullført", value: 94, color: "bg-chart-2" },
-              { label: "Dokumenter oppdatert", value: 100, color: "bg-chart-4" },
-              { label: "GDPR-samsvar", value: 100, color: "bg-chart-3" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  {item.label}
-                </span>
-                <div className="flex items-center gap-2">
-                  <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${item.color} rounded-full`}
-                      style={{ width: `${item.value}%` }}
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-foreground">
-                    {item.value}%
-                  </span>
-                </div>
-              </div>
-            ))}
-            <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
-              <CheckCircle2 className="w-4 h-4 text-success" />
-              Oppdatert for siste 30 dager
-            </div>
+          <CardContent>
+            <p className="text-sm text-muted-foreground">
+              Se statistikk over instrukser åpnet, AI-spørsmål og mer.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => setTab("innsikt")}
+              className="w-full mt-4"
+            >
+              Åpne innsikt
+            </Button>
           </CardContent>
         </Card>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Megaphone, MoreHorizontal, Pin } from "lucide-react";
+import { Plus, Megaphone, MoreHorizontal, Pin, Pencil } from "lucide-react";
 import type { Alert } from "@/lib/types";
 import { severityLabel, severityColor } from "@/lib/ui-helpers";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent } from "@/components/ui/card";
@@ -17,6 +18,7 @@ type Props = {
   alerts: Alert[];
   toggleAlert: (alertId: string, active: boolean) => void;
   deleteAlert: (alertId: string) => void;
+  openEditAlert: (alert: Alert) => void;
   setShowCreateAlert: (show: boolean) => void;
   alertsHasMore: boolean;
   alertsLoadingMore: boolean;
@@ -27,6 +29,7 @@ export default function AlertsTab({
   alerts,
   toggleAlert,
   deleteAlert,
+  openEditAlert,
   setShowCreateAlert,
   alertsHasMore,
   alertsLoadingMore,
@@ -91,9 +94,14 @@ export default function AlertsTab({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEditAlert(alert)}>
+                      <Pencil className="w-4 h-4 mr-2" />
+                      Rediger
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => toggleAlert(alert.id, alert.active)}>
                       {alert.active ? "Deaktiver" : "Aktiver"}
                     </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem className="text-destructive" onClick={() => deleteAlert(alert.id)}>
                       Slett
                     </DropdownMenuItem>
