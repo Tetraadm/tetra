@@ -51,6 +51,7 @@ export default async function AdminPage() {
     .from('instructions')
     .select('*, folders(*)')
     .eq('org_id', profile.org_id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(ADMIN_PAGE_SIZE)
 

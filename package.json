@@ -28,6 +28,7 @@
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "@tailwindcss/postcss": "^4.1.18",
+    "@thednp/dommatrix": "^3.0.2",
     "@upstash/ratelimit": "^2.0.7",
     "@upstash/redis": "^1.36.0",
     "autoprefixer": "^10.4.23",

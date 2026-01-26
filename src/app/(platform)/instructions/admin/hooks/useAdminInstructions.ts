@@ -463,6 +463,8 @@ export function useAdminInstructions({
 
   const filteredInstructions = useMemo(() => {
     return instructions.filter(i => {
+      if (i.deleted_at) return false
+
       const folderMatch = selectedFolder === 'all'
         ? true
         : selectedFolder === 'none'
@@ -487,6 +489,7 @@ export function useAdminInstructions({
         .from('instructions')
         .select('*, folders(*)')
         .eq('org_id', profile.org_id)
+        .is('deleted_at', null)
         .order('created_at', { ascending: false })
         .range(offset, offset + PAGE_SIZE - 1)
 

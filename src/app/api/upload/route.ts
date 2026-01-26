@@ -9,6 +9,7 @@ import { extractKeywords } from '@/lib/keyword-extraction'
 import { generateEmbedding, generateEmbeddings, prepareTextForEmbedding } from '@/lib/embeddings'
 import { chunkText, prepareChunksForEmbedding } from '@/lib/chunking'
 import { z } from 'zod'
+import DOMMatrixPolyfill from '@thednp/dommatrix'
 
 
 // Zod schema for upload form validation
@@ -30,6 +31,39 @@ const PDF_TIMEOUT_MS = parseInt(process.env.PDF_TIMEOUT_MS || '20000', 10) // P0
 const PDF_PAGE_TIMEOUT_MS = parseInt(process.env.PDF_PAGE_TIMEOUT_MS || '2000', 10) // P0-3: Per-page timeout
 const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
 
+type GlobalPdfPolyfills = typeof globalThis & {
+  DOMMatrix?: typeof DOMMatrix
+  DOMMatrixReadOnly?: typeof DOMMatrix
+  DOMPoint?: typeof DOMPoint
+  DOMPointReadOnly?: typeof DOMPoint
+}
+
+const globalPdfPolyfills = globalThis as GlobalPdfPolyfills
+
+if (typeof globalPdfPolyfills.DOMMatrix === 'undefined') {
+  globalPdfPolyfills.DOMMatrix = DOMMatrixPolyfill as unknown as typeof DOMMatrix
+  globalPdfPolyfills.DOMMatrixReadOnly = DOMMatrixPolyfill as unknown as typeof DOMMatrix
+}
+
+if (typeof globalPdfPolyfills.DOMPoint === 'undefined') {
+  class DOMPointPolyfill {
+    x: number
+    y: number
+    z: number
+    w: number
+
+    constructor(x = 0, y = 0, z = 0, w = 1) {
+      this.x = x
+      this.y = y
+      this.z = z
+      this.w = w
+    }
+  }
+
+  globalPdfPolyfills.DOMPoint = DOMPointPolyfill as unknown as typeof DOMPoint
+  globalPdfPolyfills.DOMPointReadOnly = DOMPointPolyfill as unknown as typeof DOMPoint
+}
+
 /**
  * Extract text from PDF with resource limits to prevent DoS attacks.
  * - Max pages: PDF_MAX_PAGES (default 50)
@@ -38,8 +72,7 @@ const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
  */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   // Dynamic import to avoid DOMMatrix error in Vercel serverless
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf.mjs')
-  GlobalWorkerOptions.workerSrc = ''
+  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
 
   const loadingTask = getDocument({ data: pdfBytes, useSystemFonts: true })
   let timeoutId: ReturnType<typeof setTimeout> | undefined
@@ -324,8 +357,8 @@ export async function POST(request: NextRequest) {
     const textForKeywords = `${title} ${effectiveContent}`.trim()
     const keywords = extractKeywords(textForKeywords, 10)
 
-    // Opprett instruks i databasen
-    const { data: instruction, error: insertError } = await supabase
+    // Opprett instruks i databasen (use service client to bypass RLS since we verified admin above)
+    const { data: instruction, error: insertError } = await adminClient
       .from('instructions')
       .insert({
         title,
@@ -367,7 +400,7 @@ export async function POST(request: NextRequest) {
         const textForEmbedding = prepareTextForEmbedding(title, effectiveContent)
         const fullEmbedding = await generateEmbedding(textForEmbedding)
 
-        const { error: embeddingError } = await supabase
+        const { error: embeddingError } = await adminClient
           .from('instructions')
           .update({ embedding: JSON.stringify(fullEmbedding) })
           .eq('id', instruction.id)
@@ -394,7 +427,7 @@ export async function POST(request: NextRequest) {
             embedding: JSON.stringify(chunkEmbeddings[idx])
           }))
 
-          const { error: chunksError } = await supabase
+          const { error: chunksError } = await adminClient
             .from('instruction_chunks')
             .insert(chunkInserts)
 
