@@ -63,3 +63,6 @@ docs/**/SESSION_LOG*.md
 docs/**/BATCH*.md
 docs/**/REPO_CLEANUP*.md
 
+# GCP Service Account (NEVER commit!)
+gcp-service-account.json
+*-service-account.json

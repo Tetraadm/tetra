@@ -5,13 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { ResponsiveSelect } from '@/components/ui/responsive-select'
 import { Textarea } from '@/components/ui/textarea'
 import { ModalShell } from './ModalShell'
 
@@ -90,40 +84,33 @@ export function EditInstructionModal({
 
                 <div className="space-y-2">
                     <Label>Mappe</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={editInstructionFolder || 'none'}
                         onValueChange={(value) =>
                             setEditInstructionFolder(value === 'none' ? '' : value)
                         }
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Ingen mappe" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Ingen mappe</SelectItem>
-                            {folders.map((folder) => (
-                                <SelectItem key={folder.id} value={folder.id}>
-                                    {folder.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'none', label: 'Ingen mappe' },
+                            ...folders.map((folder) => ({
+                                value: folder.id,
+                                label: folder.name,
+                            })),
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={editInstructionStatus}
                         onValueChange={(value) => setEditInstructionStatus(value)}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="draft">Utkast</SelectItem>
-                            <SelectItem value="published">Publisert</SelectItem>
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'draft', label: 'Utkast' },
+                            { value: 'published', label: 'Publisert' },
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-2">
@@ -138,19 +125,16 @@ export function EditInstructionModal({
 
                 <div className="space-y-2">
                     <Label>Alvorlighet</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={editInstructionSeverity}
                         onValueChange={(value) => setEditInstructionSeverity(value)}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="critical">Kritisk</SelectItem>
-                            <SelectItem value="medium">Middels</SelectItem>
-                            <SelectItem value="low">Lav</SelectItem>
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'critical', label: 'Kritisk' },
+                            { value: 'medium', label: 'Middels' },
+                            { value: 'low', label: 'Lav' },
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-2">

@@ -134,12 +134,12 @@ export async function POST(request: Request) {
                 const inviterName = profile.full_name || 'En administrator';
 
                 // Generate HTML content
-                console.log('INVITE: Generating email. Role:', role, 'Team:', team_id || 'none');
                 const emailHtml = generateInviteHtml(inviteUrl, role, inviterName);
 
                 // Safety check
-                if (typeof emailHtml !== 'string' || !emailHtml.startsWith('<!DOCTYPE html>')) {
-                    console.error('CRITICAL: Email HTML is not a valid string!', emailHtml);
+                const isValidEmailHtml = typeof emailHtml === 'string' && emailHtml.startsWith('<!DOCTYPE html>');
+                if (!isValidEmailHtml) {
+                    console.error('CRITICAL: Email HTML generation failed');
                     throw new Error('Email HTML generation failed');
                 }
 

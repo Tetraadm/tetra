@@ -175,9 +175,6 @@ export async function POST(request: Request) {
             html: emailHtml
         })
 
-        // F-08: Don't log PII (email) in production logs
-        console.log('CONTACT: Email sent. Subject:', subject)
-
         return NextResponse.json({ success: true })
 
     } catch (error) {

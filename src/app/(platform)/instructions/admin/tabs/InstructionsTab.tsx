@@ -19,13 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 
 type Props = {
   instructions: Instruction[];
@@ -92,16 +86,16 @@ export default function InstructionsTab({
             Filter:
           </span>
 
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Alle statuser</SelectItem>
-              <SelectItem value="published">Publisert</SelectItem>
-              <SelectItem value="draft">Utkast</SelectItem>
-            </SelectContent>
-          </Select>
+          <ResponsiveSelect
+            value={statusFilter}
+            onValueChange={setStatusFilter}
+            options={[
+              { value: "all", label: "Alle statuser" },
+              { value: "published", label: "Publisert" },
+              { value: "draft", label: "Utkast" },
+            ]}
+            className="w-40"
+          />
 
           <div className="w-px h-6 bg-border" />
 

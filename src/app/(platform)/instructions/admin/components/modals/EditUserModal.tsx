@@ -3,13 +3,7 @@ import { Loader2 } from 'lucide-react'
 import { Team, type Profile, type Role } from '@/lib/types'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { ResponsiveSelect } from '@/components/ui/responsive-select'
 import { ModalShell } from './ModalShell'
 
 type EditUserModalProps = {
@@ -55,41 +49,34 @@ export function EditUserModal({
             <div className="space-y-4">
                 <div className="space-y-2">
                     <Label>Rolle</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={editUserRole}
                         onValueChange={(value) => setEditUserRole(value as Role)}
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="employee">Ansatt</SelectItem>
-                            <SelectItem value="teamleader">Teamleder</SelectItem>
-                            <SelectItem value="admin">Sikkerhetsansvarlig</SelectItem>
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'employee', label: 'Ansatt' },
+                            { value: 'teamleader', label: 'Teamleder' },
+                            { value: 'admin', label: 'Sikkerhetsansvarlig' },
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-2">
                     <Label>Team</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={editUserTeam || 'none'}
                         onValueChange={(value) =>
                             setEditUserTeam(value === 'none' ? '' : value)
                         }
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Ingen team" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Ingen team</SelectItem>
-                            {teams.map((team) => (
-                                <SelectItem key={team.id} value={team.id}>
-                                    {team.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'none', label: 'Ingen team' },
+                            ...teams.map((team) => ({
+                                value: team.id,
+                                label: team.name,
+                            })),
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2">

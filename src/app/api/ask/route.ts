@@ -1,4 +1,4 @@
-﻿import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
@@ -130,12 +130,6 @@ async function findRelevantInstructions(
           p_user_id: userId
         })
 
-      console.log('[ASK] Hybrid search result:', {
-        hasError: !!hybridError,
-        errorMsg: hybridError?.message,
-        resultCount: hybridResults?.length ?? 0
-      })
-
       if (!hybridError && hybridResults && hybridResults.length > 0) {
         // Map to VectorSearchResult format
         const results = hybridResults.map((r: { instruction_id: string; title: string; content: string; severity: string; folder_id: string | null; updated_at: string | null; combined_score: number }) => ({
@@ -155,7 +149,6 @@ async function findRelevantInstructions(
 
       // Fallback to legacy match_instructions if no chunks exist yet
       if (hybridError?.message?.includes('instruction_chunks') || hybridResults?.length === 0) {
-        console.log('[ASK] Falling back to legacy match_instructions')
         const { data: vectorResults, error: vectorError } = await supabase
           .rpc('match_instructions', {
             query_embedding: embeddingStr,
@@ -406,6 +399,18 @@ ${context}`
   }
 }
 
+function maskPii(input: string): string {
+  const emailMasked = input.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email]')
+  const idMasked = emailMasked.replace(/\b\d{11}\b/g, '[id]')
+  return idMasked.replace(/(?:\+?\d[\d\s().-]{6,}\d)/g, (match) => {
+    const digits = match.replace(/\D/g, '')
+    if (digits.length < 8) {
+      return match
+    }
+    return '[phone]'
+  })
+}
+
 async function logUnansweredQuestion(
   supabase: Awaited<ReturnType<typeof createClient>>,
   orgId: string,
@@ -413,10 +418,11 @@ async function logUnansweredQuestion(
   question: string
 ) {
   try {
+    const maskedQuestion = maskPii(question)
     const { error } = await supabase.from('ai_unanswered_questions').insert({
       org_id: orgId,
       user_id: userId,
-      question
+      question: maskedQuestion
     })
     if (error) console.error('ASK_LOG_ERROR: ai_unanswered_questions insert', error)
   } catch (err) {

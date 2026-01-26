@@ -38,6 +38,8 @@ interface AdminHeaderProps {
   onSearchChange?: (value: string) => void;
   onOpenProfile?: () => void;
   onOpenSettings?: () => void;
+  onOpenNotifications?: () => void;
+  notificationCount?: number;
 }
 
 export function AdminHeader({
@@ -52,6 +54,8 @@ export function AdminHeader({
   onSearchChange,
   onOpenProfile,
   onOpenSettings,
+  onOpenNotifications,
+  notificationCount = 0,
 }: AdminHeaderProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -137,9 +141,14 @@ export function AdminHeader({
             variant="ghost"
             size="icon"
             className="relative text-muted-foreground hover:text-foreground"
+            onClick={onOpenNotifications}
+            disabled={!onOpenNotifications}
+            aria-label="Kunngjøringer"
           >
             <Bell className="w-5 h-5" />
-            <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
+            {notificationCount > 0 && (
+              <span className="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full" />
+            )}
           </Button>
 
           <DropdownMenu>

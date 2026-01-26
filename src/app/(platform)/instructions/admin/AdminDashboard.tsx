@@ -309,6 +309,10 @@ export default function AdminDashboard({
     });
   }, [alerts, searchValue]);
 
+  const activeAlertCount = useMemo(() => {
+    return alerts.filter((alert) => alert.active).length;
+  }, [alerts]);
+
   const searchedTeams = useMemo(() => {
     if (!searchValue) return teams;
     return teams.filter((team) => team.name.toLowerCase().includes(searchValue));
@@ -322,10 +326,19 @@ export default function AdminDashboard({
     });
   }, [unansweredQuestions, searchValue]);
 
+  const isMissingSessionError = (error: { name?: string; message?: string }) => {
+    if (error.name === "AuthSessionMissingError") {
+      return true;
+    }
+    const message = error.message?.toLowerCase() ?? "";
+    return message.includes("session") && (message.includes("missing") || message.includes("not found"));
+  };
+
   const handleLogout = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Din sesjon er utløpt. Vennligst logg inn på nytt.");
+    if (error && !isMissingSessionError(error)) {
+      toast.error("Kunne ikke logge ut. Prøv igjen.");
+      return;
     }
     router.push("/login");
   };
@@ -361,6 +374,8 @@ export default function AdminDashboard({
             onSearchChange={setSearchQuery}
             onOpenProfile={() => setShowProfile(true)}
             onOpenSettings={() => setShowSettings(true)}
+            onOpenNotifications={() => setTab("kunngjøringer")}
+            notificationCount={activeAlertCount}
           />
 
           {/* Main Content */}

@@ -54,7 +54,7 @@ export function useAdminInstructions({
     status: 'draft',
     folderId: '',
     teamIds: [],
-    allTeams: false
+    allTeams: true
   })
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [editingInstruction, setEditingInstruction] = useState<Instruction | null>(null)
@@ -278,7 +278,7 @@ export function useAdminInstructions({
         }
       }
 
-      setNewInstruction({ title: '', content: '', severity: 'medium', status: 'draft', folderId: '', teamIds: [], allTeams: false })
+      setNewInstruction({ title: '', content: '', severity: 'medium', status: 'draft', folderId: '', teamIds: [], allTeams: true })
       setSelectedFile(null)
       onCloseCreateInstruction?.()
     } catch (error) {
@@ -383,41 +383,31 @@ export function useAdminInstructions({
       const wasPublished = editingInstruction.status === 'published'
       const willBePublished = editInstructionStatus === 'published'
 
-      const textForKeywords = `${editInstructionTitle} ${editInstructionContent}`.trim()
-      const keywords = extractKeywords(textForKeywords, 10)
-
-      const { data, error } = await supabase
-        .from('instructions')
-        .update({
+      // P0-2 FIX: Use server API endpoint for re-indexing chunks
+      const response = await fetch(`/api/instructions/${editingInstruction.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           title: editInstructionTitle,
           content: editInstructionContent,
           severity: editInstructionSeverity,
           status: editInstructionStatus,
-          folder_id: editInstructionFolder || null,
-          keywords: keywords
+          folderId: editInstructionFolder || null,
+          teamIds: editInstructionTeams
         })
-        .eq('id', editingInstruction.id)
-        .select('*, folders(*)')
-        .single()
+      })
 
-      if (error) throw error
+      const result = await response.json()
 
-      // Update team mappings
-      // First delete existing mappings
-      await supabase
-        .from('instruction_teams')
-        .delete()
-        .eq('instruction_id', editingInstruction.id)
-
-      // Then insert new mappings
-      if (editInstructionTeams.length > 0) {
-        await supabase
-          .from('instruction_teams')
-          .insert(editInstructionTeams.map(teamId => ({
-            instruction_id: editingInstruction.id,
-            team_id: teamId
-          })))
+      if (response.status >= 400 || result.error) {
+        toast.error(result.error || 'Kunne ikke oppdatere instruks')
+        setInstructionLoading(false)
+        return
       }
+
+      const data = result
 
       setInstructions(prev => prev.map(i =>
         i.id === editingInstruction.id ? data : i

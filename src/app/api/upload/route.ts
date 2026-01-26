@@ -28,7 +28,8 @@ const UploadFormSchema = z.object({
 
 // PDF processing limits - configurable via env vars
 const PDF_MAX_PAGES = parseInt(process.env.PDF_MAX_PAGES || '50', 10)
-const PDF_TIMEOUT_MS = parseInt(process.env.PDF_TIMEOUT_MS || '30000', 10)
+const PDF_TIMEOUT_MS = parseInt(process.env.PDF_TIMEOUT_MS || '20000', 10) // P0-3: Reduced from 30s to 20s total budget
+const PDF_PAGE_TIMEOUT_MS = parseInt(process.env.PDF_PAGE_TIMEOUT_MS || '2000', 10) // P0-3: Per-page timeout
 const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
 
 /**
@@ -65,21 +66,39 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
     let totalChars = 0
 
     for (let i = 1; i <= pagesToProcess; i++) {
-      const page = await pdf.getPage(i)
-      const textContent = await page.getTextContent()
-      const pageText = textContent.items
-        .map((item) => ('str' in item ? item.str : ''))
-        .join(' ')
+      try {
+        // P0-3 FIX: Per-page timeout to handle "difficult" pages
+        const pagePromise = (async () => {
+          const page = await pdf.getPage(i)
+          const textContent = await page.getTextContent()
+          return textContent.items
+            .map((item) => ('str' in item ? item.str : ''))
+            .join(' ')
+        })()
 
-      // Check character limit
-      if (totalChars + pageText.length > PDF_MAX_CHARS) {
-        console.warn(`[PDF] Character limit reached at page ${i} (${totalChars} chars)`)
-        textParts.push(pageText.slice(0, PDF_MAX_CHARS - totalChars))
-        break
+        const pageTimeoutPromise = new Promise<string>((_, reject) => {
+          setTimeout(() => {
+            reject(new Error(`Page ${i} timed out after ${PDF_PAGE_TIMEOUT_MS}ms`))
+          }, PDF_PAGE_TIMEOUT_MS)
+        })
+
+        const pageText = await Promise.race([pagePromise, pageTimeoutPromise])
+
+        // Check character limit
+        if (totalChars + pageText.length > PDF_MAX_CHARS) {
+          console.warn(`[PDF] Character limit reached at page ${i} (${totalChars} chars)`)
+          textParts.push(pageText.slice(0, PDF_MAX_CHARS - totalChars))
+          break
+        }
+
+        textParts.push(pageText)
+        totalChars += pageText.length
+      } catch (pageError) {
+        // P0-3: Skip problematic pages instead of failing entire PDF
+        console.warn(`[PDF] Skipping page ${i}:`, pageError instanceof Error ? pageError.message : 'unknown error')
+        // Continue with next page - don't fail the entire document
+        continue
       }
-
-      textParts.push(pageText)
-      totalChars += pageText.length
     }
 
     return textParts.join('\n\n').trim()
@@ -379,8 +398,6 @@ export async function POST(request: NextRequest) {
 
           if (chunksError) {
             console.error('CHUNKS_INSERT_ERROR', chunksError)
-          } else {
-            console.log(`[UPLOAD] Created ${chunks.length} chunks for instruction ${instruction.id}`)
           }
         }
       } catch (embeddingErr) {

@@ -17,13 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ResponsiveSelect } from "@/components/ui/responsive-select";
 
 /**
  * Translate action types to Norwegian
@@ -187,36 +181,24 @@ export default function AuditLogTab({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
             <div className="space-y-2">
               <Label>Handlingstype</Label>
-              <Select
+              <ResponsiveSelect
                 value={auditFilter.actionType}
                 onValueChange={(value) =>
                   setAuditFilter({ ...auditFilter, actionType: value })
                 }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Alle handlinger</SelectItem>
-                  <SelectItem value="create_instruction">
-                    Opprett instruks
-                  </SelectItem>
-                  <SelectItem value="publish_instruction">
-                    Publiser instruks
-                  </SelectItem>
-                  <SelectItem value="unpublish_instruction">
-                    Avpubliser instruks
-                  </SelectItem>
-                  <SelectItem value="delete_instruction">
-                    Slett instruks
-                  </SelectItem>
-                  <SelectItem value="create_user">Opprett bruker</SelectItem>
-                  <SelectItem value="edit_user">Rediger bruker</SelectItem>
-                  <SelectItem value="delete_user">Slett bruker</SelectItem>
-                  <SelectItem value="invite_user">Inviter bruker</SelectItem>
-                  <SelectItem value="change_role">Endre rolle</SelectItem>
-                </SelectContent>
-              </Select>
+                options={[
+                  { value: "all", label: "Alle handlinger" },
+                  { value: "create_instruction", label: "Opprett instruks" },
+                  { value: "publish_instruction", label: "Publiser instruks" },
+                  { value: "unpublish_instruction", label: "Avpubliser instruks" },
+                  { value: "delete_instruction", label: "Slett instruks" },
+                  { value: "create_user", label: "Opprett bruker" },
+                  { value: "edit_user", label: "Rediger bruker" },
+                  { value: "delete_user", label: "Slett bruker" },
+                  { value: "invite_user", label: "Inviter bruker" },
+                  { value: "change_role", label: "Endre rolle" },
+                ]}
+              />
             </div>
             <div className="space-y-2">
               <Label>Fra dato</Label>

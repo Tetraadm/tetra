@@ -6,13 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { ResponsiveSelect } from '@/components/ui/responsive-select'
 import { Textarea } from '@/components/ui/textarea'
 import { ModalShell } from './ModalShell'
 
@@ -68,21 +62,18 @@ export function CreateAlertModal({
 
                 <div className="space-y-2">
                     <Label>Alvorlighet</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={newAlert.severity}
                         onValueChange={(value) =>
                             setNewAlert({ ...newAlert, severity: value })
                         }
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="critical">Kritisk</SelectItem>
-                            <SelectItem value="medium">Middels</SelectItem>
-                            <SelectItem value="low">Lav</SelectItem>
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'critical', label: 'Kritisk' },
+                            { value: 'medium', label: 'Middels' },
+                            { value: 'low', label: 'Lav' },
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-3">

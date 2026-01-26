@@ -6,13 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
+import { ResponsiveSelect } from '@/components/ui/responsive-select'
 import { Textarea } from '@/components/ui/textarea'
 import { ModalShell } from './ModalShell'
 
@@ -42,6 +36,8 @@ export function CreateInstructionModal({
     onClose
 }: CreateInstructionModalProps) {
     const titleId = useId()
+    const hasTeamSelection = newInstruction.allTeams || newInstruction.teamIds.length > 0
+    const canCreate = newInstruction.title.trim().length > 0 && hasTeamSelection
 
     return (
         <ModalShell open={open} onClose={onClose} titleId={titleId}>
@@ -64,7 +60,7 @@ export function CreateInstructionModal({
 
                 <div className="space-y-2">
                     <Label>Mappe</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={newInstruction.folderId || 'none'}
                         onValueChange={(value) =>
                             setNewInstruction({
@@ -72,37 +68,30 @@ export function CreateInstructionModal({
                                 folderId: value === 'none' ? '' : value,
                             })
                         }
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Ingen mappe" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">Ingen mappe</SelectItem>
-                            {folders.map((folder) => (
-                                <SelectItem key={folder.id} value={folder.id}>
-                                    {folder.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'none', label: 'Ingen mappe' },
+                            ...folders.map((folder) => ({
+                                value: folder.id,
+                                label: folder.name,
+                            })),
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-2">
                     <Label>Status</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={newInstruction.status}
                         onValueChange={(value) =>
                             setNewInstruction({ ...newInstruction, status: value })
                         }
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="draft">Utkast (ikke synlig for ansatte)</SelectItem>
-                            <SelectItem value="published">Publisert (synlig for ansatte og AI)</SelectItem>
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'draft', label: 'Utkast (ikke synlig for ansatte)' },
+                            { value: 'published', label: 'Publisert (synlig for ansatte og AI)' },
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-2">
@@ -123,21 +112,18 @@ export function CreateInstructionModal({
 
                 <div className="space-y-2">
                     <Label>Alvorlighet</Label>
-                    <Select
+                    <ResponsiveSelect
                         value={newInstruction.severity}
                         onValueChange={(value) =>
                             setNewInstruction({ ...newInstruction, severity: value })
                         }
-                    >
-                        <SelectTrigger className="w-full">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="critical">Kritisk</SelectItem>
-                            <SelectItem value="medium">Middels</SelectItem>
-                            <SelectItem value="low">Lav</SelectItem>
-                        </SelectContent>
-                    </Select>
+                        options={[
+                            { value: 'critical', label: 'Kritisk' },
+                            { value: 'medium', label: 'Middels' },
+                            { value: 'low', label: 'Lav' },
+                        ]}
+                        className="w-full"
+                    />
                 </div>
 
                 <div className="space-y-2">
@@ -202,13 +188,18 @@ export function CreateInstructionModal({
                             })}
                         </div>
                     )}
+                    {!hasTeamSelection && (
+                        <p className="text-xs text-destructive">
+                            Velg minst ett team eller bruk Alle team.
+                        </p>
+                    )}
                 </div>
 
                 <div className="flex items-center justify-end gap-2 pt-2">
                     <Button variant="outline" onClick={onClose}>
                         Avbryt
                     </Button>
-                    <Button onClick={createInstruction} disabled={instructionLoading}>
+                    <Button onClick={createInstruction} disabled={instructionLoading || !canCreate}>
                         {instructionLoading && (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         )}

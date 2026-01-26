@@ -2,6 +2,8 @@
 -- SECURITY: All functions require authenticated admin of the target organization
 
 -- Function to count total instructions for pagination
+-- SECURITY: Only service_role can execute (see GRANT at bottom)
+-- Admin verification is done in the API route before calling this function
 CREATE OR REPLACE FUNCTION public.count_org_instructions(p_org_id uuid)
 RETURNS int
 LANGUAGE plpgsql
@@ -9,20 +11,10 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Security check: Require authentication
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not_authenticated';
-  END IF;
-  
-  -- Security check: Caller must be admin of the specified org
-  IF NOT EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() 
-    AND role = 'admin' 
-    AND org_id = p_org_id
-  ) THEN
-    RAISE EXCEPTION 'forbidden: admin access required';
-  END IF;
+  -- NOTE: auth.uid() checks removed because API uses service_role (auth.uid() = NULL)
+  -- Security is enforced by:
+  -- 1. Only service_role can execute this function (GRANT below)
+  -- 2. API route verifies admin access before calling
 
   RETURN (
     SELECT count(*)
@@ -57,20 +49,10 @@ AS $$
 DECLARE
   v_total_org_users bigint;
 BEGIN
-  -- Security check: Require authentication
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not_authenticated';
-  END IF;
-  
-  -- Security check: Caller must be admin of the specified org
-  IF NOT EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() 
-    AND role = 'admin' 
-    AND org_id = p_org_id
-  ) THEN
-    RAISE EXCEPTION 'forbidden: admin access required';
-  END IF;
+  -- NOTE: auth.uid() checks removed because API uses service_role (auth.uid() = NULL)
+  -- Security is enforced by:
+  -- 1. Only service_role can execute this function (GRANT below)
+  -- 2. API route verifies admin access before calling
 
   -- Get total active users in org
   SELECT count(*) INTO v_total_org_users
@@ -137,20 +119,10 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  -- Security check: Require authentication
-  IF auth.uid() IS NULL THEN
-    RAISE EXCEPTION 'not_authenticated';
-  END IF;
-  
-  -- Security check: Caller must be admin of the specified org
-  IF NOT EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() 
-    AND role = 'admin' 
-    AND org_id = p_org_id
-  ) THEN
-    RAISE EXCEPTION 'forbidden: admin access required';
-  END IF;
+  -- NOTE: auth.uid() checks removed because API uses service_role (auth.uid() = NULL)
+  -- Security is enforced by:
+  -- 1. Only service_role can execute this function (GRANT below)
+  -- 2. API route verifies admin access before calling
 
   RETURN QUERY
   SELECT
