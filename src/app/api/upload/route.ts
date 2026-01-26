@@ -8,10 +8,8 @@ import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { generateEmbedding, generateEmbeddings, prepareTextForEmbedding } from '@/lib/embeddings'
 import { chunkText, prepareChunksForEmbedding } from '@/lib/chunking'
-import { getDocument, GlobalWorkerOptions } from 'pdfjs-dist/legacy/build/pdf.mjs'
 import { z } from 'zod'
 
-GlobalWorkerOptions.workerSrc = ''
 
 // Zod schema for upload form validation
 const UploadFormSchema = z.object({
@@ -39,6 +37,10 @@ const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
  * - Max chars: PDF_MAX_CHARS (default 500k)
  */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
+  // Dynamic import to avoid DOMMatrix error in Vercel serverless
+  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  GlobalWorkerOptions.workerSrc = ''
+
   const loadingTask = getDocument({ data: pdfBytes, useSystemFonts: true })
   let timeoutId: ReturnType<typeof setTimeout> | undefined
 
@@ -72,7 +74,7 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
           const page = await pdf.getPage(i)
           const textContent = await page.getTextContent()
           return textContent.items
-            .map((item) => ('str' in item ? item.str : ''))
+            .map((item: unknown) => (item && typeof item === 'object' && 'str' in item ? String((item as { str: string }).str) : ''))
             .join(' ')
         })()
 
