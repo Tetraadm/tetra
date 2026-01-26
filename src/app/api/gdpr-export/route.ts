@@ -40,7 +40,7 @@ export async function GET() {
 
         // Get user's AI questions (if any)
         const { data: aiQuestions } = await supabase
-            .from('ask_tetra_logs')
+            .from('ask_tetrivo_logs')
             .select('id, question, created_at')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })

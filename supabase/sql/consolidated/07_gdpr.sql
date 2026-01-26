@@ -47,8 +47,8 @@ $$;
 COMMENT ON FUNCTION public.cleanup_old_audit_logs IS 
 'GDPR: Deletes audit logs older than retention period (default 90 days).';
 
--- Cleanup old ask tetra logs
-CREATE OR REPLACE FUNCTION public.cleanup_old_ask_tetra_logs(p_retention_days INTEGER DEFAULT 90)
+-- Cleanup old ask tetrivo logs
+CREATE OR REPLACE FUNCTION public.cleanup_old_ask_tetrivo_logs(p_retention_days INTEGER DEFAULT 90)
 RETURNS TABLE (
   deleted_count BIGINT,
   oldest_remaining_date TIMESTAMPTZ
@@ -65,19 +65,19 @@ BEGIN
   v_cutoff_date := NOW() - (p_retention_days || ' days')::INTERVAL;
 
   WITH deleted AS (
-    DELETE FROM public.ask_tetra_logs
+    DELETE FROM public.ask_tetrivo_logs
     WHERE created_at < v_cutoff_date
     RETURNING *
   )
   SELECT COUNT(*) INTO v_deleted_count FROM deleted;
 
-  SELECT MIN(created_at) INTO v_oldest_date FROM public.ask_tetra_logs;
+  SELECT MIN(created_at) INTO v_oldest_date FROM public.ask_tetrivo_logs;
 
   RETURN QUERY SELECT v_deleted_count, v_oldest_date;
 END;
 $$;
 
-COMMENT ON FUNCTION public.cleanup_old_ask_tetra_logs IS 
+COMMENT ON FUNCTION public.cleanup_old_ask_tetrivo_logs IS 
 'GDPR: Deletes AI logs older than retention period (default 90 days).';
 
 -- Cleanup old unanswered questions
@@ -130,8 +130,8 @@ BEGIN
   FROM public.cleanup_old_audit_logs(p_retention_days) r;
 
   RETURN QUERY
-  SELECT 'ask_tetra_logs'::TEXT, r.deleted_count, r.oldest_remaining_date
-  FROM public.cleanup_old_ask_tetra_logs(p_retention_days) r;
+  SELECT 'ask_tetrivo_logs'::TEXT, r.deleted_count, r.oldest_remaining_date
+  FROM public.cleanup_old_ask_tetrivo_logs(p_retention_days) r;
 
   RETURN QUERY
   SELECT 'ai_unanswered_questions'::TEXT, r.deleted_count, r.oldest_remaining_date
@@ -189,7 +189,7 @@ BEGIN
 
   -- AI logs (user's questions)
   SELECT COALESCE(jsonb_agg(to_jsonb(atl.*)), '[]'::JSONB) INTO v_ai_logs
-  FROM public.ask_tetra_logs atl
+  FROM public.ask_tetrivo_logs atl
   WHERE atl.user_id = p_user_id;
 
   -- Instruction reads
@@ -278,7 +278,7 @@ BEGIN
 
   -- Count records to be deleted
   SELECT COUNT(*) INTO v_audit_count FROM public.audit_logs WHERE user_id = p_user_id;
-  SELECT COUNT(*) INTO v_ai_log_count FROM public.ask_tetra_logs WHERE user_id = p_user_id;
+  SELECT COUNT(*) INTO v_ai_log_count FROM public.ask_tetrivo_logs WHERE user_id = p_user_id;
   SELECT COUNT(*) INTO v_read_count FROM public.instruction_reads WHERE user_id = p_user_id;
   SELECT COUNT(*) INTO v_unanswered_count FROM public.ai_unanswered_questions WHERE user_id = p_user_id;
   SELECT COUNT(*) INTO v_gdpr_requests_count FROM public.gdpr_requests WHERE user_id = p_user_id;
@@ -289,7 +289,7 @@ BEGIN
   
   -- 2. Delete activity logs
   DELETE FROM public.instruction_reads WHERE user_id = p_user_id;
-  DELETE FROM public.ask_tetra_logs WHERE user_id = p_user_id;
+  DELETE FROM public.ask_tetrivo_logs WHERE user_id = p_user_id;
   DELETE FROM public.ai_unanswered_questions WHERE user_id = p_user_id;
   DELETE FROM public.audit_logs WHERE user_id = p_user_id;
   
@@ -342,13 +342,13 @@ COMMENT ON FUNCTION public.gdpr_hard_delete_user IS
 -- ============================================================================
 
 REVOKE EXECUTE ON FUNCTION public.cleanup_old_audit_logs(INTEGER) FROM public, authenticated;
-REVOKE EXECUTE ON FUNCTION public.cleanup_old_ask_tetra_logs(INTEGER) FROM public, authenticated;
+REVOKE EXECUTE ON FUNCTION public.cleanup_old_ask_tetrivo_logs(INTEGER) FROM public, authenticated;
 REVOKE EXECUTE ON FUNCTION public.cleanup_old_unanswered_questions(INTEGER) FROM public, authenticated;
 REVOKE EXECUTE ON FUNCTION public.cleanup_all_old_logs(INTEGER) FROM public, authenticated;
 
 -- Grant cleanup functions to service_role (for API routes and pg_cron)
 GRANT EXECUTE ON FUNCTION public.cleanup_old_audit_logs(INTEGER) TO service_role;
-GRANT EXECUTE ON FUNCTION public.cleanup_old_ask_tetra_logs(INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION public.cleanup_old_ask_tetrivo_logs(INTEGER) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cleanup_old_unanswered_questions(INTEGER) TO service_role;
 GRANT EXECUTE ON FUNCTION public.cleanup_all_old_logs(INTEGER) TO service_role;
 
@@ -390,8 +390,8 @@ GRANT EXECUTE ON FUNCTION public.gdpr_hard_delete_user(UUID, BOOLEAN) TO authent
 -- FROM public.audit_logs
 -- WHERE created_at < NOW() - INTERVAL '90 days'
 -- UNION ALL
--- SELECT 'ask_tetra_logs', COUNT(*)
--- FROM public.ask_tetra_logs
+-- SELECT 'ask_tetrivo_logs', COUNT(*)
+-- FROM public.ask_tetrivo_logs
 -- WHERE created_at < NOW() - INTERVAL '90 days'
 -- UNION ALL
 -- SELECT 'ai_unanswered_questions', COUNT(*)
@@ -406,8 +406,8 @@ GRANT EXECUTE ON FUNCTION public.gdpr_hard_delete_user(UUID, BOOLEAN) TO authent
 --   COUNT(*) AS total
 -- FROM public.audit_logs
 -- UNION ALL
--- SELECT 'ask_tetra_logs', MIN(created_at), MAX(created_at), COUNT(*)
--- FROM public.ask_tetra_logs
+-- SELECT 'ask_tetrivo_logs', MIN(created_at), MAX(created_at), COUNT(*)
+-- FROM public.ask_tetrivo_logs
 -- UNION ALL
 -- SELECT 'ai_unanswered_questions', MIN(created_at), MAX(created_at), COUNT(*)
 -- FROM public.ai_unanswered_questions;

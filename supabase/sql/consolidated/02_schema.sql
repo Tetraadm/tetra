@@ -144,9 +144,9 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
 
 COMMENT ON TABLE public.audit_logs IS 'GDPR: Audit trail. Auto-deleted after 90 days via cleanup function.';
 
--- Ask Tetra logs (AI queries)
+-- Ask Tetrivo logs (AI queries)
 -- GDPR: Logs questions for quality assurance. 90-day retention.
-CREATE TABLE IF NOT EXISTS public.ask_tetra_logs (
+CREATE TABLE IF NOT EXISTS public.ask_tetrivo_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   org_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
   user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS public.ask_tetra_logs (
   created_at TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
-COMMENT ON TABLE public.ask_tetra_logs IS 'GDPR: AI query logs. Auto-deleted after 90 days.';
+COMMENT ON TABLE public.ask_tetrivo_logs IS 'GDPR: AI query logs. Auto-deleted after 90 days.';
 
 -- AI unanswered questions
 CREATE TABLE IF NOT EXISTS public.ai_unanswered_questions (
@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS public.gdpr_retention_runs (
   run_at TIMESTAMPTZ DEFAULT NOW() NOT NULL,
   retention_days INTEGER NOT NULL,
   audit_logs_deleted BIGINT,
-  ask_tetra_logs_deleted BIGINT,
+  ask_tetrivo_logs_deleted BIGINT,
   unanswered_questions_deleted BIGINT,
   executed_by UUID REFERENCES auth.users(id),
   notes TEXT
@@ -198,7 +198,7 @@ ALTER TABLE public.alerts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.alert_teams ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invites ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.ask_tetra_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ask_tetrivo_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.ai_unanswered_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gdpr_retention_runs ENABLE ROW LEVEL SECURITY;
 
@@ -224,8 +224,8 @@ CREATE INDEX IF NOT EXISTS idx_invites_org_id ON public.invites(org_id);
 CREATE INDEX IF NOT EXISTS idx_invites_team_id ON public.invites(team_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_org_id ON public.audit_logs(org_id);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON public.audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_ask_tetra_logs_org_id ON public.ask_tetra_logs(org_id);
-CREATE INDEX IF NOT EXISTS idx_ask_tetra_logs_user_id ON public.ask_tetra_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_ask_tetrivo_logs_org_id ON public.ask_tetrivo_logs(org_id);
+CREATE INDEX IF NOT EXISTS idx_ask_tetrivo_logs_user_id ON public.ask_tetrivo_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_ai_unanswered_questions_org_id ON public.ai_unanswered_questions(org_id);
 
 -- Query optimization indexes
@@ -238,7 +238,7 @@ CREATE INDEX IF NOT EXISTS idx_instruction_reads_confirmed ON public.instruction
 
 -- GDPR retention indexes (for efficient date-based cleanup)
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_ask_tetra_logs_created_at ON public.ask_tetra_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ask_tetrivo_logs_created_at ON public.ask_tetrivo_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_ai_unanswered_questions_created_at ON public.ai_unanswered_questions(created_at DESC);
 
 -- GIN index for keyword search

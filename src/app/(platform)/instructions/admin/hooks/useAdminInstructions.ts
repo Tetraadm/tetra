@@ -189,6 +189,10 @@ export function useAdminInstructions({
             folders: folder ? { name: folder.name } : null
           }, ...prev])
 
+          if (selectedFile?.type === 'application/pdf' && result.textExtracted === false) {
+            toast.error('PDF-en inneholder ingen lesbar tekst. AI kan ikke svare før innhold legges inn manuelt.')
+          }
+
           await logAuditEventClient(supabase, {
             orgId: profile.org_id,
             userId: profile.id,

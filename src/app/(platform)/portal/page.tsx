@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import { Building2, Megaphone, BookOpen, ArrowRight, Lock } from "lucide-react";
-import { TetraLogo } from "@/components/tetra-logo";
+import { TetrivoLogo } from "@/components/tetrivo-logo";
 
 interface OrgModules {
     instructions: boolean;
@@ -66,7 +66,7 @@ export default function PortalPage() {
             <div className="container mx-auto px-4 py-16">
                 <div className="text-center mb-12">
                     <div className="mb-6 flex justify-center">
-                        <TetraLogo size={44} />
+                        <TetrivoLogo size={44} />
                     </div>
                     <h1 className="font-serif text-4xl font-semibold text-foreground mb-4">Velg app</h1>
                     <p className="text-muted-foreground">Velg hvilken modul du vil jobbe med</p>

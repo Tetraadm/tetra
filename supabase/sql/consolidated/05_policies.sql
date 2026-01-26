@@ -35,8 +35,8 @@ DROP POLICY IF EXISTS "Admins manage alert teams" ON public.alert_teams;
 DROP POLICY IF EXISTS "Admins manage invites" ON public.invites;
 DROP POLICY IF EXISTS "Users insert audit logs" ON public.audit_logs;
 DROP POLICY IF EXISTS "Admins view audit logs" ON public.audit_logs;
-DROP POLICY IF EXISTS "Users insert ask tetra logs" ON public.ask_tetra_logs;
-DROP POLICY IF EXISTS "Admins view ask tetra logs" ON public.ask_tetra_logs;
+DROP POLICY IF EXISTS "Users insert ask tetrivo logs" ON public.ask_tetrivo_logs;
+DROP POLICY IF EXISTS "Admins view ask tetrivo logs" ON public.ask_tetrivo_logs;
 DROP POLICY IF EXISTS "Users insert unanswered questions" ON public.ai_unanswered_questions;
 DROP POLICY IF EXISTS "Admins view unanswered questions" ON public.ai_unanswered_questions;
 DROP POLICY IF EXISTS "Admins view retention runs" ON public.gdpr_retention_runs;
@@ -471,21 +471,21 @@ CREATE POLICY "Admins view audit logs"
 -- ASK_TETRA_LOGS POLICIES
 -- ============================================================================
 
-CREATE POLICY "Users insert ask tetra logs"
-  ON public.ask_tetra_logs FOR INSERT
+CREATE POLICY "Users insert ask tetrivo logs"
+  ON public.ask_tetrivo_logs FOR INSERT
   WITH CHECK (
     org_id IN (SELECT org_id FROM public.profiles WHERE id = (SELECT auth.uid()))
     AND (user_id IS NULL OR user_id = (SELECT auth.uid()))
   );
 
-CREATE POLICY "Admins view ask tetra logs"
-  ON public.ask_tetra_logs FOR SELECT
+CREATE POLICY "Admins view ask tetrivo logs"
+  ON public.ask_tetrivo_logs FOR SELECT
   USING (
     EXISTS (
       SELECT 1 FROM public.profiles p
       WHERE p.id = (SELECT auth.uid())
         AND p.role = 'admin'
-        AND p.org_id = ask_tetra_logs.org_id
+        AND p.org_id = ask_tetrivo_logs.org_id
     )
   );
 

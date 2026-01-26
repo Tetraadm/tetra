@@ -187,7 +187,7 @@ Ansatte må signere at de har lest viktige instrukser.
 | `instruction_reads` | Lesebekreftelser |
 | `folders` | Mapper for kategorisering |
 | `audit_logs` | Aktivitetslogg for GDPR |
-| `ask_tetra_logs` | Logg over AI-spørsmål |
+| `ask_tetrivo_logs` | Logg over AI-spørsmål |
 | `ai_unanswered_questions` | Spørsmål AI ikke kunne besvare |
 
 ### Row Level Security (RLS)

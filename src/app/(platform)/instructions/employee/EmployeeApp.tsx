@@ -17,7 +17,7 @@ import type {
 import { useEmployeeChat, useEmployeeInstructions } from "./hooks";
 import HomeContent from "./components/HomeContent";
 import InstructionsTab from "./components/InstructionsTab";
-import AskTetraTab from "./components/AskTetraTab";
+import AskTetrivoTab from "./components/AskTetrivoTab";
 import InstructionModal from "./components/InstructionModal";
 import AccountTab from "./components/AccountTab";
 import { EmployeeHeader } from "@/components/employee/EmployeeHeader";
@@ -178,7 +178,7 @@ export default function EmployeeApp({
               )}
 
               {getContentTab() === "ask" && (
-                <AskTetraTab
+                <AskTetrivoTab
                   messages={messages}
                   isTyping={isTyping}
                   streamingText={streamingText}

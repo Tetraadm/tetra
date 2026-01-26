@@ -72,8 +72,8 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 
 ```bash
 # 1. Klon repositoriet
-git clone https://github.com/Tetraadm/tetra.git
-cd tetra
+git clone https://github.com/Tetraadm/tetrivo.git
+cd tetrivo
 
 # 2. Installer avhengigheter
 npm install

@@ -3,7 +3,7 @@
 import { createClient } from '@/lib/supabase/client'
 import { useState } from 'react'
 import { CheckCircle, Shield, Building2, Users, UserCircle } from 'lucide-react'
-import { TetraLogo } from '@/components/tetra-logo'
+import { TetrivoLogo } from '@/components/tetrivo-logo'
 import toast from 'react-hot-toast'
 import type { Organization, Team } from '@/lib/types'
 import { roleLabel, colors, shadows, radius, transitions } from '@/lib/ui-helpers'
@@ -260,7 +260,7 @@ export default function AcceptInvite({ invite, organization, team, token }: Prop
       <div style={styles.decorShape2} />
       <div style={styles.card}>
         <div style={{ marginBottom: 28, display: 'flex', justifyContent: 'center' }}>
-          <TetraLogo />
+          <TetrivoLogo />
         </div>
         <h1 style={styles.title}>Du er invitert!</h1>
         <p style={styles.subtitle}>

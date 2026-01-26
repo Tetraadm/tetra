@@ -183,10 +183,10 @@ BEGIN
      'low', TRUE, ORG_ID);
 
   -- ============================================================================
-  -- ASK TETRA LOGS (eksempel AI-spørsmål)
+  -- ASK TETRIVO LOGS (eksempel AI-spørsmål)
   -- ============================================================================
   
-  INSERT INTO ask_tetra_logs (org_id, question, answer, source_instruction_id) VALUES
+  INSERT INTO ask_tetrivo_logs (org_id, question, answer, source_instruction_id) VALUES
     (ORG_ID, 'Hvor finner jeg brannslokker?', 
      'Brannslokkere finnes ved alle nødutganger og i hver avdeling. Se etter rød skiltmerking. Vi har pulverapparat (rød), CO2-apparat (svart) og skumapparat tilgjengelig.',
      inst_brannsikkerhet),

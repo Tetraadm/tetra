@@ -83,7 +83,7 @@ export default async function AdminPage() {
     .eq('org_id', profile.org_id)
 
   const { count: aiQuestionCount } = await supabase
-    .from('ask_tetra_logs')
+    .from('ask_tetrivo_logs')
     .select('id', { count: 'exact', head: true })
     .eq('org_id', profile.org_id)
 

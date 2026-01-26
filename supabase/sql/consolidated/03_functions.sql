@@ -97,6 +97,7 @@ BEGIN
     i.keywords
   FROM public.instructions i
   WHERE i.org_id = v_profile.org_id
+    AND i.deleted_at IS NULL
     AND i.status = 'published'
     AND (
       -- User has team and instruction is assigned to their team

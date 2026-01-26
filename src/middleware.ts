@@ -99,7 +99,11 @@ export async function middleware(request: NextRequest) {
   // Routes: /, /login, /invite/*, /auth/*
 
   // Redirect unauthenticated users from protected routes
-  if (!user && (isProtectedRoute || isProtectedApi)) {
+  if (!user && isProtectedApi) {
+    return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+  }
+
+  if (!user && isProtectedRoute) {
     const redirectUrl = request.nextUrl.clone()
     redirectUrl.pathname = '/login'
     redirectUrl.searchParams.set('redirect', pathname)

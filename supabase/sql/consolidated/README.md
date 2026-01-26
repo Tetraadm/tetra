@@ -192,8 +192,8 @@ SELECT
 FROM public.audit_logs
 WHERE created_at < NOW() - INTERVAL '90 days'
 UNION ALL
-SELECT 'ask_tetra_logs', COUNT(*)
-FROM public.ask_tetra_logs
+SELECT 'ask_tetrivo_logs', COUNT(*)
+FROM public.ask_tetrivo_logs
 WHERE created_at < NOW() - INTERVAL '90 days'
 UNION ALL
 SELECT 'ai_unanswered_questions', COUNT(*)

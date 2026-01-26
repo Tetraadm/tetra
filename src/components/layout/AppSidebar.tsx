@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils"
 import { LucideIcon, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { TetraLogo } from "@/components/tetra-logo"
+import { TetrivoLogo } from "@/components/tetrivo-logo"
 
 export interface SidebarTab {
     id: string
@@ -35,7 +35,7 @@ export function AppSidebar({ tabs, activeTab, onTabChange, open, onClose }: AppS
                 )}
             >
                 <div className="flex h-16 items-center justify-between px-4 border-b border-border lg:hidden">
-                    <TetraLogo size={48} />
+                    <TetrivoLogo size={48} />
                     <Button variant="ghost" size="icon" onClick={onClose}>
                         <X className="h-5 w-5" />
                     </Button>

@@ -37,6 +37,12 @@ type VectorSearchResult = {
   similarity: number
 }
 
+type InstructionLike = {
+  title?: string | null
+  content?: string | null
+  keywords?: unknown
+}
+
 function normalizeKeywords(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.filter((item): item is string => typeof item === 'string')
@@ -84,7 +90,7 @@ function getSeverityFromInstruction(
 
 function countKeywordOverlap(
   queryKeywords: string[],
-  instruction: InstructionWithKeywords
+  instruction: InstructionLike
 ): number {
   const title = instruction.title?.toLowerCase() ?? ''
   const content = instruction.content?.toLowerCase() ?? ''
@@ -102,6 +108,17 @@ function countKeywordOverlap(
   }, 0)
 }
 
+function filterByKeywordOverlap<T extends InstructionLike>(
+  queryKeywords: string[],
+  instructions: T[]
+): T[] {
+  if (queryKeywords.length === 0) {
+    return []
+  }
+
+  return instructions.filter(instruction => countKeywordOverlap(queryKeywords, instruction) > 0)
+}
+
 /**
  * Try vector search first, fall back to keyword search if embeddings not available
  */
@@ -113,6 +130,8 @@ async function findRelevantInstructions(
   instructions: Array<VectorSearchResult | InstructionWithKeywords>
   usedVectorSearch: boolean
 }> {
+  const queryKeywords = extractKeywords(question, 5)
+
   // Try hybrid search first (vector + full-text) if OpenAI is configured
   if (process.env.OPENAI_API_KEY) {
     try {
@@ -141,8 +160,13 @@ async function findRelevantInstructions(
           updated_at: r.updated_at,
           similarity: r.combined_score
         }))
+
+        const filteredResults = filterByKeywordOverlap(queryKeywords, results)
+        if (filteredResults.length === 0) {
+          return { instructions: [], usedVectorSearch: true }
+        }
         return {
-          instructions: results as VectorSearchResult[],
+          instructions: filteredResults as VectorSearchResult[],
           usedVectorSearch: true // Indicates hybrid was used
         }
       }
@@ -158,8 +182,12 @@ async function findRelevantInstructions(
           })
 
         if (!vectorError && vectorResults && vectorResults.length > 0) {
+          const filteredResults = filterByKeywordOverlap(queryKeywords, vectorResults)
+          if (filteredResults.length === 0) {
+            return { instructions: [], usedVectorSearch: true }
+          }
           return {
-            instructions: vectorResults as VectorSearchResult[],
+            instructions: filteredResults as VectorSearchResult[],
             usedVectorSearch: true
           }
         }
@@ -188,7 +216,6 @@ async function findRelevantInstructions(
   }))
 
   const instructionsWithContent = normalizedInstructions.filter(i => i.content && i.content.trim())
-  const queryKeywords = extractKeywords(question, 5)
 
   if (instructionsWithContent.length === 0 || queryKeywords.length === 0) {
     return { instructions: [], usedVectorSearch: false }
@@ -330,6 +357,7 @@ ${context}`
       const readableStream = new ReadableStream({
         async start(controller) {
           try {
+            let fullText = ''
             const streamResponse = anthropic.messages.stream({
               model: 'claude-3-5-haiku-20241022',
               max_tokens: 500,
@@ -339,6 +367,7 @@ ${context}`
             })
 
             streamResponse.on('text', (text) => {
+              fullText += text
               // Send text chunk
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`))
             })
@@ -346,7 +375,9 @@ ${context}`
             await streamResponse.finalMessage()
 
             // Send source metadata at the end
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'source', content: sourceData })}\n\n`))
+            if (fullText.trim() !== FALLBACK_ANSWER) {
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'source', content: sourceData })}\n\n`))
+            }
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
 
             // Question was answered - no logging needed
@@ -379,12 +410,14 @@ ${context}`
     })
 
     const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
+    const normalizedAnswer = answer.trim()
+    const isFallback = normalizedAnswer === FALLBACK_ANSWER
 
     // Question was answered - no logging needed
 
     return Response.json({
-      answer,
-      source: sourceData,
+      answer: normalizedAnswer,
+      source: isFallback ? null : sourceData,
       searchMethod: usedVectorSearch ? 'vector' : 'keyword'
     })
 

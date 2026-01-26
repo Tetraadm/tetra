@@ -3,7 +3,7 @@
 import { Bell, Search, User, Menu, LogOut, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { TetraLogo } from "@/components/tetra-logo"
+import { TetrivoLogo } from "@/components/tetrivo-logo"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
     DropdownMenu,
@@ -38,7 +38,7 @@ export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDis
                     <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick}>
                         <Menu className="h-5 w-5" />
                     </Button>
-                    <TetraLogo size={48} className="hidden sm:flex" />
+                    <TetrivoLogo size={48} className="hidden sm:flex" />
                     {organizationName && (
                         <span className="hidden md:inline-flex px-2.5 py-0.5 rounded-md bg-muted text-muted-foreground text-xs font-medium border border-border">
                             {organizationName}

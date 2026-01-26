@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { TetraLogo } from "@/components/tetra-logo"
+import { TetrivoLogo } from "@/components/tetrivo-logo"
 import { Menu, X } from "lucide-react"
 
 const navigation = [
@@ -21,7 +21,7 @@ export function Header() {
             <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
                 <div className="flex lg:flex-1">
                     <Link href="/" className="-m-1.5 p-1.5">
-                        <TetraLogo size={36} />
+                        <TetrivoLogo size={36} />
                     </Link>
                 </div>
 
@@ -64,7 +64,7 @@ export function Header() {
                     <div className="fixed inset-y-0 right-0 z-50 w-full overflow-y-auto bg-background px-6 py-6 sm:max-w-sm border-l border-border">
                         <div className="flex items-center justify-between">
                             <Link href="/" className="-m-1.5 p-1.5">
-                                <TetraLogo className="scale-150" />
+                                <TetrivoLogo className="scale-150" />
                             </Link>
                             <button
                                 type="button"

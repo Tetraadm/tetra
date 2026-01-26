@@ -48,7 +48,7 @@ const suggestedQuestions = [
   },
 ];
 
-export default function AskTetraTab({
+export default function AskTetrivoTab({
   messages,
   isTyping,
   streamingText,

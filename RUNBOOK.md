@@ -140,7 +140,7 @@ curl -X POST https://tetrivo.com/api/gdpr-cleanup \
 
 ### Hva slettes
 - `audit_logs` eldre enn `GDPR_RETENTION_DAYS` (default 90)
-- `ask_tetra_logs` eldre enn retention period
+- `ask_tetrivo_logs` eldre enn retention period
 
 ### Sjekk siste kjøring
 ```sql
