@@ -23,6 +23,10 @@ type ModalShellProps = {
 export function ModalShell({ open, onClose, titleId, children }: ModalShellProps) {
     const contentRef = useRef<HTMLDivElement | null>(null)
 
+    // Store onClose in a ref to avoid re-running effect when it changes
+    const onCloseRef = useRef(onClose)
+    onCloseRef.current = onClose
+
     useEffect(() => {
         if (!open) return
 
@@ -40,7 +44,7 @@ export function ModalShell({ open, onClose, titleId, children }: ModalShellProps
         const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape') {
                 event.preventDefault()
-                onClose()
+                onCloseRef.current()
                 return
             }
 
@@ -68,7 +72,7 @@ export function ModalShell({ open, onClose, titleId, children }: ModalShellProps
 
         document.addEventListener('keydown', handleKeyDown)
         return () => document.removeEventListener('keydown', handleKeyDown)
-    }, [open, onClose])
+    }, [open])
 
     if (!open) return null
 

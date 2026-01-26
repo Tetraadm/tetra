@@ -108,14 +108,17 @@ CREATE POLICY "Read own profile"
   ON public.profiles FOR SELECT
   USING (id = (SELECT auth.uid()));
 
+-- NOTE: Do NOT use get_profile_context() in policies - it throws exceptions
+-- which causes the entire query to fail. Use direct subqueries instead.
+
 CREATE POLICY "Teamleader read team profiles"
   ON public.profiles FOR SELECT
   USING (
     EXISTS (
-      SELECT 1
-      FROM public.get_profile_context((SELECT auth.uid())) pc
-      WHERE pc.role = 'teamleader'
-        AND pc.team_id = profiles.team_id
+      SELECT 1 FROM public.profiles caller
+      WHERE caller.id = (SELECT auth.uid())
+        AND caller.role = 'teamleader'
+        AND caller.team_id = profiles.team_id
     )
   );
 
@@ -123,10 +126,10 @@ CREATE POLICY "Admin read org profiles"
   ON public.profiles FOR SELECT
   USING (
     EXISTS (
-      SELECT 1
-      FROM public.get_profile_context((SELECT auth.uid())) pc
-      WHERE pc.role = 'admin'
-        AND pc.org_id = profiles.org_id
+      SELECT 1 FROM public.profiles caller
+      WHERE caller.id = (SELECT auth.uid())
+        AND caller.role = 'admin'
+        AND caller.org_id = profiles.org_id
     )
   );
 
@@ -136,20 +139,20 @@ CREATE POLICY "Update profiles"
   USING (
     id = (SELECT auth.uid())
     OR EXISTS (
-      SELECT 1
-      FROM public.get_profile_context((SELECT auth.uid())) pc
-      WHERE pc.role = 'admin'
-        AND pc.org_id = profiles.org_id
+      SELECT 1 FROM public.profiles caller
+      WHERE caller.id = (SELECT auth.uid())
+        AND caller.role = 'admin'
+        AND caller.org_id = profiles.org_id
     )
   )
   WITH CHECK (
     CASE
       -- Admins can update anything in their org
       WHEN EXISTS (
-        SELECT 1
-        FROM public.get_profile_context((SELECT auth.uid())) pc
-        WHERE pc.role = 'admin'
-          AND pc.org_id = profiles.org_id
+        SELECT 1 FROM public.profiles caller
+        WHERE caller.id = (SELECT auth.uid())
+          AND caller.role = 'admin'
+          AND caller.org_id = profiles.org_id
       ) THEN TRUE
       -- Non-admins: lock sensitive fields
       WHEN id = (SELECT auth.uid()) THEN (
@@ -168,10 +171,10 @@ CREATE POLICY "Admins delete profiles"
   ON public.profiles FOR DELETE
   USING (
     EXISTS (
-      SELECT 1
-      FROM public.get_profile_context((SELECT auth.uid())) pc
-      WHERE pc.role = 'admin'
-        AND pc.org_id = profiles.org_id
+      SELECT 1 FROM public.profiles caller
+      WHERE caller.id = (SELECT auth.uid())
+        AND caller.role = 'admin'
+        AND caller.org_id = profiles.org_id
     )
   );
 
