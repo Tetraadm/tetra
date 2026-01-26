@@ -17,7 +17,7 @@ type Props = {
   instructions: Instruction[];
   alerts: Alert[];
   unansweredCount: number;
-  setTab: (tab: "kunngjøringer") => void;
+  setTab: (tab: "kunngjøringer" | "aktivitetslogg") => void;
 };
 
 export default function OverviewTab({
@@ -158,6 +158,7 @@ export default function OverviewTab({
               <button
                 type="button"
                 className="text-sm text-primary hover:underline"
+                onClick={() => setTab("aktivitetslogg")}
               >
                 Se alle
               </button>
