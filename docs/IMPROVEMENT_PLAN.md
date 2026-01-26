@@ -915,8 +915,8 @@ Før sikkerhetsansvarlig kan godkjenne, må ALLE disse være ✅:
 - [x] Upstash EU-region verifisert ✅ Frankfurt, Germany (eu-central-1)
 
 ### Dokumentasjon (kan lages under test)
-- [ ] Subprosessor-liste klar
-- [ ] DPA med Supabase (signert eller bekreftet inkludert)
+- [x] Subprosessor-liste klar ✅ Opprettet `docs/SUBPROCESSORS.md` 2026-01-26
+- [x] DPA med Supabase ✅ Inkludert i Supabase ToS (standard)
 
 ### UI (kan fikses etter første test)
 - [x] Logout feilmelding fikset ✅
