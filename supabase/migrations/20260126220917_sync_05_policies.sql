@@ -1,12 +1,4 @@
--- ============================================================================
--- TETRIVO HMS - 05_policies.sql
--- ============================================================================
--- KJØR ETTER: 04_triggers.sql
--- SINGLE SOURCE OF TRUTH for all RLS policies.
--- All policies use WITH CHECK for write operations (least privilege).
--- ============================================================================
-
--- Drop existing policies to keep definitions in sync
+-- sync consolidated 05_policies
 DROP POLICY IF EXISTS "Read own org" ON public.organizations;
 DROP POLICY IF EXISTS "Admin update org" ON public.organizations;
 DROP POLICY IF EXISTS "Read org teams" ON public.teams;
@@ -41,10 +33,6 @@ DROP POLICY IF EXISTS "Users insert unanswered questions" ON public.ai_unanswere
 DROP POLICY IF EXISTS "Admins view unanswered questions" ON public.ai_unanswered_questions;
 DROP POLICY IF EXISTS "Admins view retention runs" ON public.gdpr_retention_runs;
 
--- ============================================================================
--- ORGANIZATIONS POLICIES
--- ============================================================================
-
 CREATE POLICY "Read own org"
   ON public.organizations FOR SELECT
   USING (
@@ -70,10 +58,6 @@ CREATE POLICY "Admin update org"
     )
   );
 
--- ============================================================================
--- TEAMS POLICIES
--- ============================================================================
-
 CREATE POLICY "Read org teams"
   ON public.teams FOR SELECT
   USING (
@@ -98,11 +82,6 @@ CREATE POLICY "Admins manage teams"
         AND p.org_id = teams.org_id
     )
   );
-
--- ============================================================================
--- PROFILES POLICIES
--- SECURITY: Field locking prevents privilege escalation
--- ============================================================================
 
 CREATE POLICY "Read own profile"
   ON public.profiles FOR SELECT
@@ -130,7 +109,6 @@ CREATE POLICY "Admin read org profiles"
     )
   );
 
--- CRITICAL: This policy locks role, org_id, team_id for non-admins
 CREATE POLICY "Update profiles"
   ON public.profiles FOR UPDATE
   USING (
@@ -144,14 +122,12 @@ CREATE POLICY "Update profiles"
   )
   WITH CHECK (
     CASE
-      -- Admins can update anything in their org
       WHEN EXISTS (
         SELECT 1
         FROM public.get_profile_context((SELECT auth.uid())) pc
         WHERE pc.role = 'admin'
           AND pc.org_id = profiles.org_id
       ) THEN TRUE
-      -- Non-admins: lock sensitive fields
       WHEN id = (SELECT auth.uid()) THEN (
         role = (SELECT p.role FROM public.profiles p WHERE p.id = (SELECT auth.uid()))
         AND org_id = (SELECT p.org_id FROM public.profiles p WHERE p.id = (SELECT auth.uid()))
@@ -161,7 +137,7 @@ CREATE POLICY "Update profiles"
     END
   );
 
-COMMENT ON POLICY "Update profiles" ON public.profiles IS 
+COMMENT ON POLICY "Update profiles" ON public.profiles IS
 'SECURITY: Non-admins cannot change role/org_id/team_id (prevents privilege escalation).';
 
 CREATE POLICY "Admins delete profiles"
@@ -174,10 +150,6 @@ CREATE POLICY "Admins delete profiles"
         AND pc.org_id = profiles.org_id
     )
   );
-
--- ============================================================================
--- FOLDERS POLICIES
--- ============================================================================
 
 CREATE POLICY "Read org folders"
   ON public.folders FOR SELECT
@@ -203,10 +175,6 @@ CREATE POLICY "Admins manage folders"
         AND p.org_id = folders.org_id
     )
   );
-
--- ============================================================================
--- INSTRUCTIONS POLICIES
--- ============================================================================
 
 CREATE POLICY "Users view published instructions"
   ON public.instructions FOR SELECT
@@ -262,10 +230,6 @@ CREATE POLICY "Admins manage instructions"
     )
   );
 
--- ============================================================================
--- INSTRUCTION_TEAMS POLICIES
--- ============================================================================
-
 CREATE POLICY "Users view instruction teams"
   ON public.instruction_teams FOR SELECT
   USING (
@@ -299,10 +263,6 @@ CREATE POLICY "Admins manage instruction teams"
         AND p.org_id = i.org_id
     )
   );
-
--- ============================================================================
--- INSTRUCTION_READS POLICIES
--- ============================================================================
 
 CREATE POLICY "Users insert own reads"
   ON public.instruction_reads FOR INSERT
@@ -342,10 +302,6 @@ CREATE POLICY "Admins view org reads"
     )
   );
 
--- ============================================================================
--- ALERTS POLICIES
--- ============================================================================
-
 CREATE POLICY "Users view active alerts"
   ON public.alerts FOR SELECT
   USING (
@@ -383,10 +339,6 @@ CREATE POLICY "Admins manage alerts"
     )
   );
 
--- ============================================================================
--- ALERT_TEAMS POLICIES
--- ============================================================================
-
 CREATE POLICY "Users view alert teams"
   ON public.alert_teams FOR SELECT
   USING (
@@ -421,10 +373,6 @@ CREATE POLICY "Admins manage alert teams"
     )
   );
 
--- ============================================================================
--- INVITES POLICIES
--- ============================================================================
-
 CREATE POLICY "Admins manage invites"
   ON public.invites FOR ALL
   USING (
@@ -444,11 +392,6 @@ CREATE POLICY "Admins manage invites"
     )
   );
 
--- ============================================================================
--- AUDIT_LOGS POLICIES
--- GDPR: Users can insert (for logging), only admins can read
--- ============================================================================
-
 CREATE POLICY "Users insert audit logs"
   ON public.audit_logs FOR INSERT
   WITH CHECK (
@@ -466,10 +409,6 @@ CREATE POLICY "Admins view audit logs"
         AND p.org_id = audit_logs.org_id
     )
   );
-
--- ============================================================================
--- ASK_TETRA_LOGS POLICIES
--- ============================================================================
 
 CREATE POLICY "Users insert ask tetra logs"
   ON public.ask_tetra_logs FOR INSERT
@@ -489,10 +428,6 @@ CREATE POLICY "Admins view ask tetra logs"
     )
   );
 
--- ============================================================================
--- AI_UNANSWERED_QUESTIONS POLICIES
--- ============================================================================
-
 CREATE POLICY "Users insert unanswered questions"
   ON public.ai_unanswered_questions FOR INSERT
   WITH CHECK (
@@ -511,10 +446,6 @@ CREATE POLICY "Admins view unanswered questions"
     )
   );
 
--- ============================================================================
--- GDPR_RETENTION_RUNS POLICIES
--- ============================================================================
-
 CREATE POLICY "Admins view retention runs"
   ON public.gdpr_retention_runs FOR SELECT
   USING (
@@ -524,11 +455,3 @@ CREATE POLICY "Admins view retention runs"
         AND p.role = 'admin'
     )
   );
-
--- ============================================================================
--- VERIFICATION
--- ============================================================================
--- Run this to verify all policies exist:
--- SELECT schemaname, tablename, policyname, cmd FROM pg_policies 
--- WHERE schemaname = 'public' ORDER BY tablename, policyname;
--- ============================================================================

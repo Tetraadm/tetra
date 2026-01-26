@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "sql:check": "node scripts/check-sql-sync.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
