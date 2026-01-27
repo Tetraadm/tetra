@@ -73,7 +73,15 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   // Dynamic import to avoid DOMMatrix error in Vercel serverless
   const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
 
-  const loadingTask = getDocument({ data: pdfBytes, useSystemFonts: true })
+  const loadingTask = getDocument({
+    data: pdfBytes,
+    useSystemFonts: true,
+    // Use CDN for cmap files - handles font encoding for non-standard fonts
+    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/cmaps/',
+    cMapPacked: true,
+    // Standard fonts for PDF compatibility
+    standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/standard_fonts/',
+  })
   let timeoutId: ReturnType<typeof setTimeout> | undefined
 
   // Create timeout promise that properly cleans up the loading task
