@@ -76,9 +76,14 @@ if (typeof globalPdfPolyfills.DOMPoint === 'undefined') {
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   // Use require for legacy CommonJS module compatibility
   // @ts-ignore - pdf-parse does not have types
-  const pdf = require('pdf-parse')
+  let pdfParse = require('pdf-parse')
 
-  console.log('[PDF] Starting extraction with pdf-parse, bytes:', pdfBytes.length)
+  // Handle basic ESM interop (some bundlers wrap CJS in default)
+  if (pdfParse && typeof pdfParse !== 'function' && pdfParse.default) {
+    pdfParse = pdfParse.default
+  }
+
+  console.log('[PDF] Starting extraction with pdf-parse, bytes:', pdfBytes.length, 'Type:', typeof pdfParse)
 
   try {
     // Convert Uint8Array to Buffer for pdf-parse
@@ -94,7 +99,7 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
 
     // Race between parsing and timeout
     const data = await Promise.race([
-      pdf(buffer),
+      pdfParse(buffer),
       timeoutPromise
     ]) as { text: string; numrender: number; info: any }
 
