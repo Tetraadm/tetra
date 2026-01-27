@@ -69,96 +69,49 @@ if (typeof globalPdfPolyfills.DOMPoint === 'undefined') {
  * - Timeout: PDF_TIMEOUT_MS (default 30s)
  * - Max chars: PDF_MAX_CHARS (default 500k)
  */
+// @ts-ignore - pdf-parse does not have types
+import pdf from 'pdf-parse'
+
+/**
+ * Extract text from PDF using pdf-parse (server-side safe).
+ * Handles timeouts and basic error cases.
+ */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
-  console.log('[PDF] Starting extraction, bytes:', pdfBytes.length)
-
-  // Dynamic import to avoid DOMMatrix error in Vercel serverless
-  // Use CommonJS build (.js) to fix worker loading issues
-  // @ts-ignore - Direct import of .js file for serverless compatibility
-  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.js')
-
-  // Point to the worker file explicitly to help bundler or force main thread execution
-  pdfjs.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.js'
-
-  const loadingTask = pdfjs.getDocument({
-    data: pdfBytes,
-    useSystemFonts: true,
-    // Disable external resource fetching to avoid serverless network issues
-    disableAutoFetch: true,
-    disableStream: true,
-  })
-  let timeoutId: ReturnType<typeof setTimeout> | undefined
-
-  // Create timeout promise that properly cleans up the loading task
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeoutId = setTimeout(() => {
-      loadingTask.destroy()
-      reject(new Error(`PDF parsing timed out after ${PDF_TIMEOUT_MS}ms`))
-    }, PDF_TIMEOUT_MS)
-  })
+  console.log('[PDF] Starting extraction with pdf-parse, bytes:', pdfBytes.length)
 
   try {
-    // Race between PDF loading and timeout
-    const pdf = await Promise.race([loadingTask.promise, timeoutPromise])
-    console.log('[PDF] Document loaded, pages:', pdf.numPages)
+    // Convert Uint8Array to Buffer for pdf-parse
+    const buffer = Buffer.from(pdfBytes)
 
-    // Clear timeout on success to prevent race condition
+    // Create a timeout promise
+    let timeoutId: ReturnType<typeof setTimeout> | undefined
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(() => {
+        reject(new Error(`PDF parsing timed out after ${PDF_TIMEOUT_MS}ms`))
+      }, PDF_TIMEOUT_MS)
+    })
+
+    // Race between parsing and timeout
+    const data = await Promise.race([
+      pdf(buffer),
+      timeoutPromise
+    ]) as { text: string; numrender: number; info: any }
+
     if (timeoutId) clearTimeout(timeoutId)
 
-    const pagesToProcess = Math.min(pdf.numPages, PDF_MAX_PAGES)
-    if (pdf.numPages > PDF_MAX_PAGES) {
-      console.warn(`[PDF] Truncating: ${pdf.numPages} pages -> ${PDF_MAX_PAGES}`)
+    const text = data.text
+    console.log('[PDF] Extraction success. Pages:', data.numrender, 'Chars:', text.length)
+
+    // Basic cleanup and char limit check
+    if (text.length > PDF_MAX_CHARS) {
+      console.warn(`[PDF] Truncating text: ${text.length} -> ${PDF_MAX_CHARS}`)
+      return text.slice(0, PDF_MAX_CHARS)
     }
 
-    const textParts: string[] = []
-    let totalChars = 0
+    return text.trim()
 
-    for (let i = 1; i <= pagesToProcess; i++) {
-      try {
-        // P0-3 FIX: Per-page timeout to handle "difficult" pages
-        const pagePromise = (async () => {
-          const page = await pdf.getPage(i)
-          const textContent = await page.getTextContent()
-          const items = textContent.items || []
-          console.log(`[PDF] Page ${i}: ${items.length} text items`)
-          return items
-            .map((item: unknown) => (item && typeof item === 'object' && 'str' in item ? String((item as { str: string }).str) : ''))
-            .join(' ')
-        })()
-
-        const pageTimeoutPromise = new Promise<string>((_, reject) => {
-          setTimeout(() => {
-            reject(new Error(`Page ${i} timed out after ${PDF_PAGE_TIMEOUT_MS}ms`))
-          }, PDF_PAGE_TIMEOUT_MS)
-        })
-
-        const pageText = await Promise.race([pagePromise, pageTimeoutPromise])
-        console.log(`[PDF] Page ${i} text length: ${pageText.length}`)
-
-        // Check character limit
-        if (totalChars + pageText.length > PDF_MAX_CHARS) {
-          console.warn(`[PDF] Character limit reached at page ${i} (${totalChars} chars)`)
-          textParts.push(pageText.slice(0, PDF_MAX_CHARS - totalChars))
-          break
-        }
-
-        textParts.push(pageText)
-        totalChars += pageText.length
-      } catch (pageError) {
-        // P0-3: Skip problematic pages instead of failing entire PDF
-        console.warn(`[PDF] Skipping page ${i}:`, pageError instanceof Error ? pageError.message : 'unknown error')
-        // Continue with next page - don't fail the entire document
-        continue
-      }
-    }
-
-    const finalText = textParts.join('\n\n').trim()
-    console.log(`[PDF] Extraction complete, total chars: ${finalText.length}`)
-    return finalText
   } catch (error) {
-    // Clear timeout and ensure loading task is destroyed on any error
-    if (timeoutId) clearTimeout(timeoutId)
-    loadingTask.destroy()
+    console.error('[PDF] Extraction failed:', error)
     throw error
   }
 }
