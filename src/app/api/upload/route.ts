@@ -339,6 +339,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Ekstraher tekst fra .txt og .pdf
+    console.log('[UPLOAD] Processing file:', file.name, 'Type:', file.type, 'Size:', file.size)
+
     let extractedText = ''
     if (file.type === 'text/plain') {
       extractedText = await file.text()
@@ -348,6 +350,8 @@ export async function POST(request: NextRequest) {
       } catch (err) {
         console.error('PDF_PARSE_ERROR', err)
       }
+    } else {
+      console.warn('[UPLOAD] Unsupported file type for extraction:', file.type)
     }
 
     // NEW: Extract keywords from title and content
