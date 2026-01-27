@@ -69,14 +69,15 @@ if (typeof globalPdfPolyfills.DOMPoint === 'undefined') {
  * - Timeout: PDF_TIMEOUT_MS (default 30s)
  * - Max chars: PDF_MAX_CHARS (default 500k)
  */
-// @ts-ignore - pdf-parse does not have types
-import pdf from 'pdf-parse'
-
 /**
  * Extract text from PDF using pdf-parse (server-side safe).
  * Handles timeouts and basic error cases.
  */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
+  // Use require for legacy CommonJS module compatibility
+  // @ts-ignore - pdf-parse does not have types
+  const pdf = require('pdf-parse')
+
   console.log('[PDF] Starting extraction with pdf-parse, bytes:', pdfBytes.length)
 
   try {
