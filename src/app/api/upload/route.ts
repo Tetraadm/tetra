@@ -70,17 +70,17 @@ if (typeof globalPdfPolyfills.DOMPoint === 'undefined') {
  * - Max chars: PDF_MAX_CHARS (default 500k)
  */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
+  console.log('[PDF] Starting extraction, bytes:', pdfBytes.length)
+
   // Dynamic import to avoid DOMMatrix error in Vercel serverless
   const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
 
   const loadingTask = getDocument({
     data: pdfBytes,
     useSystemFonts: true,
-    // Use CDN for cmap files - handles font encoding for non-standard fonts
-    cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/cmaps/',
-    cMapPacked: true,
-    // Standard fonts for PDF compatibility
-    standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.530/standard_fonts/',
+    // Disable external resource fetching to avoid serverless network issues
+    disableAutoFetch: true,
+    disableStream: true,
   })
   let timeoutId: ReturnType<typeof setTimeout> | undefined
 
@@ -95,6 +95,7 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   try {
     // Race between PDF loading and timeout
     const pdf = await Promise.race([loadingTask.promise, timeoutPromise])
+    console.log('[PDF] Document loaded, pages:', pdf.numPages)
 
     // Clear timeout on success to prevent race condition
     if (timeoutId) clearTimeout(timeoutId)
@@ -113,7 +114,9 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
         const pagePromise = (async () => {
           const page = await pdf.getPage(i)
           const textContent = await page.getTextContent()
-          return textContent.items
+          const items = textContent.items || []
+          console.log(`[PDF] Page ${i}: ${items.length} text items`)
+          return items
             .map((item: unknown) => (item && typeof item === 'object' && 'str' in item ? String((item as { str: string }).str) : ''))
             .join(' ')
         })()
@@ -125,6 +128,7 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
         })
 
         const pageText = await Promise.race([pagePromise, pageTimeoutPromise])
+        console.log(`[PDF] Page ${i} text length: ${pageText.length}`)
 
         // Check character limit
         if (totalChars + pageText.length > PDF_MAX_CHARS) {
@@ -143,7 +147,9 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
       }
     }
 
-    return textParts.join('\n\n').trim()
+    const finalText = textParts.join('\n\n').trim()
+    console.log(`[PDF] Extraction complete, total chars: ${finalText.length}`)
+    return finalText
   } catch (error) {
     // Clear timeout and ensure loading task is destroyed on any error
     if (timeoutId) clearTimeout(timeoutId)
