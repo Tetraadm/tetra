@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Shield, Check, X, Loader2, User, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -32,11 +32,7 @@ export function GdprRequestsAdmin({ onPendingCountChange }: Props) {
     const [isLoading, setIsLoading] = useState(true)
     const [processingId, setProcessingId] = useState<string | null>(null)
 
-    useEffect(() => {
-        fetchRequests()
-    }, [])
-
-    const fetchRequests = async () => {
+    const fetchRequests = useCallback(async () => {
         try {
             const response = await fetch('/api/gdpr-request')
             const data = await response.json()
@@ -53,7 +49,11 @@ export function GdprRequestsAdmin({ onPendingCountChange }: Props) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [onPendingCountChange])
+
+    useEffect(() => {
+        fetchRequests()
+    }, [fetchRequests])
 
     const handleProcess = async (requestId: string, status: 'approved' | 'rejected') => {
         if (status === 'approved') {

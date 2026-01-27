@@ -1,9 +1,31 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, startTransition } from 'react'
 import type { Profile, ChatMessage } from '@/lib/types'
 
 type UseEmployeeChatOptions = {
   profile: Profile
   onOpenSource?: (instructionId: string) => void
+}
+
+// Throttle function for smoother streaming updates
+function throttle(fn: (text: string) => void, delay: number): (text: string) => void {
+  let lastCall = 0
+  let timeoutId: NodeJS.Timeout | null = null
+  let lastText = ''
+  
+  return (text: string) => {
+    lastText = text
+    const now = Date.now()
+    if (now - lastCall >= delay) {
+      lastCall = now
+      fn(text)
+    } else if (!timeoutId) {
+      timeoutId = setTimeout(() => {
+        lastCall = Date.now()
+        timeoutId = null
+        fn(lastText)
+      }, delay - (now - lastCall))
+    }
+  }
 }
 
 export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOptions) {
@@ -12,6 +34,7 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
   const [isTyping, setIsTyping] = useState(false)
   const [streamingText, setStreamingText] = useState('')
   const chatRef = useRef<HTMLDivElement>(null)
+  const accumulatedTextRef = useRef('')
 
   useEffect(() => {
     if (chatRef.current) {
@@ -72,10 +95,17 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
         if (!reader) throw new Error('No reader available')
 
         const decoder = new TextDecoder()
-        let accumulatedText = ''
+        accumulatedTextRef.current = ''
         let source: ChatMessage['source'] | undefined
 
         setIsTyping(false) // Hide typing indicator when streaming starts
+
+        // Throttled update function (30ms = ~33fps, smooth enough for text)
+        const updateStreamingText = throttle((text: string) => {
+          startTransition(() => {
+            setStreamingText(text)
+          })
+        }, 30)
 
         while (true) {
           const { done, value } = await reader.read()
@@ -90,25 +120,28 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
                 const data = JSON.parse(line.slice(6))
 
                 if (data.type === 'text') {
-                  accumulatedText += data.content
-                  setStreamingText(accumulatedText)
+                  accumulatedTextRef.current += data.content
+                  updateStreamingText(accumulatedTextRef.current)
                 } else if (data.type === 'source') {
                   source = data.content
                 } else if (data.type === 'done') {
-                  // Finalize the message - add to messages FIRST, then clear streaming
+                  // Finalize the message
+                  const finalText = accumulatedTextRef.current
                   setMessages(prev => [...prev, {
                     type: 'bot',
-                    text: accumulatedText,
+                    text: finalText,
                     source
                   }])
-                  // Small delay to ensure message is rendered before clearing streaming text
-                  setTimeout(() => setStreamingText(''), 50)
+                  setStreamingText('')
+                  accumulatedTextRef.current = ''
                 } else if (data.type === 'error') {
                   throw new Error(data.content)
                 }
               } catch (parseError) {
-                // Skip malformed JSON chunks
-                console.warn('Failed to parse SSE chunk:', parseError)
+                // Skip malformed JSON chunks (normal for partial SSE data)
+                if (process.env.NODE_ENV === 'development') {
+                  console.warn('Failed to parse SSE chunk:', parseError)
+                }
               }
             }
           }
@@ -160,7 +193,7 @@ export function useEmployeeChat({ profile, onOpenSource }: UseEmployeeChatOption
     setChatInput,
     messages,
     isTyping,
-    streamingText, // NEW: Expose streaming text for live rendering
+    streamingText,
     chatRef,
     handleAsk,
     handleSuggestion,

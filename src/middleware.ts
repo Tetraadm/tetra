@@ -29,6 +29,11 @@ export async function middleware(request: NextRequest) {
   // EXPLICIT PUBLIC ROUTES - Skip ALL auth logic for these paths
   // This prevents any possibility of redirect loops
   // ========================================================================
+  // SECURITY: /api/gdpr-cleanup uses its own Bearer token auth (for cron jobs)
+  // We allow it through middleware but the route validates GDPR_CLEANUP_SECRET
+  const isGdprCleanup = pathname === '/api/gdpr-cleanup'
+  const hasGdprToken = isGdprCleanup && request.headers.get('authorization')?.startsWith('Bearer ')
+  
   const isPublicRoute =
     pathname === '/' ||
     pathname === '/login' ||
@@ -36,7 +41,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/invite/') ||
     pathname === '/api/health' ||
     pathname === '/api/contact' ||
-    pathname === '/api/gdpr-cleanup'
+    hasGdprToken // Only allow gdpr-cleanup if it has Bearer token
 
   if (isPublicRoute) {
     return NextResponse.next()

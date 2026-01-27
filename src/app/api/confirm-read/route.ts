@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
+import { apiRatelimit } from '@/lib/ratelimit'
 
 const confirmReadSchema = z.object({
   instructionId: z.string().uuid()
@@ -13,6 +14,15 @@ export async function POST(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+    }
+
+    // Rate limiting
+    const { success, isMisconfigured } = await apiRatelimit.limit(`confirm-read:${user.id}`)
+    if (isMisconfigured) {
+      return NextResponse.json({ error: 'Tjenesten er midlertidig utilgjengelig' }, { status: 503 })
+    }
+    if (!success) {
+      return NextResponse.json({ error: 'For mange forespørsler. Prøv igjen senere.' }, { status: 429 })
     }
 
     const body = await request.json()

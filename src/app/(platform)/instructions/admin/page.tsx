@@ -66,6 +66,7 @@ export default async function AdminPage() {
     .from('alerts')
     .select('*')
     .eq('org_id', profile.org_id)
+    .is('deleted_at', null)
     .order('created_at', { ascending: false })
     .limit(ALERT_PAGE_SIZE)
 

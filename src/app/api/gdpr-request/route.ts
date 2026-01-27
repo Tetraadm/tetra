@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import { Resend } from 'resend'
 import { escapeHtml } from '@/lib/sanitize-html'
+import { apiRatelimit } from '@/lib/ratelimit'
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -34,6 +35,15 @@ export async function POST(request: NextRequest) {
 
         if (!user) {
             return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+        }
+
+        // Rate limiting
+        const { success, isMisconfigured } = await apiRatelimit.limit(`gdpr:${user.id}`)
+        if (isMisconfigured) {
+            return NextResponse.json({ error: 'Tjenesten er midlertidig utilgjengelig' }, { status: 503 })
+        }
+        if (!success) {
+            return NextResponse.json({ error: 'For mange forespørsler. Prøv igjen senere.' }, { status: 429 })
         }
 
         const body = await request.json()
@@ -205,6 +215,15 @@ export async function PATCH(request: NextRequest) {
 
         if (!user) {
             return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+        }
+
+        // Rate limiting
+        const { success, isMisconfigured } = await apiRatelimit.limit(`gdpr:${user.id}`)
+        if (isMisconfigured) {
+            return NextResponse.json({ error: 'Tjenesten er midlertidig utilgjengelig' }, { status: 503 })
+        }
+        if (!success) {
+            return NextResponse.json({ error: 'For mange forespørsler. Prøv igjen senere.' }, { status: 429 })
         }
 
         const body = await request.json()

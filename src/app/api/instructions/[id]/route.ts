@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { generateEmbedding, generateEmbeddings, prepareTextForEmbedding } from '@/lib/embeddings'
@@ -76,6 +76,9 @@ export async function PATCH(
             return NextResponse.json({ error: 'Ingen tilgang til denne instruksen' }, { status: 403 })
         }
 
+        // Use service role client for all mutations (bypasses RLS since we verified admin above)
+        const adminClient = createServiceRoleClient()
+
         // SECURITY: Validate that all teamIds belong to the user's org
         if (teamIds.length > 0) {
             const { count, error: teamCountError } = await supabase
@@ -114,8 +117,8 @@ export async function PATCH(
             // Continue without embedding
         }
 
-        // Update instruction
-        const { data: instruction, error: updateError } = await supabase
+        // Update instruction (using service role for consistency)
+        const { data: instruction, error: updateError } = await adminClient
             .from('instructions')
             .update({
                 title: safeTitle,
@@ -136,8 +139,8 @@ export async function PATCH(
         }
 
         // P0-2 FIX: Re-index chunks when content is edited
-        // Step 1: Delete old chunks
-        const { error: deleteChunksError } = await supabase
+        // Step 1: Delete old chunks (using service role)
+        const { error: deleteChunksError } = await adminClient
             .from('instruction_chunks')
             .delete()
             .eq('instruction_id', id)
@@ -167,7 +170,7 @@ export async function PATCH(
                         embedding: JSON.stringify(chunkEmbeddings[idx])
                     }))
 
-                    const { error: chunksError } = await supabase
+                    const { error: chunksError } = await adminClient
                         .from('instruction_chunks')
                         .insert(chunkInserts)
 
@@ -182,16 +185,16 @@ export async function PATCH(
             }
         }
 
-        // Update team mappings
+        // Update team mappings (using service role)
         // First delete existing mappings
-        await supabase
+        await adminClient
             .from('instruction_teams')
             .delete()
             .eq('instruction_id', id)
 
         // Then insert new mappings
         if (teamIds.length > 0) {
-            const { error: teamLinkError } = await supabase
+            const { error: teamLinkError } = await adminClient
                 .from('instruction_teams')
                 .insert(teamIds.map(tid => ({
                     instruction_id: id,

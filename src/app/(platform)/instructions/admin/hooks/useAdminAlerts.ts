@@ -285,6 +285,7 @@ const loadMoreAlerts = useCallback(async () => {
       .from('alerts')
       .select('*')
       .eq('org_id', profile.org_id)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false })
       .range(offset, offset + PAGE_SIZE - 1)
 

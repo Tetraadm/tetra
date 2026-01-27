@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { apiRatelimit } from '@/lib/ratelimit'
 
 /**
  * GDPR Data Export API
@@ -14,6 +15,15 @@ export async function GET() {
 
         if (!user) {
             return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+        }
+
+        // Rate limiting - stricter for data exports (potential for abuse)
+        const { success, isMisconfigured } = await apiRatelimit.limit(`gdpr-export:${user.id}`)
+        if (isMisconfigured) {
+            return NextResponse.json({ error: 'Tjenesten er midlertidig utilgjengelig' }, { status: 503 })
+        }
+        if (!success) {
+            return NextResponse.json({ error: 'For mange forespørsler. Prøv igjen senere.' }, { status: 429 })
         }
 
         // Get user profile

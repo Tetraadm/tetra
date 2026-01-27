@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sanitizeHtml, escapeHtml } from '@/lib/sanitize-html'
+import { sanitizeHtml, stripHtml, escapeHtml } from '@/lib/sanitize-html'
 
 describe('sanitizeHtml', () => {
     describe('script removal', () => {
@@ -19,30 +19,71 @@ describe('sanitizeHtml', () => {
         })
     })
 
-    describe('HTML tag removal', () => {
-        it('should remove simple HTML tags', () => {
+    describe('safe HTML tag preservation', () => {
+        it('should preserve paragraph tags', () => {
             const input = '<p>Paragraph</p>'
-            expect(sanitizeHtml(input)).toBe('Paragraph')
+            expect(sanitizeHtml(input)).toBe('<p>Paragraph</p>')
         })
 
-        it('should remove nested tags', () => {
+        it('should preserve nested safe tags', () => {
             const input = '<div><span>Nested</span></div>'
-            expect(sanitizeHtml(input)).toBe('Nested')
+            expect(sanitizeHtml(input)).toBe('<div><span>Nested</span></div>')
         })
 
-        it('should remove self-closing tags', () => {
+        it('should preserve line breaks', () => {
             const input = 'Before<br/>After'
-            expect(sanitizeHtml(input)).toBe('BeforeAfter')
+            expect(sanitizeHtml(input)).toContain('Before')
+            expect(sanitizeHtml(input)).toContain('After')
         })
 
-        it('should remove anchor tags', () => {
+        it('should preserve formatting tags', () => {
+            const input = '<strong>Bold</strong> and <em>italic</em>'
+            expect(sanitizeHtml(input)).toBe('<strong>Bold</strong> and <em>italic</em>')
+        })
+
+        it('should preserve lists', () => {
+            const input = '<ul><li>Item 1</li><li>Item 2</li></ul>'
+            expect(sanitizeHtml(input)).toBe('<ul><li>Item 1</li><li>Item 2</li></ul>')
+        })
+    })
+
+    describe('dangerous content removal', () => {
+        it('should remove javascript: URLs from anchors', () => {
             const input = '<a href="javascript:alert()">Click</a>'
-            expect(sanitizeHtml(input)).toBe('Click')
+            const result = sanitizeHtml(input)
+            expect(result).not.toContain('javascript:')
+            expect(result).toContain('Click')
         })
 
         it('should remove style tags', () => {
             const input = '<style>body{display:none}</style>Content'
             expect(sanitizeHtml(input)).toBe('Content')
+        })
+
+        it('should remove iframe tags', () => {
+            const input = '<iframe src="evil.com"></iframe>Safe'
+            expect(sanitizeHtml(input)).toBe('Safe')
+        })
+
+        it('should remove event handlers', () => {
+            const input = '<div onclick="alert()">Click me</div>'
+            const result = sanitizeHtml(input)
+            expect(result).not.toContain('onclick')
+            expect(result).toContain('Click me')
+        })
+    })
+
+    describe('anchor tag transformation', () => {
+        it('should add noopener noreferrer to links', () => {
+            const input = '<a href="https://example.com">Link</a>'
+            const result = sanitizeHtml(input)
+            expect(result).toContain('rel="noopener noreferrer"')
+        })
+
+        it('should add target blank to links', () => {
+            const input = '<a href="https://example.com">Link</a>'
+            const result = sanitizeHtml(input)
+            expect(result).toContain('target="_blank"')
         })
     })
 
@@ -60,16 +101,6 @@ describe('sanitizeHtml', () => {
             const input = 'This is plain text without HTML'
             expect(sanitizeHtml(input)).toBe('This is plain text without HTML')
         })
-
-        it('should normalize whitespace', () => {
-            const input = '  Multiple   spaces   here  '
-            expect(sanitizeHtml(input)).toBe('Multiple spaces here')
-        })
-
-        it('should decode HTML entities', () => {
-            const input = '&lt;script&gt;test&lt;/script&gt;'
-            expect(sanitizeHtml(input)).toBe('<script>test</script>')
-        })
     })
 
     describe('Norwegian text handling', () => {
@@ -80,8 +111,40 @@ describe('sanitizeHtml', () => {
 
         it('should sanitize while preserving Norwegian text', () => {
             const input = '<p>Hei på deg!</p><script>ondsinnet()</script>'
-            expect(sanitizeHtml(input)).toBe('Hei på deg!')
+            expect(sanitizeHtml(input)).toBe('<p>Hei på deg!</p>')
         })
+    })
+})
+
+describe('stripHtml', () => {
+    it('should remove all HTML tags', () => {
+        const input = '<p>Paragraph</p>'
+        expect(stripHtml(input)).toBe('Paragraph')
+    })
+
+    it('should remove nested tags', () => {
+        const input = '<div><span>Nested</span></div>'
+        expect(stripHtml(input)).toBe('Nested')
+    })
+
+    it('should remove all formatting', () => {
+        const input = '<strong>Bold</strong> and <em>italic</em>'
+        expect(stripHtml(input)).toBe('Bold and italic')
+    })
+
+    it('should handle script tags', () => {
+        const input = '<script>evil()</script>Safe text'
+        expect(stripHtml(input)).toBe('Safe text')
+    })
+
+    it('should preserve Norwegian characters', () => {
+        const input = '<p>Hei på deg! Æøå</p>'
+        expect(stripHtml(input)).toBe('Hei på deg! Æøå')
+    })
+
+    it('should handle empty input', () => {
+        expect(stripHtml('')).toBe('')
+        expect(stripHtml(null as unknown as string)).toBe('')
     })
 })
 

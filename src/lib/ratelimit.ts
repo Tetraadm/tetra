@@ -20,6 +20,8 @@ const UPLOAD_RATE_LIMIT = parseEnvInt('UPLOAD_RATE_LIMIT', 10)
 const UPLOAD_RATE_WINDOW_SECONDS = parseEnvInt('UPLOAD_RATE_WINDOW_SECONDS', 60)
 const INVITE_RATE_LIMIT = parseEnvInt('INVITE_RATE_LIMIT', 10)
 const INVITE_RATE_WINDOW_SECONDS = parseEnvInt('INVITE_RATE_WINDOW_SECONDS', 3600) // 1 hour default
+const API_RATE_LIMIT = parseEnvInt('API_RATE_LIMIT', 60)
+const API_RATE_WINDOW_SECONDS = parseEnvInt('API_RATE_WINDOW_SECONDS', 60)
 
 // Check if Upstash is configured
 const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL
@@ -159,6 +161,12 @@ function createRateLimiters() {
         INVITE_RATE_WINDOW_SECONDS,
         'ratelimit:invite'
       ),
+      apiRatelimit: new UpstashRatelimitWrapper(
+        redis,
+        API_RATE_LIMIT,
+        API_RATE_WINDOW_SECONDS,
+        'ratelimit:api'
+      ),
     }
   }
 
@@ -170,6 +178,7 @@ function createRateLimiters() {
       aiRatelimit: new MisconfiguredRatelimit(),
       uploadRatelimit: new MisconfiguredRatelimit(),
       inviteRatelimit: new MisconfiguredRatelimit(),
+      apiRatelimit: new MisconfiguredRatelimit(),
     }
   }
 
@@ -178,6 +187,7 @@ function createRateLimiters() {
     aiRatelimit: new InMemoryRatelimit(AI_RATE_LIMIT, AI_RATE_WINDOW_SECONDS),
     uploadRatelimit: new InMemoryRatelimit(UPLOAD_RATE_LIMIT, UPLOAD_RATE_WINDOW_SECONDS),
     inviteRatelimit: new InMemoryRatelimit(INVITE_RATE_LIMIT, INVITE_RATE_WINDOW_SECONDS),
+    apiRatelimit: new InMemoryRatelimit(API_RATE_LIMIT, API_RATE_WINDOW_SECONDS),
   }
 }
 
@@ -186,6 +196,7 @@ const limiters = createRateLimiters()
 export const aiRatelimit = limiters.aiRatelimit
 export const uploadRatelimit = limiters.uploadRatelimit
 export const inviteRatelimit = limiters.inviteRatelimit
+export const apiRatelimit = limiters.apiRatelimit
 
 // Helper to get client IP with improved robustness
 export function getClientIp(request: Request): string {

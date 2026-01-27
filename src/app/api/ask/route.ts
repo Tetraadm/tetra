@@ -1,18 +1,16 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
 import { z } from 'zod'
 import { generateEmbedding } from '@/lib/embeddings'
+import { searchDocuments, type VertexSearchResult } from '@/lib/vertex-search'
+import { streamGeminiAnswer, generateGeminiAnswer } from '@/lib/vertex-chat'
 import {
   calculateRelevanceScore,
   extractKeywords,
   type InstructionWithKeywords
 } from '@/lib/keyword-extraction'
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY!
-})
+import { maskPII } from '@/lib/pii'
 
 const FALLBACK_ANSWER = 'Jeg finner ingen relevant instruks i Tetrivo for dette. Kontakt din leder eller sikkerhetsansvarlig.'
 const RAW_MIN_SCORE = Number(process.env.AI_MIN_RELEVANCE_SCORE ?? '0.35')
@@ -130,6 +128,170 @@ async function findRelevantInstructions(
   instructions: Array<VectorSearchResult | InstructionWithKeywords>
   usedVectorSearch: boolean
 }> {
+  // 1. Try Vertex AI Search first (The new primary search)
+  try {
+    const vertexResults = await searchDocuments(question)
+    console.log('[ASK_DEBUG] vertexResults length:', vertexResults.length)
+    if (vertexResults.length > 0) {
+      // Extract file paths and UUIDs from Vertex results to match with database
+      // Link format: gs://bucket/orgId/uuid.pdf or just orgId/uuid.pdf
+      // Title might be: "uuid.pdf" or "orgId/uuid.pdf" or a readable title
+      const uuidRegex = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
+      
+      const extractedData = vertexResults.map((r: VertexSearchResult) => {
+        const link = r.link || ''
+        
+        // Try to extract file path from GCS link
+        const gcsMatch = link.match(/gs:\/\/[^/]+\/(.+)$/)
+        if (gcsMatch) return { type: 'path', value: gcsMatch[1] }
+        
+        // Try to extract from title if it looks like a file path
+        if (r.title && r.title.includes('/')) return { type: 'path', value: r.title }
+        
+        // Try to extract UUID from title (e.g., "2cdfa043-e368-4cbd-9b9a-b798be54ae51.pdf")
+        const uuidMatch = r.title?.match(uuidRegex)
+        if (uuidMatch) return { type: 'uuid', value: uuidMatch[1] }
+        
+        return null
+      })
+      
+      const filePaths = extractedData
+        .filter(d => d?.type === 'path')
+        .map(d => d!.value)
+      
+      const uuids = extractedData
+        .filter(d => d?.type === 'uuid')
+        .map(d => d!.value)
+      
+      console.log('[ASK_DEBUG] Extracted file paths:', filePaths)
+      console.log('[ASK_DEBUG] Extracted UUIDs:', uuids)
+      
+      // Lookup instructions by file_path or id to get correct id and title
+      let enrichedInstructions: VectorSearchResult[] = []
+      
+      if (filePaths.length > 0 || uuids.length > 0) {
+        // Try to find instructions by file_path first
+        let dbInstructions: Array<{
+          id: string
+          title: string
+          content: string | null
+          severity: string
+          folder_id: string | null
+          updated_at: string | null
+          file_path: string | null
+        }> = []
+        
+        if (filePaths.length > 0) {
+          const { data: pathResults, error: pathError } = await supabase
+            .from('instructions')
+            .select('id, title, content, severity, folder_id, updated_at, file_path')
+            .in('file_path', filePaths)
+          
+          if (!pathError && pathResults) {
+            dbInstructions = pathResults
+          }
+        }
+        
+        // Also try to find by UUID if we have any
+        if (uuids.length > 0) {
+          const { data: uuidResults, error: uuidError } = await supabase
+            .from('instructions')
+            .select('id, title, content, severity, folder_id, updated_at, file_path')
+            .in('id', uuids)
+          
+          if (!uuidError && uuidResults) {
+            // Merge results, avoiding duplicates
+            const existingIds = new Set(dbInstructions.map(i => i.id))
+            for (const inst of uuidResults) {
+              if (!existingIds.has(inst.id)) {
+                dbInstructions.push(inst)
+              }
+            }
+          }
+        }
+        
+        if (dbInstructions.length > 0) {
+          // Create maps for quick lookup
+          const instructionByPath = new Map(
+            dbInstructions.filter(i => i.file_path).map(inst => [inst.file_path, inst])
+          )
+          const instructionById = new Map(
+            dbInstructions.map(inst => [inst.id, inst])
+          )
+          
+          // Enrich Vertex results with database data
+          enrichedInstructions = vertexResults.map((r: VertexSearchResult) => {
+            const link = r.link || ''
+            const gcsMatch = link.match(/gs:\/\/[^/]+\/(.+)$/)
+            const filePath = gcsMatch ? gcsMatch[1] : (r.title && r.title.includes('/') ? r.title : null)
+            const uuidMatch = r.title?.match(uuidRegex)
+            const uuid = uuidMatch ? uuidMatch[1] : null
+            
+            // Try to match by file_path first, then by UUID
+            let dbInst = filePath ? instructionByPath.get(filePath) : null
+            if (!dbInst && uuid) {
+              dbInst = instructionById.get(uuid)
+            }
+            
+            if (dbInst) {
+              console.log('[ASK_DEBUG] Matched Vertex result to DB instruction:', {
+                vertexTitle: r.title,
+                dbId: dbInst.id,
+                dbTitle: dbInst.title
+              })
+              return {
+                id: dbInst.id,
+                title: dbInst.title,
+                content: r.content || dbInst.content || '', // Prefer Vertex snippet, fallback to DB content
+                severity: dbInst.severity,
+                folder_id: dbInst.folder_id,
+                updated_at: dbInst.updated_at,
+                similarity: r.score
+              }
+            }
+            
+            // Fallback: use Vertex data as-is (may have UUID as title)
+            return {
+              id: r.id,
+              title: r.title,
+              content: r.content,
+              severity: 'normal',
+              folder_id: null,
+              updated_at: null,
+              similarity: r.score
+            }
+          })
+          
+          console.log('[ASK_DEBUG] Enriched instructions count:', enrichedInstructions.length)
+          return {
+            instructions: enrichedInstructions,
+            usedVectorSearch: true
+          }
+        }
+      }
+      
+      // Fallback: use Vertex results without enrichment
+      const mapped = vertexResults.map((r: VertexSearchResult) => ({
+        id: r.id,
+        title: r.title,
+        content: r.content,
+        severity: 'normal',
+        folder_id: null,
+        updated_at: null,
+        similarity: r.score
+      }))
+      console.log('[ASK_DEBUG] Mapped instructions count (no DB match):', mapped.length)
+      return {
+        instructions: mapped,
+        usedVectorSearch: true
+      }
+    } else {
+      console.log('[ASK_DEBUG] Vertex search returned 0 results')
+    }
+  } catch (vertexError) {
+    console.warn('[ASK] Vertex Search failed, falling back to database:', vertexError)
+  }
+
   const queryKeywords = extractKeywords(question, 5)
 
   // Try hybrid search first (vector + full-text) if OpenAI is configured
@@ -320,27 +482,36 @@ export async function POST(request: NextRequest) {
     }
 
     // Build context from instructions
+    // SECURITY: Mask PII before sending to third-party AI (GDPR compliance)
     const context = relevantInstructions.map(inst => {
       const folderName = getFolderNameFromInstruction(inst)
       const severity = getSeverityFromInstruction(inst)
-      return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + severity + '\nINNHOLD:\n' + inst.content + '\n---'
+      // Mask PII in content before sending to AI
+      const maskedContent = maskPII(inst.content || '')
+      return '---\nDOKUMENT: ' + folderName + inst.title + '\nALVORLIGHET: ' + severity + '\nINNHOLD:\n' + maskedContent + '\n---'
     }).join('\n\n')
+
+    // Also mask PII in the user's question
+    const maskedQuestion = maskPII(question)
+
+    // Debug logging - only in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ASK_DEBUG] Context length:', context.length, 'chars')
+      console.log('[ASK_DEBUG] Instructions count:', relevantInstructions.length)
+    }
 
     const systemPrompt = `Du er Tetrivo, en intern HMS-assistent for en bedrift.
 
-KRITISKE REGLER:
-1. Du skal KUN sitere og gjengi informasjon fra DOKUMENTENE nedenfor.
-2. Du har IKKE lov til å bruke ekstern kunnskap, egne vurderinger eller anbefalinger.
-3. Du skal ALDRI legge til kommentarer som "Merk:", "Dette høres ut...", "Jeg anbefaler..." eller lignende.
-4. Du skal ALDRI dikte opp prosedyrer eller gi egne råd.
-5. Hvis svaret IKKE finnes i dokumentene nedenfor, svar NØYAKTIG: "Jeg finner ingen relevant instruks i Tetrivo for dette. Kontakt din leder eller sikkerhetsansvarlig."
-6. Referer alltid til hvilket dokument svaret kommer fra ved å si "Basert på dokumentet [tittel]:" først.
-7. Svar kort, faktabasert og kun med det som faktisk står i dokumentet.
-8. Selv om innholdet virker rart eller uprofesjonelt, skal du BARE gjengi det uten å kommentere.
-9. Du har KUN tilgang til dokumentene listet nedenfor. PDF-filer uten tekstutskrift er IKKE tilgjengelig for deg.
+    DINE INSTRUKSJONER:
+    1. Du skal svare på spørsmålet basert PÅ INFORMASJONEN I DOKUMENTUTDRAGENE nedenfor. 
+    2. Utdragene kan være bruddstykker. Hvis de innholder relevant informasjon (f.eks. telefonnummer, rutiner, hva man skal gjøre), SKAL du bruke dette til å forme et svar.
+    3. Start svaret med "Basert på dokumentet [tittel]:". Hvis tittelen ser ut som en ID (f.eks. tall/bokstaver), bruk den likevel.
+    4. Hvis du IKKE finner svaret i teksten, svar nøyaktig: "${FALLBACK_ANSWER}"
+    5. Ikke dikt opp informasjon som ikke står i teksten.
+    6. Ikke legg til egne vurderinger ("Jeg anbefaler...", "Det er viktig at...").
 
-TILGJENGELIGE DOKUMENTER:
-${context}`
+    DOKUMENTUTDRAG:
+    ${context}`
 
     const sourceInstruction = relevantInstructions[0]
     const sourceData = {
@@ -358,21 +529,15 @@ ${context}`
         async start(controller) {
           try {
             let fullText = ''
-            const streamResponse = anthropic.messages.stream({
-              model: 'claude-3-5-haiku-20241022',
-              max_tokens: 500,
-              temperature: 0,
-              system: systemPrompt,
-              messages: [{ role: 'user', content: question }]
-            })
 
-            streamResponse.on('text', (text) => {
-              fullText += text
-              // Send text chunk
-              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', content: text })}\n\n`))
-            })
-
-            await streamResponse.finalMessage()
+            await streamGeminiAnswer(
+              systemPrompt,
+              [{ role: 'user', content: maskedQuestion }],
+              (textChunk) => {
+                fullText += textChunk
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', content: textChunk })}\n\n`))
+              }
+            )
 
             // Send source metadata at the end
             if (fullText.trim() !== FALLBACK_ANSWER) {
@@ -401,15 +566,14 @@ ${context}`
     }
 
     // NON-STREAMING MODE (backward compatible)
-    const response = await anthropic.messages.create({
-      model: 'claude-3-5-haiku-20241022',
-      max_tokens: 500,
-      temperature: 0,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: question }]
-    })
+    const geminiAnswer = await generateGeminiAnswer(
+      systemPrompt,
+      [{ role: 'user', content: maskedQuestion }]
+    )
 
-    const answer = response.content[0].type === 'text' ? response.content[0].text : 'Kunne ikke generere svar.'
+    const answer = geminiAnswer || 'Kunne ikke generere svar.'
+
+
     const normalizedAnswer = answer.trim()
     const isFallback = normalizedAnswer === FALLBACK_ANSWER
 
@@ -432,18 +596,6 @@ ${context}`
   }
 }
 
-function maskPii(input: string): string {
-  const emailMasked = input.replace(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi, '[email]')
-  const idMasked = emailMasked.replace(/\b\d{11}\b/g, '[id]')
-  return idMasked.replace(/(?:\+?\d[\d\s().-]{6,}\d)/g, (match) => {
-    const digits = match.replace(/\D/g, '')
-    if (digits.length < 8) {
-      return match
-    }
-    return '[phone]'
-  })
-}
-
 async function logUnansweredQuestion(
   supabase: Awaited<ReturnType<typeof createClient>>,
   orgId: string,
@@ -451,7 +603,7 @@ async function logUnansweredQuestion(
   question: string
 ) {
   try {
-    const maskedQuestion = maskPii(question)
+    const maskedQuestion = maskPII(question)
     const { error } = await supabase.from('ai_unanswered_questions').insert({
       org_id: orgId,
       user_id: userId,

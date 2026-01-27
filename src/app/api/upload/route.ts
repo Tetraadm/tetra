@@ -7,8 +7,13 @@ import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
 import { generateEmbedding, generateEmbeddings, prepareTextForEmbedding } from '@/lib/embeddings'
 import { chunkText, prepareChunksForEmbedding } from '@/lib/chunking'
+import { extractPdfText as documentAiExtract, isDocumentAIConfigured } from '@/lib/document-ai'
+import { triggerEmbeddingGeneration, isEdgeFunctionsConfigured } from '@/lib/edge-functions'
 import { z } from 'zod'
 import DOMMatrixPolyfill from '@thednp/dommatrix'
+import { Storage } from '@google-cloud/storage'
+import { getGoogleAuthOptions } from '@/lib/vertex-auth'
+import { storageLogger } from '@/lib/logger'
 
 
 // Zod schema for upload form validation
@@ -27,8 +32,8 @@ const UploadFormSchema = z.object({
 // PDF processing limits - configurable via env vars
 const PDF_MAX_PAGES = parseInt(process.env.PDF_MAX_PAGES || '50', 10)
 const PDF_TIMEOUT_MS = parseInt(process.env.PDF_TIMEOUT_MS || '20000', 10) // P0-3: Reduced from 30s to 20s total budget
-const PDF_PAGE_TIMEOUT_MS = parseInt(process.env.PDF_PAGE_TIMEOUT_MS || '2000', 10) // P0-3: Per-page timeout
 const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
+const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'tetrivo-documents-eu'
 
 type GlobalPdfPolyfills = typeof globalThis & {
   DOMMatrix?: typeof DOMMatrix
@@ -64,26 +69,24 @@ if (typeof globalPdfPolyfills.DOMPoint === 'undefined') {
 }
 
 /**
- * Extract text from PDF with resource limits to prevent DoS attacks.
- * - Max pages: PDF_MAX_PAGES (default 50)
- * - Timeout: PDF_TIMEOUT_MS (default 30s)
- * - Max chars: PDF_MAX_CHARS (default 500k)
- */
-/**
- * Extract text from PDF using pdf-parse (server-side safe).
- * Handles timeouts and basic error cases.
+ * Extract text from PDF using Google Document AI or pdf-parse fallback.
+ * Document AI provides better handling of:
+ * - Tables and structured content
+ * - OCR for scanned documents  
+ * - Norwegian language support
  */
 async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
-  // Use require for legacy CommonJS module compatibility
-  // @ts-ignore - pdf-parse does not have types
-  let pdfParse = require('pdf-parse')
-
-  // Handle basic ESM interop (some bundlers wrap CJS in default)
-  if (pdfParse && typeof pdfParse !== 'function' && pdfParse.default) {
-    pdfParse = pdfParse.default
+  // Use Document AI if configured (recommended)
+  if (isDocumentAIConfigured()) {
+    storageLogger.info({ bytes: pdfBytes.length }, 'Extracting PDF with Document AI')
+    return documentAiExtract(pdfBytes)
   }
 
-  console.log('[PDF] Starting extraction with pdf-parse, bytes:', pdfBytes.length, 'Type:', typeof pdfParse)
+  // Fallback to pdf-parse
+  storageLogger.info({ bytes: pdfBytes.length }, 'Extracting PDF with pdf-parse (Document AI not configured)')
+  
+  // Use dynamic import for legacy CommonJS module compatibility
+  const { default: pdfParse } = await import('pdf-parse')
 
   try {
     // Convert Uint8Array to Buffer for pdf-parse
@@ -99,9 +102,9 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
 
     // Race between parsing and timeout
     const data = await Promise.race([
-      pdfParse(buffer),
+      pdfParse(buffer, { max: PDF_MAX_PAGES }),
       timeoutPromise
-    ]) as { text: string; numrender: number; info: any }
+    ])
 
     if (timeoutId) clearTimeout(timeoutId)
 
@@ -302,8 +305,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kunne ikke laste opp filen' }, { status: 500 })
     }
 
+    // Google Cloud Storage Upload (Parallel, don't fail main request if this fails)
+    try {
+      const storage = new Storage({
+        ...getGoogleAuthOptions(),
+        projectId: getGoogleAuthOptions().projectId // Ensure projectId is passed explicitly if needed
+      })
+      const bucket = storage.bucket(GCS_BUCKET_NAME)
+      const gcsFile = bucket.file(fileName)
+
+      // Upload to GCS
+      // We use the raw buffer
+      await gcsFile.save(Buffer.from(fileBytes), {
+        metadata: {
+          contentType: file.type,
+          metadata: {
+            originalName: file.name,
+            uploadedBy: user.id,
+            orgId: orgId
+          }
+        }
+      })
+      storageLogger.info({ fileName }, 'GCS upload success')
+    } catch (gcsError) {
+      storageLogger.warn({ error: gcsError, fileName }, 'GCS upload failed (non-fatal)')
+      // We don't fail the request because the Supabase part (critical) succeeded
+    }
+
     // Ekstraher tekst fra .txt og .pdf
-    console.log('[UPLOAD] Processing file:', file.name, 'Type:', file.type, 'Size:', file.size)
+    storageLogger.info({ fileName: file.name, type: file.type, size: file.size }, 'Processing file')
 
     let extractedText = ''
     if (file.type === 'text/plain') {
@@ -312,10 +342,10 @@ export async function POST(request: NextRequest) {
       try {
         extractedText = await extractPdfText(fileBytes)
       } catch (err) {
-        console.error('PDF_PARSE_ERROR', err)
+        storageLogger.error({ error: err }, 'PDF parse error')
       }
     } else {
-      console.warn('[UPLOAD] Unsupported file type for extraction:', file.type)
+      storageLogger.warn({ type: file.type }, 'Unsupported file type for extraction')
     }
 
     // NEW: Extract keywords from title and content
@@ -359,51 +389,93 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Kunne ikke opprette instruks' }, { status: 500 })
     }
 
-    // Generate chunks and embeddings for vector search (non-blocking - don't fail upload if this fails)
-    if (instruction && effectiveContent) {
+    // Update GCS metadata with instruction ID and title (for Vertex AI Search)
+    if (instruction) {
       try {
-        // Legacy: Also store full document embedding for backward compatibility
-        const textForEmbedding = prepareTextForEmbedding(title, effectiveContent)
-        const fullEmbedding = await generateEmbedding(textForEmbedding)
-
-        const { error: embeddingError } = await adminClient
-          .from('instructions')
-          .update({ embedding: JSON.stringify(fullEmbedding) })
-          .eq('id', instruction.id)
-
-        if (embeddingError) {
-          console.error('EMBEDDING_STORE_ERROR', embeddingError)
-        }
-
-        // NEW: Generate chunks with embeddings
-        const chunks = chunkText(effectiveContent)
-
-        if (chunks.length > 0) {
-          // Prepare chunk texts with title context for embedding
-          const chunkTexts = prepareChunksForEmbedding(title, chunks)
-
-          // Generate embeddings for all chunks in batch
-          const chunkEmbeddings = await generateEmbeddings(chunkTexts)
-
-          // Insert chunks into database
-          const chunkInserts = chunks.map((chunk, idx) => ({
-            instruction_id: instruction.id,
-            chunk_index: chunk.index,
-            content: chunk.content,
-            embedding: JSON.stringify(chunkEmbeddings[idx])
-          }))
-
-          const { error: chunksError } = await adminClient
-            .from('instruction_chunks')
-            .insert(chunkInserts)
-
-          if (chunksError) {
-            console.error('CHUNKS_INSERT_ERROR', chunksError)
+        const storage = new Storage({
+          ...getGoogleAuthOptions(),
+          projectId: getGoogleAuthOptions().projectId
+        })
+        const bucket = storage.bucket(GCS_BUCKET_NAME)
+        const gcsFile = bucket.file(fileName)
+        
+        await gcsFile.setMetadata({
+          metadata: {
+            instructionId: instruction.id,
+            title: title,
+            originalName: file.name,
+            uploadedBy: user.id,
+            orgId: orgId
           }
+        })
+        storageLogger.info({ instructionId: instruction.id }, 'GCS metadata updated')
+      } catch (metadataError) {
+        storageLogger.warn({ error: metadataError }, 'GCS metadata update failed (non-fatal)')
+      }
+    }
+
+    // Generate embeddings - try async Edge Functions first, fallback to sync
+    if (instruction && effectiveContent) {
+      if (isEdgeFunctionsConfigured()) {
+        // Async: Use Supabase Edge Functions for background processing
+        // This is non-blocking - embeddings will be generated asynchronously
+        triggerEmbeddingGeneration({
+          instructionId: instruction.id,
+          title: title,
+          content: effectiveContent,
+          orgId: orgId
+        }).then(success => {
+          if (success) {
+            storageLogger.info({ instructionId: instruction.id }, 'Embeddings queued via Edge Function')
+          }
+        }).catch(err => {
+          storageLogger.warn({ error: err }, 'Edge Function trigger failed')
+        })
+        
+        storageLogger.info({ instructionId: instruction.id }, 'Embedding generation triggered async')
+      } else {
+        // Sync fallback: Generate embeddings immediately
+        try {
+          const textForEmbedding = prepareTextForEmbedding(title, effectiveContent)
+          const fullEmbedding = await generateEmbedding(textForEmbedding)
+
+          const { error: embeddingError } = await adminClient
+            .from('instructions')
+            .update({ embedding: JSON.stringify(fullEmbedding) })
+            .eq('id', instruction.id)
+
+          if (embeddingError) {
+            storageLogger.error({ error: embeddingError }, 'Failed to store embedding')
+          }
+
+          // Generate chunks with embeddings
+          const chunks = chunkText(effectiveContent)
+
+          if (chunks.length > 0) {
+            const chunkTexts = prepareChunksForEmbedding(title, chunks)
+            const chunkEmbeddings = await generateEmbeddings(chunkTexts)
+
+            const chunkInserts = chunks.map((chunk, idx) => ({
+              instruction_id: instruction.id,
+              chunk_index: chunk.index,
+              content: chunk.content,
+              embedding: JSON.stringify(chunkEmbeddings[idx])
+            }))
+
+            const { error: chunksError } = await adminClient
+              .from('instruction_chunks')
+              .insert(chunkInserts)
+
+            if (chunksError) {
+              storageLogger.error({ error: chunksError }, 'Failed to insert chunks')
+            }
+          }
+          
+          storageLogger.info({ instructionId: instruction.id }, 'Embeddings generated synchronously')
+        } catch (embeddingErr) {
+          // Log but don't fail the upload
+          storageLogger.error({ error: embeddingErr }, 'Embedding generation failed')
         }
-      } catch (embeddingErr) {
-        // Log but don't fail the upload - embeddings can be regenerated later
-        console.error('EMBEDDING_GENERATION_ERROR', embeddingErr)
       }
     }
 

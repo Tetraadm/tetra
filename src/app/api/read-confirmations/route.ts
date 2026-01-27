@@ -1,5 +1,6 @@
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { apiRatelimit } from '@/lib/ratelimit'
 
 // Types for RPC responses
 type InstructionReadStats = {
@@ -33,6 +34,15 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+    }
+
+    // Rate limiting
+    const { success, isMisconfigured } = await apiRatelimit.limit(`read-confirmations:${user.id}`)
+    if (isMisconfigured) {
+      return NextResponse.json({ error: 'Tjenesten er midlertidig utilgjengelig' }, { status: 503 })
+    }
+    if (!success) {
+      return NextResponse.json({ error: 'For mange forespørsler. Prøv igjen senere.' }, { status: 429 })
     }
 
     // Verify user is admin

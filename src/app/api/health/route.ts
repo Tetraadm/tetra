@@ -35,47 +35,45 @@ export async function GET() {
     }
 
     // Rate limiter health check
+    // SECURITY: Don't expose provider details - just status
     const rateLimiterStatus = getRateLimiterStatus()
     if (rateLimiterStatus.provider === 'misconfigured') {
         checks.rateLimiter = {
             status: 'error',
-            error: 'Upstash not configured in production - rate limiting will fail closed',
-            details: rateLimiterStatus
+            error: 'Rate limiter not properly configured'
         }
     } else if (rateLimiterStatus.provider === 'in-memory') {
         checks.rateLimiter = {
             status: 'degraded',
-            error: 'Using in-memory rate limiter (dev mode only)',
-            details: rateLimiterStatus
+            error: 'Using fallback rate limiter'
         }
     } else {
         checks.rateLimiter = {
-            status: 'ok',
-            details: rateLimiterStatus
+            status: 'ok'
         }
     }
 
     // External services configuration check (not connectivity - just config presence)
+    // SECURITY: Don't expose which specific services are missing - reduces attack surface
     const externalServices = {
         anthropic: !!process.env.ANTHROPIC_API_KEY,
         resend: !!process.env.RESEND_API_KEY,
         sentry: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
     }
 
-    const missingServices = Object.entries(externalServices)
-        .filter(([, configured]) => !configured)
-        .map(([name]) => name)
+    const configuredCount = Object.values(externalServices).filter(Boolean).length
+    const totalServices = Object.keys(externalServices).length
 
-    if (missingServices.length > 0) {
+    if (configuredCount < totalServices) {
         checks.externalServices = {
             status: 'degraded',
-            error: `Missing API keys: ${missingServices.join(', ')}`,
-            details: externalServices
+            error: 'One or more external services not configured'
+            // SECURITY: Don't expose which services or details
         }
     } else {
         checks.externalServices = {
-            status: 'ok',
-            details: externalServices
+            status: 'ok'
+            // SECURITY: Don't expose service names even when configured
         }
     }
 

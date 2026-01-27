@@ -1,5 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
+import { apiRatelimit } from '@/lib/ratelimit'
+
+/**
+ * Masks an email address for privacy (GDPR data minimization)
+ * Example: "john.doe@example.com" -> "j***@e***.com"
+ */
+function maskEmail(email: string | null): string | null {
+    if (!email) return null
+    const [local, domain] = email.split('@')
+    if (!domain) return email
+    const [domainName, tld] = domain.split('.')
+    if (!tld) return email
+    return `${local[0]}***@${domainName[0]}***.${tld}`
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,6 +22,15 @@ export async function GET(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
       return NextResponse.json({ error: 'Ikke autentisert' }, { status: 401 })
+    }
+
+    // Rate limiting
+    const { success, isMisconfigured } = await apiRatelimit.limit(`audit-logs:${user.id}`)
+    if (isMisconfigured) {
+      return NextResponse.json({ error: 'Tjenesten er midlertidig utilgjengelig' }, { status: 503 })
+    }
+    if (!success) {
+      return NextResponse.json({ error: 'For mange forespørsler. Prøv igjen senere.' }, { status: 429 })
     }
 
     // Verify user is admin
@@ -52,8 +75,20 @@ export async function GET(request: NextRequest) {
 
     if (error) throw error
 
+    // SECURITY: Mask emails in response (GDPR data minimization)
+    const maskedLogs = (data || []).map((log: Record<string, unknown>) => {
+      const profiles = log.profiles as { full_name?: string; email?: string } | null
+      return {
+        ...log,
+        profiles: profiles ? {
+          full_name: profiles.full_name,
+          email: maskEmail(profiles.email || null)
+        } : null
+      }
+    })
+
     return NextResponse.json({
-      logs: data,
+      logs: maskedLogs,
       pagination: {
         total: count || 0,
         limit,
