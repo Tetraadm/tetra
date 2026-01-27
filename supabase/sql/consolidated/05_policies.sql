@@ -525,6 +525,7 @@ CREATE POLICY "Admins view retention runs"
       SELECT 1 FROM public.profiles p
       WHERE p.id = (SELECT auth.uid())
         AND p.role = 'admin'
+        AND p.org_id = gdpr_retention_runs.org_id
     )
   );
 

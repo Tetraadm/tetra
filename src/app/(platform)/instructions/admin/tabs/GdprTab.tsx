@@ -5,7 +5,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { GdprRequestsAdmin } from "@/components/GdprRequestsAdmin";
 
-export default function GdprTab() {
+type Props = {
+  onPendingCountChange?: (count: number) => void;
+};
+
+export default function GdprTab({ onPendingCountChange }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -90,7 +94,7 @@ export default function GdprTab() {
         </Card>
       </div>
 
-      <GdprRequestsAdmin />
+      <GdprRequestsAdmin onPendingCountChange={onPendingCountChange} />
     </div>
   );
 }

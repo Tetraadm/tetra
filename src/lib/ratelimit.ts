@@ -174,7 +174,6 @@ function createRateLimiters() {
   }
 
   // Development: in-memory fallback is acceptable
-  console.log('[ratelimit] Using in-memory rate limiter (dev mode)')
   return {
     aiRatelimit: new InMemoryRatelimit(AI_RATE_LIMIT, AI_RATE_WINDOW_SECONDS),
     uploadRatelimit: new InMemoryRatelimit(UPLOAD_RATE_LIMIT, UPLOAD_RATE_WINDOW_SECONDS),

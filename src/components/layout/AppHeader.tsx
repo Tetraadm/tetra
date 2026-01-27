@@ -1,5 +1,6 @@
 "use client"
 
+import { useMemo, useState } from "react"
 import { Bell, Search, User, Menu, LogOut, Info } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { severityColor, severityLabel } from "@/lib/ui-helpers"
+import type { Alert } from "@/lib/types"
 
 interface AppHeaderProps {
     onMenuClick: () => void
@@ -28,9 +31,17 @@ interface AppHeaderProps {
     onDisclaimer?: () => void
     onProfile?: () => void
     onSettings?: () => void
+    alerts?: Alert[]
 }
 
-export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDisclaimer, onProfile, onSettings }: AppHeaderProps) {
+export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDisclaimer, onProfile, onSettings, alerts = [] }: AppHeaderProps) {
+    const [alertsOpen, setAlertsOpen] = useState(false)
+    
+    const activeAlerts = useMemo(
+        () => alerts.filter((alert) => alert.active),
+        [alerts]
+    )
+    
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border/70 bg-background/70 backdrop-blur-lg">
             <div className="flex h-16 items-center justify-between px-4 lg:px-6">
@@ -65,12 +76,65 @@ export function AppHeader({ onMenuClick, user, organizationName, onLogout, onDis
                     )}
                     <ThemeToggle />
 
-                    <Button variant="ghost" size="icon" className="relative">
-                        <Bell className="h-5 w-5" />
-                        <Badge className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs bg-primary text-primary-foreground">
-                            3
-                        </Badge>
-                    </Button>
+                    <DropdownMenu open={alertsOpen} onOpenChange={setAlertsOpen}>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="relative">
+                                <Bell className="h-5 w-5" />
+                                {activeAlerts.length > 0 && !alertsOpen && (
+                                    <span className="absolute top-0 right-0 min-w-[10px] h-[10px] rounded-full bg-primary" />
+                                )}
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-80">
+                            <DropdownMenuLabel>Varsler</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {activeAlerts.length === 0 ? (
+                                <div className="px-3 py-3 text-sm text-muted-foreground">
+                                    Ingen aktive kunngjøringer.
+                                </div>
+                            ) : (
+                                <div className="max-h-72 overflow-y-auto">
+                                    {activeAlerts.map((alert) => {
+                                        const colors = severityColor(alert.severity)
+                                        const createdAt = new Date(alert.created_at).toLocaleDateString(
+                                            "nb-NO",
+                                            { day: "numeric", month: "short" }
+                                        )
+                                        return (
+                                            <div
+                                                key={alert.id}
+                                                className="px-3 py-3 border-b border-border/60 last:border-0"
+                                            >
+                                                <div className="flex items-center justify-between gap-3">
+                                                    <Badge
+                                                        variant="outline"
+                                                        style={{
+                                                            backgroundColor: colors.bg,
+                                                            color: colors.color,
+                                                            borderColor: colors.border,
+                                                        }}
+                                                    >
+                                                        {severityLabel(alert.severity)}
+                                                    </Badge>
+                                                    <span className="text-xs text-muted-foreground">
+                                                        {createdAt}
+                                                    </span>
+                                                </div>
+                                                <p className="mt-2 text-sm font-medium text-foreground">
+                                                    {alert.title}
+                                                </p>
+                                                {alert.description && (
+                                                    <p className="mt-1 text-xs text-muted-foreground">
+                                                        {alert.description}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

@@ -23,7 +23,11 @@ interface GdprRequest {
     } | null
 }
 
-export function GdprRequestsAdmin() {
+type Props = {
+    onPendingCountChange?: (count: number) => void;
+}
+
+export function GdprRequestsAdmin({ onPendingCountChange }: Props) {
     const [requests, setRequests] = useState<GdprRequest[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [processingId, setProcessingId] = useState<string | null>(null)
@@ -38,7 +42,11 @@ export function GdprRequestsAdmin() {
             const data = await response.json()
 
             if (response.ok) {
-                setRequests(data.requests || [])
+                const reqs = data.requests || []
+                setRequests(reqs)
+                // Notify parent of pending count change
+                const pendingCount = reqs.filter((r: GdprRequest) => r.status === 'pending').length
+                onPendingCountChange?.(pendingCount)
             }
         } catch (error) {
             console.error('Failed to fetch GDPR requests:', error)

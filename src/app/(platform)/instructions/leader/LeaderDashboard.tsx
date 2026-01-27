@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react'
 import { FileText, Home, Users, Inbox } from 'lucide-react'
 import { cleanupInviteData } from '@/lib/invite-cleanup'
 import AuthWatcher from '@/components/AuthWatcher'
-import type { Profile, Organization, Team } from '@/lib/types'
+import type { Profile, Organization, Team, Alert } from '@/lib/types'
 import { severityLabel, roleLabel } from '@/lib/ui-helpers'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { AppSidebar, type SidebarTab } from '@/components/layout/AppSidebar'
@@ -36,6 +36,7 @@ type Props = {
   team: Team | null
   teamMembers: Profile[]
   instructions: Instruction[]
+  alerts: Alert[]
 }
 
 export default function LeaderDashboard({
@@ -43,7 +44,8 @@ export default function LeaderDashboard({
   organization,
   team,
   teamMembers,
-  instructions
+  instructions,
+  alerts
 }: Props) {
   const [tab, setTab] = useState<'oversikt' | 'team' | 'instrukser'>('oversikt')
   const [showMobileMenu, setShowMobileMenu] = useState(false)
@@ -91,6 +93,7 @@ export default function LeaderDashboard({
           onLogout={handleLogout}
           onProfile={() => setShowProfile(true)}
           onSettings={() => setShowSettings(true)}
+          alerts={alerts}
         />
         <div className="flex h-[calc(100vh-64px)] overflow-hidden">
           <AppSidebar

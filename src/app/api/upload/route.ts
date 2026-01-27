@@ -1,8 +1,7 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase/server'
-import { createServerClient } from '@supabase/ssr'
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
@@ -179,21 +178,6 @@ type SupabaseErrorDetails = {
   hint?: string
 }
 
-// Service role client for storage operations (bypasses RLS)
-function createServiceClient() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      cookies: {
-        get() { return undefined },
-        set() { },
-        remove() { }
-      }
-    }
-  )
-}
-
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
@@ -322,7 +306,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const adminClient = createServiceClient()
+    const adminClient = createServiceRoleClient()
     const { error: uploadError } = await adminClient.storage
       .from('instructions')
       .upload(fileName, fileBytes, {

@@ -62,8 +62,6 @@ export async function POST(request: Request) {
             )
         }
 
-        console.log(`GDPR cleanup completed: ${JSON.stringify(data)}`)
-
         return NextResponse.json({
             success: true,
             retention_days: retentionDays,

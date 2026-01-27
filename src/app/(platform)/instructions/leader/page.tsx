@@ -43,6 +43,14 @@ export default async function LeaderPage() {
     console.error('get_user_instructions failed', instructionsError)
   }
 
+  // Fetch alerts via security-definer RPC (team + org-wide)
+  const { data: alerts, error: alertsError } = await supabase
+    .rpc('get_user_alerts', { p_user_id: user.id })
+
+  if (alertsError) {
+    console.error('get_user_alerts failed', alertsError)
+  }
+
   return (
     <LeaderDashboard
       profile={profile}
@@ -50,6 +58,7 @@ export default async function LeaderPage() {
       team={profile.teams}
       teamMembers={teamMembers || []}
       instructions={instructions || []}
+      alerts={alerts || []}
     />
   )
 }

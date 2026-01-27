@@ -117,21 +117,22 @@ export default function AdminDashboard({
   const [showEditInstruction, setShowEditInstruction] = useState(false);
   const [showCreateFolder, setShowCreateFolder] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [currentGdprCount, setCurrentGdprCount] = useState(gdprPendingCount);
 
   useEffect(() => {
     cleanupInviteData();
   }, []);
 
   useEffect(() => {
-    if (gdprPendingCount > 0) {
-      const label = gdprPendingCount === 1
+    if (currentGdprCount > 0) {
+      const label = currentGdprCount === 1
         ? "1 sletteforespørsel"
-        : `${gdprPendingCount} sletteforespørsler`
+        : `${currentGdprCount} sletteforespørsler`
       toast(`Du har ${label} som venter på behandling.`, {
         id: "gdpr-pending",
       })
     }
-  }, [gdprPendingCount])
+  }, [currentGdprCount])
 
   const searchValue = searchQuery.trim().toLowerCase();
 
@@ -326,9 +327,11 @@ export default function AdminDashboard({
     });
   }, [alerts, searchValue]);
 
+  // Don't show notification count when on the alerts tab
   const activeAlertCount = useMemo(() => {
+    if (tab === "kunngjøringer") return 0;
     return alerts.filter((alert) => alert.active).length;
-  }, [alerts]);
+  }, [alerts, tab]);
 
   const searchedTeams = useMemo(() => {
     if (!searchValue) return teams;
@@ -440,7 +443,7 @@ export default function AdminDashboard({
           collapsed={sidebarCollapsed}
           onCollapsedChange={setSidebarCollapsed}
           unansweredCount={unansweredQuestions.length}
-          gdprPendingCount={gdprPendingCount}
+          gdprPendingCount={currentGdprCount}
         />
 
         {/* Main Content Area */}
@@ -581,7 +584,7 @@ export default function AdminDashboard({
               />
             )}
 
-            {tab === "gdpr" && <GdprTab />}
+            {tab === "gdpr" && <GdprTab onPendingCountChange={setCurrentGdprCount} />}
           </main>
         </div>
       </div>

@@ -45,6 +45,7 @@ export function EmployeeHeader({
 }: EmployeeHeaderProps) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -93,11 +94,11 @@ export function EmployeeHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        <DropdownMenu>
+        <DropdownMenu open={alertsOpen} onOpenChange={setAlertsOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative h-11 w-11">
               <Bell className="w-5 h-5" />
-              {activeAlerts.length > 0 && (
+              {activeAlerts.length > 0 && !alertsOpen && (
                 <span className="absolute top-2 right-2 min-w-[10px] h-[10px] rounded-full bg-primary" />
               )}
             </Button>

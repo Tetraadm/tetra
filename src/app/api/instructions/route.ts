@@ -1,7 +1,7 @@
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { uploadRatelimit } from '@/lib/ratelimit'
 import { extractKeywords } from '@/lib/keyword-extraction'
@@ -131,7 +131,10 @@ export async function POST(request: NextRequest) {
         const safeTitle = sanitizeHtml(title)
         const safeContent = content ? sanitizeHtml(content) : null
 
-        const { data: instruction, error: insertError } = await supabase
+        // Use service role client for INSERT (bypasses RLS since we already verified admin above)
+        const adminClient = createServiceRoleClient()
+        
+        const { data: instruction, error: insertError } = await adminClient
             .from('instructions')
             .insert({
                 title: safeTitle,
@@ -173,7 +176,7 @@ export async function POST(request: NextRequest) {
                         embedding: JSON.stringify(chunkEmbeddings[idx])
                     }))
 
-                    const { error: chunksError } = await supabase
+                    const { error: chunksError } = await adminClient
                         .from('instruction_chunks')
                         .insert(chunkInserts)
 
@@ -190,7 +193,7 @@ export async function POST(request: NextRequest) {
 
         // Link Teams
         if (instruction && teamIds.length > 0) {
-            const { error: teamLinkError } = await supabase
+            const { error: teamLinkError } = await adminClient
                 .from('instruction_teams')
                 .insert(
                     teamIds.map(tid => ({
