@@ -1,6 +1,6 @@
 # Tetrivo HMS Runbook
 
-Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-21.
+Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-27.
 
 ---
 
@@ -57,24 +57,37 @@ Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-21.
 
 ---
 
-## 4. AI Service Feil (Vertex/Gemini/OpenAI)
+## 4. AI Service Feil (Vertex AI / Gemini)
 
 ### Symptomer
 - "Tjenesten er midlertidig utilgjengelig" (503)
 - "Kunne ikke generere svar" (500)
-- Vertex search gir 0 treff
+- Embeddings feiler / ingen resultater i AI-søk
+
+### Komponenter
+Systemet bruker **kun Google Cloud** for AI:
+- **Gemini 2.0 Flash** - Chat/svar-generering (`gemini-2.0-flash-001`)
+- **Vertex AI Embeddings** - Semantisk søk (`text-multilingual-embedding-002`, 768 dim)
+- **Document AI OCR** - PDF tekstutvinning (processor: `c741d9fd2e1301ad`)
 
 ### Feilsøking
-1. **Google Auth:** Sjekk at `GOOGLE_CREDENTIALS_JSON` er gyldig JSON.
-2. **IAM Roller:** Service account må ha `Vertex AI User` og `Discovery Engine Editor`.
-3. **Vertex Quotas:** Sjekk GCP Console for quota-overskridelser (særlig på Gemini Flash).
-4. **Edge Function Logs:** Sjekk Supabase Dashboard -> Functions -> Logs for `generate-embeddings`.
-5. **OpenAI Fallback:** Hvis Vertex feiler, sjekk `OPENAI_API_KEY` for fallback.
+1. **Google Auth:** Sjekk at `GOOGLE_CREDENTIALS_JSON` er gyldig JSON (minifisert).
+2. **IAM Roller:** Service account må ha:
+   - `Vertex AI User`
+   - `Discovery Engine Editor`
+   - `Document AI API User`
+   - `Storage Object Admin` (for GCS bucket)
+3. **Vertex Quotas:** Sjekk GCP Console for quota-overskridelser.
+4. **Edge Function Logs:** Sjekk Supabase Dashboard -> Edge Functions -> Logs:
+   - `generate-embeddings` - Vertex AI embedding-generering
+   - `process-document` - Document AI OCR for PDF-er
+5. **Document AI Processor:** Sjekk at processor er aktiv i GCP Console -> Document AI.
 
 ### Løsning
-- IAM Feil: Gi riktig rolle i GCP IAM.
-- Quota: Be om økt quota eller bytt region i koden.
-- Vertex nedetid: Systemet skal automatisk bruke OpenAI (om konfigurert).
+- **IAM Feil:** Gi riktig rolle i GCP IAM.
+- **Quota:** Be om økt quota eller bytt region i koden.
+- **Edge Function Timeout:** Supabase Edge Functions har 60s timeout - store PDF-er kan feile.
+- **Embedding Mismatch:** Database bruker 768-dimensjons vektorer - sørg for at embeddings-modellen matcher.
 
 ---
 
@@ -177,15 +190,41 @@ git push origin main
 
 ---
 
-## 8. Task Processing (Sync Fallback)
+## 8. Edge Functions (Embeddings & OCR)
 
-### Merk
-Systemet er for tiden konfigurert til å kjøre tunge oppgaver (som embeddings) **synkront** i API-kallet pga. begrensninger i Next.js/Turbopack med Google Cloud Tasks biblioteket.
+### Arkitektur
+Tunge oppgaver kjøres via **Supabase Edge Functions** (Deno runtime):
+- `generate-embeddings` - Genererer Vertex AI embeddings (768 dim)
+- `process-document` - Ekstraherer tekst fra PDF via Document AI OCR
 
-### Konsekvenser
-- `/api/tasks/process` kan ta opp mot 60 sekunder
-- Ingen retry-mekanisme (annet enn klientens reload)
-- Cloud Tasks kø er deaktivert i koden (`cloud-tasks.ts` stub)
+### Hvorfor Edge Functions?
+Google Cloud-biblioteker (Document AI, Vertex AI SDK) fungerer ikke med Next.js Turbopack.
+Edge Functions løser dette ved å bruke Deno runtime med HTTP API direkte.
+
+### Feilsøking
+1. **Sjekk logs:** Supabase Dashboard -> Edge Functions -> Logs
+2. **Sjekk secrets:** Edge Functions -> Secrets må inneholde:
+   - `GOOGLE_CREDENTIALS_JSON`
+   - `GCS_BUCKET_NAME`
+   - `DOCUMENT_AI_PROCESSOR_ID`
+   - `DOCUMENT_AI_LOCATION`
+3. **Timeout:** Edge Functions har 60s timeout - store PDF-er kan feile
+
+### Deploy Edge Functions
+```bash
+# Krever Supabase CLI og innlogget bruker
+supabase functions deploy generate-embeddings
+supabase functions deploy process-document
+```
+
+### Manuell testing
+```bash
+# Test embeddings
+curl -X POST "https://rshukldzekufrlkbsqrr.supabase.co/functions/v1/generate-embeddings" \
+  -H "Authorization: Bearer YOUR_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Test tekst"}'
+```
 
 ---
 
@@ -213,7 +252,7 @@ Systemet er for tiden konfigurert til å kjøre tunge oppgaver (som embeddings) 
 | Supabase support | support@supabase.io | Database/auth issues |
 | Vercel support | support@vercel.com | Hosting/deploy issues |
 | Resend support | support@resend.com | E-post leveringsproblemer |
-| Anthropic status | status.anthropic.com | AI API status |
+| Google Cloud status | status.cloud.google.com | Vertex AI / Document AI status |
 
 ---
 

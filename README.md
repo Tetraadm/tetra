@@ -28,7 +28,9 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 | **Framework** | Next.js 16.1, React 19 |
 | **Språk** | TypeScript 5 |
 | **Database** | PostgreSQL (Supabase) |
-| **AI** | Claude Haiku 3.5, OpenAI |
+| **AI Chat** | Gemini 2.0 Flash (Vertex AI) |
+| **AI Embeddings** | Vertex AI `text-multilingual-embedding-002` |
+| **PDF OCR** | Google Document AI |
 | **E-post** | Resend |
 | **Hosting** | Vercel |
 | **Rate Limiting** | Upstash Redis |
@@ -44,8 +46,7 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 - Node.js 20+
 - npm 10+
 - [Supabase](https://supabase.com/) prosjekt
-- [Anthropic](https://anthropic.com/) API-nøkkel
-- [OpenAI](https://openai.com/) API-nøkkel (valgfritt)
+- [Google Cloud](https://console.cloud.google.com/) prosjekt med Vertex AI aktivert
 
 ### Installasjon
 
@@ -77,9 +78,16 @@ npm run dev
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 SUPABASE_SERVICE_ROLE_KEY=eyJ...
-ANTHROPIC_API_KEY=sk-ant-api03-...
-OPENAI_API_KEY=sk-... # Valgfritt
+GOOGLE_CREDENTIALS_JSON={"type":"service_account",...} # Minifisert JSON
 NEXT_PUBLIC_APP_URL=https://tetrivo.com
+```
+
+### Google Cloud (Vertex AI)
+
+```env
+GCS_BUCKET_NAME=your-bucket-name
+DOCUMENT_AI_PROCESSOR_ID=your-processor-id
+DOCUMENT_AI_LOCATION=eu # eller us
 ```
 
 ### Valgfrie
@@ -190,23 +198,38 @@ npx playwright install
 npm run test:e2e
 ```
 
-### Google Cloud Setup (Critical)
+### Google Cloud Setup (Kritisk)
 
-For at Vertex AI skal fungere kreves et Service Account key i JSON format.
-1. Opprett Service Account i GCP
-2. Gi roller: `Vertex AI User`, `Discovery Engine Editor`
+For at Vertex AI og Document AI skal fungere kreves et Service Account key i JSON format.
+
+1. Opprett Service Account i GCP Console
+2. Gi roller:
+   - `Vertex AI User` - for embeddings og chat
+   - `Document AI API User` - for PDF OCR
+   - `Storage Object Admin` - for GCS bucket
 3. Last ned JSON key
 4. Minifiser JSON (fjern linjeskift) og legg i `GOOGLE_CREDENTIALS_JSON`
 
 ### Supabase Edge Functions
 
-Brukes for tunge prosesser som embeddings.
+Brukes for tunge AI-prosesser (Google Cloud SDK fungerer ikke med Next.js Turbopack).
+
+| Funksjon | Beskrivelse |
+|----------|-------------|
+| `generate-embeddings` | Genererer Vertex AI embeddings (768 dim) |
+| `process-document` | Ekstraherer tekst fra PDF via Document AI |
 
 ```bash
 # Deploy (krever Supabase CLI)
 supabase functions deploy generate-embeddings
+supabase functions deploy process-document
 ```
-Disse funksjonene har automatisk fallback til OpenAI hvis Vertex AI feiler.
+
+Edge Functions secrets må settes i Supabase Dashboard:
+- `GOOGLE_CREDENTIALS_JSON`
+- `GCS_BUCKET_NAME`
+- `DOCUMENT_AI_PROCESSOR_ID`
+- `DOCUMENT_AI_LOCATION`
 
 ---
 

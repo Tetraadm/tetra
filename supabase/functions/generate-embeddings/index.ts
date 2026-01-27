@@ -1,26 +1,16 @@
 /**
  * Generate Embeddings Edge Function
  * 
- * Processes document embeddings asynchronously using Vertex AI or OpenAI.
+ * Processes document embeddings using Vertex AI.
  * Called via HTTP POST with instruction data.
- * 
- * Payload:
- * {
- *   instructionId: string
- *   title: string
- *   content: string
- *   orgId: string
- * }
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.47.10'
-import { getAccessToken, getProjectId } from '../_shared/google-auth.ts'
 
 // Configuration
 const VERTEX_LOCATION = 'europe-west4'
 const VERTEX_MODEL = 'text-multilingual-embedding-002'
-const OPENAI_MODEL = 'text-embedding-3-small'
 const MAX_INPUT_CHARS = 8000
 const CHUNK_SIZE = 800
 const CHUNK_OVERLAP = 100
@@ -33,26 +23,94 @@ interface EmbeddingRequest {
 }
 
 type VertexEmbeddingPrediction = {
-  embeddings: {
-    values: number[]
-  }
+  embeddings: { values: number[] }
 }
 
 type VertexEmbeddingResponse = {
   predictions: VertexEmbeddingPrediction[]
 }
 
-type OpenAIEmbeddingData = {
-  embedding: number[]
-  index: number
+// ========== Google Auth ==========
+function getProjectId(): string {
+  const credentialsJson = Deno.env.get('GOOGLE_CREDENTIALS_JSON')
+  if (!credentialsJson) throw new Error('GOOGLE_CREDENTIALS_JSON not set')
+  return JSON.parse(credentialsJson).project_id
 }
 
-type OpenAIEmbeddingResponse = {
-  data: OpenAIEmbeddingData[]
+async function getAccessToken(scopes: string[]): Promise<string> {
+  const credentialsJson = Deno.env.get('GOOGLE_CREDENTIALS_JSON')
+  if (!credentialsJson) throw new Error('GOOGLE_CREDENTIALS_JSON not set')
+  const credentials = JSON.parse(credentialsJson)
+  
+  const header = { alg: 'RS256', typ: 'JWT' }
+  const now = Math.floor(Date.now() / 1000)
+  const payload = {
+    iss: credentials.client_email,
+    scope: scopes.join(' '),
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600
+  }
+  
+  const base64url = (obj: object) => {
+    const json = JSON.stringify(obj)
+    const base64 = btoa(json)
+    return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
+  }
+  
+  const encodedHeader = base64url(header)
+  const encodedPayload = base64url(payload)
+  const signatureInput = `${encodedHeader}.${encodedPayload}`
+  
+  const privateKey = credentials.private_key
+  const keyData = privateKey
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '')
+  
+  const binaryKey = Uint8Array.from(atob(keyData), (c: string) => c.charCodeAt(0))
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    binaryKey,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  )
+  
+  const signatureBuffer = await crypto.subtle.sign(
+    'RSASSA-PKCS1-v1_5',
+    cryptoKey,
+    new TextEncoder().encode(signatureInput)
+  )
+  
+  const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '')
+  
+  const jwt = `${signatureInput}.${signature}`
+  
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+      assertion: jwt
+    })
+  })
+  
+  if (!tokenResponse.ok) {
+    const error = await tokenResponse.text()
+    throw new Error(`Failed to get access token: ${error}`)
+  }
+  
+  const tokenData = await tokenResponse.json()
+  return tokenData.access_token
 }
+// ========== End Google Auth ==========
 
 serve(async (req: Request) => {
-  // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -67,26 +125,15 @@ serve(async (req: Request) => {
     const payload: EmbeddingRequest = await req.json()
     console.log(`Processing embeddings for instruction: ${payload.instructionId}`)
 
-    // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    // Prepare text for embedding
     const fullText = `${payload.title}\n\n${payload.content}`.slice(0, MAX_INPUT_CHARS)
     
-    // Try Vertex AI first, fallback to OpenAI
-    let embeddings: number[]
-    let chunkEmbeddings: number[][] = []
-    
-    try {
-      embeddings = await generateVertexEmbedding(fullText)
-      console.log('Generated embedding with Vertex AI')
-    } catch (vertexError) {
-      console.log('Vertex AI failed, falling back to OpenAI:', vertexError)
-      embeddings = await generateOpenAIEmbedding(fullText)
-      console.log('Generated embedding with OpenAI')
-    }
+    // Generate embedding with Vertex AI
+    const embeddings = await generateVertexEmbedding(fullText)
+    console.log(`Generated embedding with Vertex AI (${embeddings.length} dimensions)`)
 
     // Store full document embedding
     const { error: updateError } = await supabase
@@ -108,16 +155,11 @@ serve(async (req: Request) => {
         .delete()
         .eq('instruction_id', payload.instructionId)
 
-      // Generate embeddings for chunks
+      // Generate embeddings for all chunks in one batch
       const chunkTexts = chunks.map(c => `${payload.title}\n\n${c.content}`.slice(0, MAX_INPUT_CHARS))
-      
-      try {
-        chunkEmbeddings = await generateVertexEmbeddings(chunkTexts)
-      } catch {
-        chunkEmbeddings = await generateOpenAIEmbeddings(chunkTexts)
-      }
+      const chunkEmbeddings = await generateVertexEmbeddings(chunkTexts)
 
-      // Insert chunks
+      // Insert chunks with embeddings
       const chunkInserts = chunks.map((chunk, idx) => ({
         instruction_id: payload.instructionId,
         chunk_index: chunk.index,
@@ -141,7 +183,8 @@ serve(async (req: Request) => {
         success: true, 
         instructionId: payload.instructionId,
         embeddingDimensions: embeddings.length,
-        chunksProcessed: chunks.length
+        chunksProcessed: chunks.length,
+        provider: 'vertex-ai'
       }),
       { headers, status: 200 }
     )
@@ -149,7 +192,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('Error processing embeddings:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: (error as Error).message }),
       { headers, status: 500 }
     )
   }
@@ -185,7 +228,7 @@ async function generateVertexEmbedding(text: string): Promise<number[]> {
 }
 
 /**
- * Generate embeddings for multiple texts using Vertex AI
+ * Generate embeddings for multiple texts using Vertex AI (batch)
  */
 async function generateVertexEmbeddings(texts: string[]): Promise<number[][]> {
   const projectId = getProjectId()
@@ -214,66 +257,7 @@ async function generateVertexEmbeddings(texts: string[]): Promise<number[][]> {
 }
 
 /**
- * Generate embedding using OpenAI (fallback)
- */
-async function generateOpenAIEmbedding(text: string): Promise<number[]> {
-  const apiKey = Deno.env.get('OPENAI_API_KEY')
-  if (!apiKey) throw new Error('OPENAI_API_KEY not configured')
-
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: text
-    })
-  })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`OpenAI error: ${error}`)
-  }
-
-  const data = (await response.json()) as OpenAIEmbeddingResponse
-  return data.data[0].embedding
-}
-
-/**
- * Generate embeddings for multiple texts using OpenAI (fallback)
- */
-async function generateOpenAIEmbeddings(texts: string[]): Promise<number[][]> {
-  const apiKey = Deno.env.get('OPENAI_API_KEY')
-  if (!apiKey) throw new Error('OPENAI_API_KEY not configured')
-
-  const response = await fetch('https://api.openai.com/v1/embeddings', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: texts
-    })
-  })
-
-  if (!response.ok) {
-    const error = await response.text()
-    throw new Error(`OpenAI error: ${error}`)
-  }
-
-  const data = (await response.json()) as OpenAIEmbeddingResponse
-  return data.data
-    .slice()
-    .sort((a, b) => a.index - b.index)
-    .map((entry) => entry.embedding)
-}
-
-/**
- * Split text into overlapping chunks
+ * Split text into overlapping chunks for better retrieval
  */
 function chunkText(text: string): Array<{ index: number; content: string }> {
   if (!text || text.length <= CHUNK_SIZE) {

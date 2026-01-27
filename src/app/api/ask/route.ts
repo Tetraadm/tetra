@@ -106,6 +106,80 @@ function countKeywordOverlap(
   }, 0)
 }
 
+/**
+ * Smart re-ranking of search results based on multiple signals:
+ * 1. Title match (strongest signal - exact or partial match)
+ * 2. Severity (critical > medium > low)
+ * 3. Recency (recently updated instructions get a boost)
+ */
+function smartRerank<T extends { 
+  title: string
+  severity?: string
+  updated_at?: string | null
+  similarity?: number 
+}>(
+  results: T[],
+  query: string
+): T[] {
+  const queryLower = query.toLowerCase().trim()
+  const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2)
+  
+  const scored = results.map(result => {
+    let score = result.similarity || 0.5
+    const titleLower = (result.title || '').toLowerCase()
+    
+    // 1. Title match boost (strongest signal)
+    if (titleLower === queryLower) {
+      // Exact title match - huge boost
+      score += 0.5
+    } else if (titleLower.includes(queryLower) || queryLower.includes(titleLower)) {
+      // Partial title match - significant boost
+      score += 0.3
+    } else {
+      // Check if query words appear in title
+      const titleMatchCount = queryWords.filter(w => titleLower.includes(w)).length
+      if (titleMatchCount > 0) {
+        score += 0.15 * (titleMatchCount / queryWords.length)
+      }
+    }
+    
+    // 2. Severity boost (critical instructions are more important)
+    const severity = result.severity?.toLowerCase() || 'medium'
+    if (severity === 'critical') {
+      score += 0.1
+    } else if (severity === 'low') {
+      score -= 0.05
+    }
+    
+    // 3. Recency boost (updated in last 30 days)
+    if (result.updated_at) {
+      const updatedAt = new Date(result.updated_at)
+      const daysSinceUpdate = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60 * 24)
+      if (daysSinceUpdate < 30) {
+        score += 0.05
+      } else if (daysSinceUpdate > 365) {
+        score -= 0.02 // Slight penalty for old instructions
+      }
+    }
+    
+    return { result, score }
+  })
+  
+  // Sort by smart score descending
+  scored.sort((a, b) => b.score - a.score)
+  
+  // Log for debugging in development
+  if (process.env.NODE_ENV === 'development') {
+    console.log('[RERANK] Top 3 results:', scored.slice(0, 3).map(s => ({
+      title: s.result.title,
+      originalScore: s.result.similarity,
+      smartScore: s.score.toFixed(3)
+    })))
+  }
+  
+  return scored.map(s => s.result)
+}
+
 function filterByKeywordOverlap<T extends InstructionLike>(
   queryKeywords: string[],
   instructions: T[]
@@ -294,8 +368,8 @@ async function findRelevantInstructions(
 
   const queryKeywords = extractKeywords(question, 5)
 
-  // Try hybrid search first (vector + full-text) if OpenAI is configured
-  if (process.env.OPENAI_API_KEY) {
+  // Try hybrid search first (vector + full-text) if embeddings are configured
+  if (process.env.GOOGLE_CREDENTIALS_JSON || process.env.OPENAI_API_KEY) {
     try {
       const questionEmbedding = await generateEmbedding(question)
 
@@ -470,11 +544,14 @@ export async function POST(request: NextRequest) {
     const userId = user.id
 
     // Find relevant instructions using vector search or keyword fallback
-    const { instructions: relevantInstructions, usedVectorSearch } = await findRelevantInstructions(
+    const { instructions: rawInstructions, usedVectorSearch } = await findRelevantInstructions(
       supabase,
       question,
       userId
     )
+
+    // Apply smart re-ranking based on title match, severity, and recency
+    const relevantInstructions = smartRerank(rawInstructions, question)
 
     if (relevantInstructions.length === 0) {
       await logUnansweredQuestion(supabase, orgId, userId, question)

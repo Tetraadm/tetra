@@ -1,399 +1,267 @@
-# Tetrivo HMS Platform - Google Cloud Integration Session
+# Tetrivo HMS Platform - Google Cloud Integration
 
-**Date**: January 2025  
-**Session**: Claude Opus Development Session
+**Date**: January 2025 (Updated: January 27, 2026)  
+**Status**: Production Ready
 
 ---
 
 ## Overview
 
-This document captures the complete development session where we integrated Google Cloud services into the Tetrivo HMS platform, including Vertex AI Search, Cloud Storage, and Supabase Edge Functions.
+This document captures the complete Google Cloud integration for the Tetrivo HMS platform. The system uses:
+- **Vertex AI Embeddings** (768 dimensions) for semantic search
+- **Google Document AI** for PDF text extraction (OCR)
+- **Gemini 2.0 Flash** for AI-powered answers
+- **Supabase Edge Functions** for async processing
 
 ---
 
-## 1. Fixed AI Chat Source Linking Issue
+## Architecture
 
-### Problem
-AI responses showed UUID instead of document title, and source links didn't work properly.
-
-### Solution
-Added database lookup in the ask route to match Vertex Search results with instructions by `file_path` or UUID.
-
-### Files Modified
-- `src/app/api/ask/route.ts`
-- `src/lib/vertex-search.ts`
-
-### Code Changes
-
-In `src/app/api/ask/route.ts`, we added logic to:
-1. Extract document IDs from Vertex Search results
-2. Query Supabase to get the actual instruction titles
-3. Map the results back to provide proper titles and working links
-
----
-
-## 2. Fixed Critical Bugs
-
-### 2.1 Duplicate Return Statement
-- **File**: `src/app/api/upload/route.ts:305-306`
-- **Issue**: Duplicate return statement causing unreachable code
-- **Fix**: Removed the duplicate
-
-### 2.2 Sensitive Debug Logging
-- **Issue**: Production logs contained sensitive information
-- **Fix**: Wrapped debug logging in `process.env.NODE_ENV === 'development'` checks
-
-### 2.3 GCS Cleanup for GDPR
-- **File**: `src/app/api/gdpr-cleanup/route.ts`
-- **Issue**: Soft-deleted instructions weren't being cleaned up from GCS
-- **Fix**: Added GCS cleanup logic alongside Supabase Storage cleanup
-
----
-
-## 3. Improved Streaming Performance
-
-### 3.1 Vertex Chat Updates
-**File**: `src/lib/vertex-chat.ts`
-
-Changes:
-- Added connection pooling for better performance
-- Switched to faster Gemini model
-- Improved error handling
-
-### 3.2 Employee Chat Hook Updates
-**File**: `src/app/(platform)/instructions/employee/hooks/useEmployeeChat.ts`
-
-Changes:
-- Added throttling (30ms) for streaming updates
-- Used `startTransition` for smoother UI updates
-- Reduced re-renders during streaming
-
----
-
-## 4. Added Structured Logging
-
-### New File: `src/lib/logger.ts`
-
-Created a structured logging utility using Pino that:
-- Outputs JSON-formatted logs compatible with Google Cloud Logging
-- Includes request context (user ID, organization ID)
-- Has different log levels (debug, info, warn, error)
-- Only logs debug in development
-
-### Usage Example
-```typescript
-import { logger } from '@/lib/logger';
-
-logger.info('User uploaded document', { 
-  userId: user.id, 
-  fileName: file.name 
-});
+```
+User uploads PDF
+       |
+       v
++------------------+     +----------------------+
+| Next.js Upload   |---->| Supabase Storage     |
++------------------+     +----------------------+
+       |                          |
+       v                          v
++------------------+     +----------------------+
+| Edge Function:   |<----| process-document     |
+| Document AI OCR  |     | (downloads PDF)      |
++------------------+     +----------------------+
+       |
+       v
++------------------+     +----------------------+
+| Edge Function:   |---->| Supabase Database    |
+| generate-embed.  |     | (768-dim vectors)    |
++------------------+     +----------------------+
+       |
+       v
++------------------+
+| AI Search Ready  |
++------------------+
 ```
 
 ---
 
-## 5. Added Redis Caching
+## 1. Embedding System
 
-### New File: `src/lib/cache.ts`
+### Provider: Vertex AI (Exclusive)
+- **Model**: `text-multilingual-embedding-002`
+- **Dimensions**: 768 (migrated from OpenAI's 1536)
+- **Location**: `europe-west4`
 
-Created a caching layer for Vertex Search results:
-- Uses Upstash Redis
-- 60-second TTL for search results
-- Reduces API calls to Vertex AI Search
-- Graceful fallback if Redis unavailable
+### Database Schema
+```sql
+-- Both tables use 768-dimension vectors
+ALTER TABLE instructions ALTER COLUMN embedding TYPE vector(768);
+ALTER TABLE instruction_chunks ALTER COLUMN embedding TYPE vector(768);
+```
 
-### Integration
-Updated `src/lib/vertex-search.ts` to check cache before making API calls.
+### Files
+- `src/lib/embeddings.ts` - Vertex AI embeddings via HTTP API
+- `supabase/functions/generate-embeddings/index.ts` - Edge Function
 
 ---
 
-## 6. Supabase Edge Functions for Async Processing
+## 2. Document AI (PDF OCR)
 
-### Background
-Next.js Turbopack bundler has incompatibility issues with Google Cloud packages:
-- `@google-cloud/tasks`
-- `@google-cloud/documentai`
-- `@google-cloud/aiplatform`
+### Configuration
+- **Location**: `eu`
+- **Processor ID**: `c741d9fd2e1301ad`
+- **Processor Type**: Document OCR
 
-These packages use Node.js-specific APIs that don't work with the edge runtime or Turbopack.
-
-### Solution
-Created Supabase Edge Functions running on Deno to handle Google Cloud integrations.
-
-### New Files Structure
-
+### Supabase Secrets Required
 ```
-supabase/functions/
-├── _shared/
-│   └── google-auth.ts       # Shared Google Cloud auth for Deno
-├── generate-embeddings/
-│   └── index.ts             # Vertex AI/OpenAI embeddings generation
-└── process-document/
-    └── index.ts             # Google Document AI for PDF extraction
+GOOGLE_CREDENTIALS_JSON={"type":"service_account",...}
+DOCUMENT_AI_PROCESSOR_ID=c741d9fd2e1301ad
+DOCUMENT_AI_LOCATION=eu
 ```
-
-### 6.1 Shared Google Auth (`supabase/functions/_shared/google-auth.ts`)
-
-Handles Google Cloud authentication in Deno environment:
-- Parses service account JSON from environment
-- Generates JWT tokens for Google APIs
-- Exchanges JWT for access tokens
-
-### 6.2 Generate Embeddings Function (`supabase/functions/generate-embeddings/index.ts`)
-
-Generates embeddings for document chunks:
-- Supports both Vertex AI and OpenAI providers
-- Handles chunking of large documents
-- Stores embeddings in Supabase database
-- CORS-enabled for browser calls
-
-**Request Format:**
-```json
-{
-  "instructionId": "uuid",
-  "content": "document text",
-  "provider": "openai" // or "vertex"
-}
-```
-
-### 6.3 Process Document Function (`supabase/functions/process-document/index.ts`)
-
-Extracts text from PDFs using Google Document AI:
-- Fetches PDF from Supabase Storage
-- Sends to Document AI for OCR/extraction
-- Returns extracted text
-
-**Request Format:**
-```json
-{
-  "storagePath": "org-id/file.pdf",
-  "processorId": "processor-id" // optional
-}
-```
-
-### Supporting Files in src/lib/
-
-#### `src/lib/edge-functions.ts`
-Client for calling Supabase Edge Functions from Next.js:
-```typescript
-import { callEdgeFunction } from '@/lib/edge-functions';
-
-const result = await callEdgeFunction('generate-embeddings', {
-  instructionId: id,
-  content: text,
-  provider: 'openai'
-});
-```
-
-#### `src/lib/cloud-tasks.ts`
-Stub file (disabled due to bundler issues):
-- Contains placeholder for Cloud Tasks integration
-- Currently disabled, using Edge Functions instead
-
-#### `src/lib/document-ai.ts`
-Stub with fallback:
-- Attempts Edge Function call for Document AI
-- Falls back to pdf-parse for local extraction
-
----
-
-## 7. Updated Upload Route
-
-**File**: `src/app/api/upload/route.ts`
-
-Changes:
-- Triggers async embedding generation via Edge Functions when configured
-- Falls back to synchronous processing if Edge Functions unavailable
-- Uploads to both Supabase Storage and GCS (for Vertex AI Search indexing)
 
 ### Flow
-1. User uploads file
-2. File stored in Supabase Storage
-3. File copied to GCS bucket
-4. Edge Function triggered for embedding generation (async)
-5. Vertex AI Search indexes from GCS
+1. PDF uploaded to Supabase Storage
+2. Edge Function downloads PDF
+3. Sends to Document AI for OCR
+4. Extracted text stored in `instructions.content`
+5. Triggers embedding generation
 
 ---
 
-## 8. TypeScript Configuration Update
+## 3. AI Chat (Gemini)
 
-**File**: `tsconfig.json`
+### Configuration
+- **Model**: `gemini-2.0-flash-001`
+- **Location**: `europe-west4`
+- **Temperature**: 0.1 (factual RAG)
 
-Added `"supabase/functions"` to exclude array:
-```json
-{
-  "exclude": [
-    "node_modules",
-    "supabase/functions"
-  ]
-}
-```
+### File
+- `src/lib/vertex-chat.ts`
 
-This prevents TypeScript from trying to compile Deno files with Node.js types.
-
----
-
-## Current State
-
-### Pending Fixes (ESLint Errors)
-
-1. **`src/app/api/upload/route.ts`**:
-   - Unused variables: `PDF_MAX_PAGES`, `PDF_PAGE_TIMEOUT_MS`
-   - `@ts-ignore` should be `@ts-expect-error`
-   - `require()` import (acceptable for pdf-parse compatibility)
-
-2. **`src/app/api/tasks/process/route.ts`**:
-   - `any` type on line 53
-
-3. **`src/lib/vertex-search.ts`**:
-   - Multiple `any` types that need proper typing
-
-4. **`supabase/functions/generate-embeddings/index.ts`**:
-   - Multiple `any` types (Deno files, may need different handling)
+### Features
+- Streaming responses
+- Connection pooling
+- Graceful error handling with fallback message
 
 ---
 
-## Architecture Decisions
+## 4. Smart Search Ranking
 
-### 1. Dual Storage Strategy
-Files are stored in both:
-- **Supabase Storage**: Primary storage, used by the application
-- **Google Cloud Storage**: For Vertex AI Search indexing
+### Implementation
+Added `smartRerank()` function in `src/app/api/ask/route.ts`
 
-### 2. Embedding Provider
-- **Primary**: OpenAI embeddings (simpler integration)
-- **Alternative**: Vertex AI Embeddings available via Edge Functions
+### Ranking Signals
 
-### 3. PDF Text Extraction
-- **Next.js**: pdf-parse library (synchronous)
-- **Edge Functions**: Document AI available for better OCR
-
-### 4. Async Processing
-- **Approach**: Supabase Edge Functions
-- **Reason**: Cloud Tasks incompatible with Turbopack bundler
+| Signal | Boost | Description |
+|--------|-------|-------------|
+| Exact title match | +0.5 | Query exactly matches instruction title |
+| Partial title match | +0.3 | Query contains or is contained in title |
+| Words in title | +0.15 | Query words appear in title |
+| Critical severity | +0.1 | Instructions marked as critical |
+| Low severity | -0.05 | Instructions marked as low priority |
+| Recently updated | +0.05 | Updated within last 30 days |
+| Stale content | -0.02 | Not updated in over 1 year |
 
 ---
 
-## Environment Variables
+## 5. Edge Functions (Deployed)
 
-### Required
+### generate-embeddings (v6)
+- **URL**: `https://rshukldzekufrlkbsqrr.supabase.co/functions/v1/generate-embeddings`
+- **Status**: ACTIVE
+- **JWT Verification**: Disabled (for internal calls)
+
+### process-document (v6)
+- **URL**: `https://rshukldzekufrlkbsqrr.supabase.co/functions/v1/process-document`
+- **Status**: ACTIVE
+- **JWT Verification**: Disabled (for internal calls)
+
+---
+
+## 6. Environment Variables
+
+### Required (.env.local)
 ```env
 # Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+NEXT_PUBLIC_SUPABASE_URL=https://rshukldzekufrlkbsqrr.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
-# OpenAI
-OPENAI_API_KEY=sk-...
-
-# Google Cloud
-GOOGLE_CREDENTIALS_JSON={"type":"service_account",...}
+# Google Cloud (Vertex AI, Document AI)
+GOOGLE_CREDENTIALS_JSON={"type":"service_account","project_id":"tetrivo-eu",...}
+GCS_BUCKET_NAME=tetrivo-docs-eu
+VERTEX_DATA_STORE_ID=tetrivo-docs-eu_1769527932986
+VERTEX_SEARCH_APP_ID=tetrivo-search_1769528509783
 ```
 
-### For Vertex AI Search
-```env
-VERTEX_SEARCH_APP_ID=your-app-id
-VERTEX_DATA_STORE_ID=your-datastore-id
-GCS_BUCKET_NAME=tetrivo-documents-eu
+### Supabase Edge Function Secrets
 ```
-
-### For Document AI (Edge Functions)
-```env
+GOOGLE_CREDENTIALS_JSON=<full service account JSON>
+DOCUMENT_AI_PROCESSOR_ID=c741d9fd2e1301ad
 DOCUMENT_AI_LOCATION=eu
-DOCUMENT_AI_PROCESSOR_ID=your-processor-id
 ```
 
 ---
 
-## Deployment Instructions
+## 7. Files Modified/Created
 
-### 1. Fix Remaining Lint Errors
-```bash
-npm run lint -- --fix
-```
-
-### 2. Commit Changes
-```bash
-git add .
-git commit -m "feat: add Google Cloud integrations with Supabase Edge Functions"
-```
-
-### 3. Deploy Supabase Edge Functions
-```bash
-# Login to Supabase
-supabase login
-
-# Link to your project
-supabase link --project-ref <your-project-ref>
-
-# Set secrets
-supabase secrets set GOOGLE_CREDENTIALS_JSON='{"type":"service_account",...}'
-supabase secrets set OPENAI_API_KEY='sk-...'
-
-# Deploy functions
-supabase functions deploy generate-embeddings
-supabase functions deploy process-document
-```
-
-### 4. Push to Remote
-```bash
-git push origin main
-```
-
----
-
-## File Change Summary
-
-### New Files Created
-- `src/lib/logger.ts`
-- `src/lib/cache.ts`
-- `src/lib/edge-functions.ts`
-- `src/lib/cloud-tasks.ts` (stub)
-- `src/lib/document-ai.ts` (stub with fallback)
-- `supabase/functions/_shared/google-auth.ts`
+### New Files
+- `src/lib/embeddings.ts` - Vertex AI embeddings (HTTP API)
+- `src/lib/vertex-chat.ts` - Gemini chat with streaming
+- `src/lib/vertex-search.ts` - Vertex AI Search integration
+- `src/lib/edge-functions.ts` - Edge Function client
+- `src/lib/logger.ts` - Structured logging (Pino)
+- `src/lib/cache.ts` - Redis caching for search
 - `supabase/functions/generate-embeddings/index.ts`
 - `supabase/functions/process-document/index.ts`
 
 ### Modified Files
-- `src/app/api/ask/route.ts`
-- `src/app/api/upload/route.ts`
-- `src/app/api/gdpr-cleanup/route.ts`
-- `src/lib/vertex-search.ts`
-- `src/lib/vertex-chat.ts`
-- `src/app/(platform)/instructions/employee/hooks/useEmployeeChat.ts`
-- `tsconfig.json`
+- `src/app/api/ask/route.ts` - Smart ranking, Vertex AI check
+- `src/app/api/upload/route.ts` - Edge Function triggers
+- `tsconfig.json` - Exclude supabase/functions
 
 ---
 
-## Next Steps
+## 8. Migration History
 
-1. Fix remaining ESLint errors
-2. Commit and push changes
-3. Deploy Supabase Edge Functions
-4. Test the full upload -> embedding -> search flow
-5. Monitor Cloud Logging for any issues
-6. Consider adding retry logic for Edge Function calls
-
----
-
-## Troubleshooting
-
-### Edge Function Errors
-Check logs:
-```bash
-supabase functions logs generate-embeddings
-supabase functions logs process-document
+### 2026-01-27: Embedding Dimension Change
+```sql
+-- Migration: change_embedding_dimensions_to_768
+DROP INDEX IF EXISTS instructions_embedding_idx;
+DROP INDEX IF EXISTS instruction_chunks_embedding_idx;
+UPDATE instructions SET embedding = NULL;
+DELETE FROM instruction_chunks;
+ALTER TABLE instructions ALTER COLUMN embedding TYPE vector(768);
+ALTER TABLE instruction_chunks ALTER COLUMN embedding TYPE vector(768);
+CREATE INDEX instructions_embedding_idx ON instructions USING ivfflat (embedding vector_cosine_ops);
+CREATE INDEX instruction_chunks_embedding_idx ON instruction_chunks USING ivfflat (embedding vector_cosine_ops);
 ```
 
-### Vertex AI Search Not Returning Results
-1. Verify GCS bucket has files
-2. Check Data Store is configured correctly
-3. Ensure Search App is linked to Data Store
+---
 
-### Embedding Generation Failing
-1. Check OpenAI API key is valid
-2. Verify Edge Function secrets are set
-3. Check function logs for specific errors
+## 9. Testing
+
+### Test PDF Upload Flow
+1. Upload PDF via admin interface
+2. Check Edge Function logs: Supabase Dashboard > Functions > Logs
+3. Verify in database:
+```sql
+SELECT id, title, LENGTH(content), embedding IS NOT NULL 
+FROM instructions 
+ORDER BY created_at DESC LIMIT 5;
+```
+
+### Test AI Chat
+1. Ask a question about uploaded content
+2. Verify source link works
+3. Check smart ranking in dev logs
 
 ---
 
-*End of Session Documentation*
+## 10. Troubleshooting
+
+### Edge Function Errors
+```bash
+# Check logs in Supabase Dashboard or via CLI
+supabase functions logs generate-embeddings --tail
+supabase functions logs process-document --tail
+```
+
+### Document AI Errors
+- Verify `DOCUMENT_AI_PROCESSOR_ID` is correct
+- Check processor is enabled in GCP Console
+- Verify service account has `Document AI API User` role
+
+### Embedding Dimension Mismatch
+If you see "expected X dimensions, not Y":
+1. Check current column: `SELECT format_type(atttypid, atttypmod) FROM pg_attribute WHERE attname = 'embedding';`
+2. Run migration to correct dimensions
+
+### AI Chat Not Responding
+1. Check Gemini model availability in `europe-west4`
+2. Verify `GOOGLE_CREDENTIALS_JSON` has Vertex AI permissions
+3. Check rate limits in GCP Console
+
+---
+
+## 11. Cost Estimates (Monthly)
+
+| Service | Free Tier | After Free |
+|---------|-----------|------------|
+| Document AI OCR | 1,000 pages | ~$1.50/1000 pages |
+| Vertex AI Embeddings | Varies | ~$0.025/1000 chars |
+| Vertex AI Search | Varies | ~$2.50/1000 queries |
+| Cloud Storage | 5 GB | ~$0.02/GB |
+| Gemini 2.0 Flash | Varies | ~$0.075/1M input tokens |
+
+---
+
+## 12. Security Notes
+
+- Service account JSON contains private key - never commit to git
+- Edge Functions use `verify_jwt: false` for internal calls
+- All data stays in EU region (europe-west4, eu)
+- PII is masked before sending to AI (see `maskPII()`)
+
+---
+
+*Last updated: January 27, 2026*

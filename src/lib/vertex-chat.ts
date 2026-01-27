@@ -2,7 +2,7 @@ import { VertexAI } from '@google-cloud/vertexai'
 import { getGoogleAuthOptions, getProjectId } from './vertex-auth'
 
 const LOCATION = 'europe-west4'; // Creating the client for specific region for Gemini models
-const MODEL_NAME = 'gemini-2.5-flash-preview-05-20' // Faster preview model with improved streaming
+const MODEL_NAME = 'gemini-2.0-flash-001' // Stable fast model
 
 export type ChatMessage = {
     role: 'user' | 'model' | 'system'
@@ -80,7 +80,10 @@ export async function streamGeminiAnswer(
 
     } catch (error) {
         console.error('Gemini Stream Error:', error)
-        throw error
+        // Return a fallback message instead of throwing
+        const fallbackMessage = 'Beklager, jeg kunne ikke generere et svar akkurat nå. Prøv igjen.'
+        onChunk(fallbackMessage)
+        return fallbackMessage
     }
 }
 

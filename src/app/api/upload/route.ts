@@ -8,7 +8,7 @@ import { extractKeywords } from '@/lib/keyword-extraction'
 import { generateEmbedding, generateEmbeddings, prepareTextForEmbedding } from '@/lib/embeddings'
 import { chunkText, prepareChunksForEmbedding } from '@/lib/chunking'
 import { extractPdfText as documentAiExtract, isDocumentAIConfigured } from '@/lib/document-ai'
-import { triggerEmbeddingGeneration, isEdgeFunctionsConfigured } from '@/lib/edge-functions'
+import { triggerEmbeddingGeneration, triggerDocumentProcessing, isEdgeFunctionsConfigured } from '@/lib/edge-functions'
 import { z } from 'zod'
 import DOMMatrixPolyfill from '@thednp/dommatrix'
 import { Storage } from '@google-cloud/storage'
@@ -414,11 +414,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Generate embeddings - try async Edge Functions first, fallback to sync
-    if (instruction && effectiveContent) {
-      if (isEdgeFunctionsConfigured()) {
-        // Async: Use Supabase Edge Functions for background processing
-        // This is non-blocking - embeddings will be generated asynchronously
+    // Generate embeddings - use Edge Functions for async processing
+    if (instruction && isEdgeFunctionsConfigured()) {
+      if (effectiveContent) {
+        // Content available - trigger embedding generation directly
         triggerEmbeddingGeneration({
           instructionId: instruction.id,
           title: title,
@@ -433,49 +432,66 @@ export async function POST(request: NextRequest) {
         })
         
         storageLogger.info({ instructionId: instruction.id }, 'Embedding generation triggered async')
-      } else {
-        // Sync fallback: Generate embeddings immediately
-        try {
-          const textForEmbedding = prepareTextForEmbedding(title, effectiveContent)
-          const fullEmbedding = await generateEmbedding(textForEmbedding)
-
-          const { error: embeddingError } = await adminClient
-            .from('instructions')
-            .update({ embedding: JSON.stringify(fullEmbedding) })
-            .eq('id', instruction.id)
-
-          if (embeddingError) {
-            storageLogger.error({ error: embeddingError }, 'Failed to store embedding')
+      } else if (file.type === 'application/pdf') {
+        // PDF with no extracted content - use Document AI Edge Function
+        // This will extract text and then trigger embedding generation
+        triggerDocumentProcessing({
+          instructionId: instruction.id,
+          filePath: fileName,
+          orgId: orgId,
+          triggerEmbeddings: true
+        }).then(success => {
+          if (success) {
+            storageLogger.info({ instructionId: instruction.id }, 'Document processing queued via Edge Function')
           }
+        }).catch(err => {
+          storageLogger.warn({ error: err }, 'Document processing Edge Function trigger failed')
+        })
+        
+        storageLogger.info({ instructionId: instruction.id }, 'Document processing triggered async for PDF')
+      }
+    } else if (instruction && effectiveContent) {
+      // Sync fallback: Generate embeddings immediately (no Edge Functions)
+      try {
+        const textForEmbedding = prepareTextForEmbedding(title, effectiveContent)
+        const fullEmbedding = await generateEmbedding(textForEmbedding)
 
-          // Generate chunks with embeddings
-          const chunks = chunkText(effectiveContent)
+        const { error: embeddingError } = await adminClient
+          .from('instructions')
+          .update({ embedding: JSON.stringify(fullEmbedding) })
+          .eq('id', instruction.id)
 
-          if (chunks.length > 0) {
-            const chunkTexts = prepareChunksForEmbedding(title, chunks)
-            const chunkEmbeddings = await generateEmbeddings(chunkTexts)
-
-            const chunkInserts = chunks.map((chunk, idx) => ({
-              instruction_id: instruction.id,
-              chunk_index: chunk.index,
-              content: chunk.content,
-              embedding: JSON.stringify(chunkEmbeddings[idx])
-            }))
-
-            const { error: chunksError } = await adminClient
-              .from('instruction_chunks')
-              .insert(chunkInserts)
-
-            if (chunksError) {
-              storageLogger.error({ error: chunksError }, 'Failed to insert chunks')
-            }
-          }
-          
-          storageLogger.info({ instructionId: instruction.id }, 'Embeddings generated synchronously')
-        } catch (embeddingErr) {
-          // Log but don't fail the upload
-          storageLogger.error({ error: embeddingErr }, 'Embedding generation failed')
+        if (embeddingError) {
+          storageLogger.error({ error: embeddingError }, 'Failed to store embedding')
         }
+
+        // Generate chunks with embeddings
+        const chunks = chunkText(effectiveContent)
+
+        if (chunks.length > 0) {
+          const chunkTexts = prepareChunksForEmbedding(title, chunks)
+          const chunkEmbeddings = await generateEmbeddings(chunkTexts)
+
+          const chunkInserts = chunks.map((chunk, idx) => ({
+            instruction_id: instruction.id,
+            chunk_index: chunk.index,
+            content: chunk.content,
+            embedding: JSON.stringify(chunkEmbeddings[idx])
+          }))
+
+          const { error: chunksError } = await adminClient
+            .from('instruction_chunks')
+            .insert(chunkInserts)
+
+          if (chunksError) {
+            storageLogger.error({ error: chunksError }, 'Failed to insert chunks')
+          }
+        }
+        
+        storageLogger.info({ instructionId: instruction.id }, 'Embeddings generated synchronously')
+      } catch (embeddingErr) {
+        // Log but don't fail the upload
+        storageLogger.error({ error: embeddingErr }, 'Embedding generation failed')
       }
     }
 
