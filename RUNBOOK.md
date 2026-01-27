@@ -57,22 +57,24 @@ Operasjonell runbook for pilot-drift. Sist oppdatert: 2026-01-21.
 
 ---
 
-## 4. AI / Anthropic-feil
+## 4. AI Service Feil (Vertex/Gemini/OpenAI)
 
 ### Symptomer
 - "Tjenesten er midlertidig utilgjengelig" (503)
-- "Kunne ikke behandle spørsmålet" (500)
+- "Kunne ikke generere svar" (500)
+- Vertex search gir 0 treff
 
 ### Feilsøking
-1. **Rate limit (429):** Sjekk Upstash dashboard for rate limit status
-2. **503 Service Unavailable:** Upstash ikke konfigurert! Sjekk `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`
-3. **Anthropic API error:** Sjekk `ANTHROPIC_API_KEY`, sjekk Anthropic status page
-4. **Ingen relevante instrukser:** AI svarer med fallback fordi ingen matcher
+1. **Google Auth:** Sjekk at `GOOGLE_CREDENTIALS_JSON` er gyldig JSON.
+2. **IAM Roller:** Service account må ha `Vertex AI User` og `Discovery Engine Editor`.
+3. **Vertex Quotas:** Sjekk GCP Console for quota-overskridelser (særlig på Gemini Flash).
+4. **Edge Function Logs:** Sjekk Supabase Dashboard -> Functions -> Logs for `generate-embeddings`.
+5. **OpenAI Fallback:** Hvis Vertex feiler, sjekk `OPENAI_API_KEY` for fallback.
 
 ### Løsning
-- Rate limit: Vent til window resetter (se `X-RateLimit-Reset` header)
-- Upstash mangler: Konfigurer i Vercel env vars, redeploy
-- Anthropic nede: Vent, eller deaktiver Spør Tetrivo midlertidig
+- IAM Feil: Gi riktig rolle i GCP IAM.
+- Quota: Be om økt quota eller bytt region i koden.
+- Vertex nedetid: Systemet skal automatisk bruke OpenAI (om konfigurert).
 
 ---
 
@@ -172,6 +174,18 @@ Supabase Pro har automatisk daglig PITR (Point-in-Time Recovery).
 git revert HEAD
 git push origin main
 ```
+
+---
+
+## 8. Task Processing (Sync Fallback)
+
+### Merk
+Systemet er for tiden konfigurert til å kjøre tunge oppgaver (som embeddings) **synkront** i API-kallet pga. begrensninger i Next.js/Turbopack med Google Cloud Tasks biblioteket.
+
+### Konsekvenser
+- `/api/tasks/process` kan ta opp mot 60 sekunder
+- Ingen retry-mekanisme (annet enn klientens reload)
+- Cloud Tasks kø er deaktivert i koden (`cloud-tasks.ts` stub)
 
 ---
 

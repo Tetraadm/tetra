@@ -24,27 +24,6 @@ Tetrivo er en **moderne HMS-plattform** bygget for norske virksomheter. Vi samle
 
 ### Hvorfor Tetrivo?
 
-| 🤖 AI-Assistent | 📚 Digital Håndbok | ✅ Lesebekreftelse |
-|-----------------|-------------------|-------------------|
-| Still spørsmål om HMS-regler og få svar basert på bedriftens dokumenter | Alle instrukser og retningslinjer samlet med versjonskontroll | Sikre at ansatte har lest og forstått viktige dokumenter |
-
----
-
-## ✨ Funksjoner
-
-- **🤖 AI-Assistent** – Claude Haiku 3.5 + OpenAI for intelligent Q&A
-- **📄 Dokumenthåndtering** – PDF-opplasting med tekstekstraksjon
-- **✅ Lesebekreftelse** – Signeringslogg for alle instrukser
-- **🔔 Varsling** – Automatiske varsler ved nye dokumenter
-- **👥 Multi-tenant** – Full isolasjon med Row Level Security
-- **📊 Audit Log** – GDPR-kompatibel aktivitetslogging
-- **🛡️ Compliance** – Bygget for EU GDPR og ISO 27001-krav
-
----
-
-## 🛠️ Teknologi
-
-| Kategori | Teknologi |
 |----------|-----------|
 | **Framework** | Next.js 16.1, React 19 |
 | **Språk** | TypeScript 5 |
@@ -125,18 +104,25 @@ NEXT_PUBLIC_APP_URL=https://tetrivo.com
 tetrivo/
 ├── src/
 │   ├── app/                    # Next.js App Router
-│   │   ├── admin/              # Admin dashboard
-│   │   ├── leader/             # Teamleder dashboard
-│   │   ├── employee/           # Ansatt dashboard
+│   │   ├── (platform)/         # Applikasjons-ruter (Beskyttet)
+│   │   │   ├── portal/         # Hovedmeny / rolle-velger
+│   │   │   ├── instructions/   # Instruksmodul
+│   │   │   └── deviations/     # Avviksmodul (Feature flagged)
+│   │   ├── (public)/           # Offentlige ruter (Login, Invite)
 │   │   ├── api/                # API Routes
-│   │   │   ├── ask/            # AI Q&A
-│   │   │   ├── contact/        # Kontaktskjema
+│   │   │   ├── ask/            # AI Q&A (Vertex/Claude)
+│   │   │   ├── tasks/          # Async oppgaver (Stub)
+│   │   │   ├── audit/          # Logging
 │   │   │   ├── upload/         # Filopplasting
-│   │   │   └── invite/         # Invitasjoner
+│   │   │   └── gdpr-cleanup/   # Cron jobs
 │   │   └── page.tsx            # Landing page
 │   ├── components/             # React-komponenter
-│   └── lib/                    # Utilities
-├── supabase/sql/               # Database migrasjoner
+│   ├── lib/                    # Core logic (Vertex, Auth, Utils)
+│   └── middleware.ts           # Auth & Routing beskyttelse
+├── supabase/
+│   ├── functions/              # Edge Functions (Deno)
+│   │   └── generate-embeddings # Embeddings generering
+│   └── sql/                    # Migrasjoner
 └── tests/                      # E2E og unit tester
 ```
 
@@ -146,12 +132,13 @@ tetrivo/
 
 | Endepunkt | Metode | Beskrivelse |
 |-----------|--------|-------------|
-| `/api/ask` | POST | AI-drevet Q&A |
+| `/api/ask` | POST | AI-drevet Q&A (Vertex + Claude) |
 | `/api/contact` | POST | Kontaktskjema |
 | `/api/upload` | POST | Filopplasting (Admin) |
-| `/api/invite` | POST | Brukerinvitasjon (Admin) |
-| `/api/confirm-read` | POST | Lesebekreftelse |
-| `/api/health` | GET | Health check |
+| `/api/tasks/process` | POST | Async oppgaveprosessering |
+| `/api/audit-logs` | GET | Hent audit logs (Admin) |
+| `/api/read-confirmations` | POST | Signer instruks |
+| `/api/health` | GET | Health check m/ Vertex sjekk |
 | `/api/gdpr-request` | POST/GET/PATCH | GDPR sletteforespørsler |
 | `/api/gdpr-cleanup` | POST | GDPR log cleanup (cron) |
 
@@ -202,6 +189,24 @@ tetrivo/
 npx playwright install
 npm run test:e2e
 ```
+
+### Google Cloud Setup (Critical)
+
+For at Vertex AI skal fungere kreves et Service Account key i JSON format.
+1. Opprett Service Account i GCP
+2. Gi roller: `Vertex AI User`, `Discovery Engine Editor`
+3. Last ned JSON key
+4. Minifiser JSON (fjern linjeskift) og legg i `GOOGLE_CREDENTIALS_JSON`
+
+### Supabase Edge Functions
+
+Brukes for tunge prosesser som embeddings.
+
+```bash
+# Deploy (krever Supabase CLI)
+supabase functions deploy generate-embeddings
+```
+Disse funksjonene har automatisk fallback til OpenAI hvis Vertex AI feiler.
 
 ---
 
