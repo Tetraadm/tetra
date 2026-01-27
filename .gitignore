@@ -66,3 +66,4 @@ docs/**/REPO_CLEANUP*.md
 # GCP Service Account (NEVER commit!)
 gcp-service-account.json
 *-service-account.json
+tetrivo-eu-*.json
