@@ -73,9 +73,14 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
   console.log('[PDF] Starting extraction, bytes:', pdfBytes.length)
 
   // Dynamic import to avoid DOMMatrix error in Vercel serverless
-  const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs')
+  // Use CommonJS build (.js) to fix worker loading issues
+  // @ts-ignore - Direct import of .js file for serverless compatibility
+  const pdfjs = await import('pdfjs-dist/legacy/build/pdf.js')
 
-  const loadingTask = getDocument({
+  // Point to the worker file explicitly to help bundler or force main thread execution
+  pdfjs.GlobalWorkerOptions.workerSrc = 'pdfjs-dist/legacy/build/pdf.worker.js'
+
+  const loadingTask = pdfjs.getDocument({
     data: pdfBytes,
     useSystemFonts: true,
     // Disable external resource fetching to avoid serverless network issues
