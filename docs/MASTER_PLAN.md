@@ -3,7 +3,7 @@
 **Dato:** 2026-01-28  
 **Mål:** Én arbeidsliste du kan jobbe deg nedover, med kun relevante punkter per i dag.
 
-## Hva som er verifisert (ikke lenger i “må fikses”)
+## Hva som er verifisert (ikke lenger i "må fikses")
 
 - Cloud Tasks-endepunkt fjernet: `src/app/api/tasks/process/route.ts` (slettet) og `src/lib/cloud-tasks.ts` (slettet)
 - Edge Functions fail-hard på manglende `EDGE_FUNCTION_SECRET` (503)
@@ -13,7 +13,12 @@
 - Edit/re-index (delete + re-insert chunks) ved oppdatering: `src/app/api/instructions/[id]/route.ts`
 - Read-confirmations RPC er kompatibel med service_role (auth.uid()-sjekker fjernet): `supabase/sql/consolidated/09_read_confirmations_rpc.sql`
 - PII masking i `ai_unanswered_questions`: `src/app/api/ask/route.ts` bruker `maskPII()`
-- `npm audit` viser 0 vulnerabilities (men se “Lav: versjonskonsistens”)
+- `npm audit` viser 0 vulnerabilities (men se "Lav: versjonskonsistens")
+- **RLS-ytelsesoptimalisering (2026-01-28):**
+  - Alle `auth.uid()` kall bruker subquery-mønster: `(SELECT auth.uid())`
+  - `ALL` policies splittet til separate `INSERT/UPDATE/DELETE` for å unngå overlapp
+  - Dupliserte SELECT-policies konsolidert (60 → 0 `multiple_permissive_policies` warnings)
+  - SQL-filer synkronisert: `05_policies.sql`, `09_instruction_chunks.sql`, `11_gdpr_requests.sql`
 
 ## Kritisk (0)
 

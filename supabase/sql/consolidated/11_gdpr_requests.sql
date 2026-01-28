@@ -1,8 +1,12 @@
 -- ============================================================================
 -- TETRIVO HMS - 11_gdpr_requests.sql
 -- ============================================================================
--- KJØR ETTER: 07_gdpr.sql
+-- KJOR ETTER: 07_gdpr.sql
 -- GDPR deletion request workflow for multi-tenant
+--
+-- PERFORMANCE OPTIMIZATIONS (2026-01-28):
+-- 1. Uses (SELECT auth.uid()) subquery pattern
+-- 2. Consolidated SELECT policy (no duplicate permissive policies)
 -- ============================================================================
 
 -- ============================================================================
@@ -46,6 +50,7 @@ ALTER TABLE public.gdpr_requests ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "Users can create own deletion request" ON public.gdpr_requests;
 DROP POLICY IF EXISTS "Users can view own requests" ON public.gdpr_requests;
 DROP POLICY IF EXISTS "Admins can view org requests" ON public.gdpr_requests;
+DROP POLICY IF EXISTS "View gdpr requests" ON public.gdpr_requests;
 DROP POLICY IF EXISTS "Admins can update org requests" ON public.gdpr_requests;
 
 -- Users can create requests for themselves
@@ -53,26 +58,21 @@ CREATE POLICY "Users can create own deletion request"
     ON public.gdpr_requests
     FOR INSERT
     TO authenticated
-    WITH CHECK (user_id = auth.uid());
+    WITH CHECK (user_id = (SELECT auth.uid()));
 
--- Users can view their own requests
-CREATE POLICY "Users can view own requests"
-    ON public.gdpr_requests
-    FOR SELECT
-    TO authenticated
-    USING (user_id = auth.uid());
-
--- Admins can view all requests in their org
-CREATE POLICY "Admins can view org requests"
+-- Consolidated SELECT: users see own, admins see org
+CREATE POLICY "View gdpr requests"
     ON public.gdpr_requests
     FOR SELECT
     TO authenticated
     USING (
+        user_id = (SELECT auth.uid())
+        OR
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid()
-            AND role = 'admin'
-            AND org_id = gdpr_requests.org_id
+            WHERE profiles.id = (SELECT auth.uid())
+            AND profiles.role = 'admin'
+            AND profiles.org_id = gdpr_requests.org_id
         )
     );
 
@@ -84,17 +84,17 @@ CREATE POLICY "Admins can update org requests"
     USING (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid()
-            AND role = 'admin'
-            AND org_id = gdpr_requests.org_id
+            WHERE profiles.id = (SELECT auth.uid())
+            AND profiles.role = 'admin'
+            AND profiles.org_id = gdpr_requests.org_id
         )
     )
     WITH CHECK (
         EXISTS (
             SELECT 1 FROM public.profiles
-            WHERE id = auth.uid()
-            AND role = 'admin'
-            AND org_id = gdpr_requests.org_id
+            WHERE profiles.id = (SELECT auth.uid())
+            AND profiles.role = 'admin'
+            AND profiles.org_id = gdpr_requests.org_id
         )
     );
 
@@ -116,7 +116,7 @@ DECLARE
     v_deletion_result JSONB;
 BEGIN
     v_caller_id := auth.uid();
-    
+
     IF v_caller_id IS NULL THEN
         RAISE EXCEPTION 'not_authenticated';
     END IF;
@@ -152,7 +152,7 @@ BEGIN
 
     -- Update request status
     UPDATE public.gdpr_requests
-    SET 
+    SET
         status = 'completed',
         processed_by = v_caller_id,
         processed_at = NOW()
@@ -166,7 +166,7 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.process_gdpr_deletion_request IS 
+COMMENT ON FUNCTION public.process_gdpr_deletion_request IS
 'Processes an approved GDPR deletion request. Admin only.';
 
 -- Grant execute to authenticated (internal checks handle authorization)
