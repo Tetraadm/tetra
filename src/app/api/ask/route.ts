@@ -358,7 +358,7 @@ async function findRelevantInstructions(
   const queryKeywords = extractKeywords(question, 5)
 
   // Try hybrid search first (vector + full-text) if embeddings are configured
-  if (process.env.GOOGLE_CREDENTIALS_JSON || process.env.OPENAI_API_KEY) {
+  if (process.env.GOOGLE_CREDENTIALS_JSON) {
     try {
       const questionEmbedding = await generateEmbedding(question)
 

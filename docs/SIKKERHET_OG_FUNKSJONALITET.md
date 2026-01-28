@@ -1,7 +1,7 @@
 # Tetrivo HMS - Sikkerhets- og Funksjonalitetsoversikt
 
-**Dato:** 23. Januar 2026
-**Dokumentversjon:** 1.0
+**Dato:** 28. Januar 2026
+**Dokumentversjon:** 1.1
 **Mottaker:** Sikkerhetsansvarlig / Compliance Officer
 
 ---
@@ -42,8 +42,8 @@ Våre prosesser og tekniske kontroller er utformet i tråd med:
 ### 🤖 AI-Assistent ("Spør Tetrivo")
 En sikker AI-løsning for ansatte:
 *   Lar ansatte stille spørsmål om rutiner ("Hva gjør jeg ved brann?").
-*   **Ingen Hallusinering:** AI-modellen (Claude/OpenAI hybrid) er begrenset via systeminstrukser til å *kun* svare basert på bedriftens opplastede dokumenter.
-*   **Datavern:** Dataene dine brukes *ikke* til å trene offentlige modeller.
+*   **Ingen Hallusinering:** AI-modellen (Gemini 2.0 Flash via Google Vertex AI) er begrenset via systeminstrukser til å *kun* svare basert på bedriftens opplastede dokumenter.
+*   **Datavern:** Dataene dine brukes *ikke* til å trene offentlige modeller. Google Vertex AI opererer under strenge databehandlingsavtaler.
 
 ### ✅ Lesebekreftelser (Internkontroll)
 *   Verifiserbar logg på at ansatte har lest pålagte instrukser.

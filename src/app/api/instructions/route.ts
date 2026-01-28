@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
         const textForKeywords = `${title} ${content}`.trim()
         const keywords = extractKeywords(textForKeywords, 10)
 
-        // Embedding generation (Fail soft if OpenAI down, but try)
+        // Embedding generation (Fail soft if Vertex AI down, but try)
         let embedding = null
         try {
             if (textForKeywords.length > 5) {

@@ -283,7 +283,7 @@ curl -X POST "https://rshukldzekufrlkbsqrr.supabase.co/functions/v1/generate-emb
   "checks": {
     "database": { "status": "ok", "ms": 5 },
     "rateLimiter": { "status": "ok", "details": { "isConfigured": true, "provider": "upstash" }},
-    "externalServices": { "status": "ok", "details": { "anthropic": true, "resend": true, "sentry": true }}
+    "externalServices": { "status": "ok", "details": { "resend": true, "sentry": true }}
   },
   "responseTime": 5
 }
