@@ -8,7 +8,7 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 
 const LOCATION = 'global'
-const GCS_BUCKET = Deno.env.get('GCS_BUCKET_NAME') || 'tetrivo-docs-eu'
+const GCS_BUCKET = Deno.env.get('GCS_BUCKET_NAME')
 
 interface AdminRequest {
   action: 'list-datastores' | 'import-gcs' | 'check-status' | 'list-documents'
@@ -122,6 +122,14 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { headers, status: 401 }
+    )
+  }
+
+  if (!GCS_BUCKET) {
+    console.error('GCS_BUCKET_NAME is not configured')
+    return new Response(
+      JSON.stringify({ error: 'Server misconfigured' }),
+      { headers, status: 503 }
     )
   }
 

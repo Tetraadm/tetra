@@ -19,7 +19,7 @@ import { getAccessToken, getProjectId } from '../_shared/google-auth.ts'
 // Configuration
 const DOCUMENT_AI_LOCATION = Deno.env.get('DOCUMENT_AI_LOCATION') || 'eu'
 const DOCUMENT_AI_PROCESSOR_ID = Deno.env.get('DOCUMENT_AI_PROCESSOR_ID')
-const GCS_BUCKET = Deno.env.get('GCS_BUCKET_NAME') || 'tetrivo-documents-eu'
+const GCS_BUCKET = Deno.env.get('GCS_BUCKET_NAME')
 const MAX_FILE_SIZE_MB = 10 // Document AI limit
 
 /**
@@ -73,6 +73,14 @@ serve(async (req: Request) => {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { headers, status: 401 }
+    )
+  }
+
+  if (!GCS_BUCKET) {
+    console.error('GCS_BUCKET_NAME is not configured')
+    return new Response(
+      JSON.stringify({ error: 'Server misconfigured' }),
+      { headers, status: 503 }
     )
   }
 
