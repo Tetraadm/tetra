@@ -103,6 +103,10 @@ DOCUMENT_AI_LOCATION=eu # eller us
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking |
 | `SENTRY_ORG` | Sentry organization |
 | `SENTRY_PROJECT` | Sentry project |
+| `EDGE_FUNCTION_SECRET` | Intern auth mellom Next.js og Edge Functions |
+| `ENABLE_VERTEX_SEARCH` | Aktiver Vertex AI Search (`true`/`false`) |
+| `VERTEX_DATA_STORE_ID` | Discovery Engine data store ID |
+| `VERTEX_SEARCH_APP_ID` | Discovery Engine search app ID |
 
 ---
 
@@ -129,7 +133,11 @@ tetrivo/
 │   └── middleware.ts           # Auth & Routing beskyttelse
 ├── supabase/
 │   ├── functions/              # Edge Functions (Deno)
-│   │   └── generate-embeddings # Embeddings generering
+│   │   ├── generate-embeddings # Vertex AI embeddings
+│   │   ├── process-document    # Document AI OCR
+│   │   ├── vertex-search       # Discovery Engine søk
+│   │   ├── vertex-admin        # Discovery Engine admin
+│   │   └── vertex-export       # Eksport til Discovery Engine
 │   └── sql/                    # Migrasjoner
 └── tests/                      # E2E og unit tester
 ```
@@ -218,11 +226,17 @@ Brukes for tunge AI-prosesser (Google Cloud SDK fungerer ikke med Next.js Turbop
 |----------|-------------|
 | `generate-embeddings` | Genererer Vertex AI embeddings (768 dim) |
 | `process-document` | Ekstraherer tekst fra PDF via Document AI |
+| `vertex-search` | Søk i Vertex AI Discovery Engine |
+| `vertex-admin` | Admin-operasjoner for Discovery Engine |
+| `vertex-export` | Eksporterer instrukser til Discovery Engine |
 
 ```bash
 # Deploy (krever Supabase CLI)
 supabase functions deploy generate-embeddings
 supabase functions deploy process-document
+supabase functions deploy vertex-search
+supabase functions deploy vertex-admin
+supabase functions deploy vertex-export
 ```
 
 Edge Functions secrets må settes i Supabase Dashboard:
@@ -230,6 +244,9 @@ Edge Functions secrets må settes i Supabase Dashboard:
 - `GCS_BUCKET_NAME`
 - `DOCUMENT_AI_PROCESSOR_ID`
 - `DOCUMENT_AI_LOCATION`
+- `EDGE_FUNCTION_SECRET` - Intern autentisering mellom Next.js og Edge Functions
+- `VERTEX_DATA_STORE_ID` - Discovery Engine data store ID
+- `VERTEX_SEARCH_APP_ID` - Discovery Engine search app ID
 
 ---
 

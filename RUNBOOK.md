@@ -190,12 +190,15 @@ git push origin main
 
 ---
 
-## 8. Edge Functions (Embeddings & OCR)
+## 8. Edge Functions (Embeddings, OCR & Vertex Search)
 
 ### Arkitektur
 Tunge oppgaver kjøres via **Supabase Edge Functions** (Deno runtime):
 - `generate-embeddings` - Genererer Vertex AI embeddings (768 dim)
 - `process-document` - Ekstraherer tekst fra PDF via Document AI OCR
+- `vertex-search` - Søk i Vertex AI Discovery Engine med org-filtrering
+- `vertex-admin` - Admin-operasjoner for Discovery Engine (import, status)
+- `vertex-export` - Eksporterer instrukser til Discovery Engine
 
 ### Hvorfor Edge Functions?
 Google Cloud-biblioteker (Document AI, Vertex AI SDK) fungerer ikke med Next.js Turbopack.
@@ -208,6 +211,9 @@ Edge Functions løser dette ved å bruke Deno runtime med HTTP API direkte.
    - `GCS_BUCKET_NAME`
    - `DOCUMENT_AI_PROCESSOR_ID`
    - `DOCUMENT_AI_LOCATION`
+   - `EDGE_FUNCTION_SECRET` - Intern auth fra Next.js
+   - `VERTEX_DATA_STORE_ID` - Discovery Engine data store
+   - `VERTEX_SEARCH_APP_ID` - Discovery Engine search app
 3. **Timeout:** Edge Functions har 60s timeout - store PDF-er kan feile
 
 ### Deploy Edge Functions
@@ -215,7 +221,14 @@ Edge Functions løser dette ved å bruke Deno runtime med HTTP API direkte.
 # Krever Supabase CLI og innlogget bruker
 supabase functions deploy generate-embeddings
 supabase functions deploy process-document
+supabase functions deploy vertex-search
+supabase functions deploy vertex-admin
+supabase functions deploy vertex-export
 ```
+
+### Vertex Search Org-filtrering (H-01)
+Dokumenter filtreres på orgId i GCS-path (`gs://bucket/{orgId}/doc.pdf`).
+For å aktivere Vertex Search i produksjon, sett `ENABLE_VERTEX_SEARCH=true` i Vercel.
 
 ### Manuell testing
 ```bash
