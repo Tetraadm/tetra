@@ -1,5 +1,5 @@
 # Tetrivo HMS – Prosjektaudit (Pilot‑klarhet)
-**Dato:** 2026-01-27  
+**Dato:** 2026-01-28 (oppdatert)  
 **Mål:** Sette prosjektet i en trygg, stabil tilstand for **pilot**, ikke full “enterprise” ferdigvare.  
 **Omfang:** Statisk gjennomgang av kode, Supabase SQL, konfig og dokumentasjon.  
 **Utelukket:** Ingen runtime‑tester, ingen ekstern sårbarhetsskanning, ingen produksjonsverifikasjon.
@@ -150,17 +150,20 @@ Ingen kritiske funn bekreftet i statisk gjennomgang.
 - **Bevis:** `next.config.ts`, `.env.example`
 - **Anbefaling:** Verifiser i deploy‑miljø.
 
-### I‑003 Ubrukte dependencies (påstand ikke bekreftet)
-- **Hva:** Pro‑audit nevnte ubrukte `@google-cloud/*`, men de brukes i koden.
-- **Bevis:** `src/lib/vertex-search.ts`, `src/lib/vertex-chat.ts`
-- **Status:** Ikke funn – beholdes her som “avkreftet”.
+### I‑003 Google Cloud SDKs - LØST
+- **Hva:** `@google-cloud/*` SDKs fungerte ikke med Next.js Turbopack.
+- **Løsning:** Alle Google Cloud API-kall går nå via Supabase Edge Functions (Deno runtime).
+- **Edge Functions:** `gemini-chat`, `vertex-search`, `generate-embeddings`, `process-document`, `vertex-admin`
+- **Status:** ✅ LØST 2026-01-28
 
 ---
 
 ## Dokumentasjonsavvik
 
+> **Merk:** Flere av disse ble fikset 2026-01-27/28. Verifiser mot oppdatert dokumentasjon.
+
 ### README.md
-- **AI‑stack:** README sier Claude/Anthropic, mens kode bruker Gemini (Vertex) + OpenAI embeddings.  
+- **AI‑stack:** ✅ FIKSET - README oppdatert til Gemini/Vertex AI (ikke Claude/Anthropic).
   **Bevis:** `README.md`, `src/lib/vertex-chat.ts`, `src/lib/embeddings.ts`
 - **API‑liste:** Mangler `/api/gdpr-export`, `/api/instructions`, `/api/confirm-read`.  
   `/api/read-confirmations` er GET, ikke POST.  
@@ -171,26 +174,24 @@ Ingen kritiske funn bekreftet i statisk gjennomgang.
   **Bevis:** `README.md`, `.github/workflows`
 - **Prosjektstruktur:** `deviations/` vises, men finnes ikke.  
   **Bevis:** `README.md`, `src/app/(platform)`
-- **Edge Functions:** README nevner kun `generate-embeddings`, men `process-document` finnes.  
+- **Edge Functions:** ✅ FIKSET - README oppdatert med alle Edge Functions.
   **Bevis:** `README.md`, `supabase/functions`
 
 ### RUNBOOK.md
-- **PDF timeout:** Runbook sier 30s, kode bruker 20s.  
+- **PDF timeout:** Runbook sier 30s, kode bruker 20s.
   **Bevis:** `RUNBOOK.md`, `src/app/api/upload/route.ts`
-- **Tasks varighet:** Runbook sier 60s; `maxDuration` er 300s.  
-  **Bevis:** `RUNBOOK.md`, `src/app/api/tasks/process/route.ts`
-- **Health‑respons:** Runbook viser felter som ikke returneres.  
+- **Tasks varighet:** ✅ FIKSET - Seksjonen er omskrevet til "Edge Functions".
+  **Bevis:** `RUNBOOK.md`
+- **Health‑respons:** Runbook viser felter som ikke returneres.
   **Bevis:** `RUNBOOK.md`, `src/app/api/health/route.ts`
-- **AI‑tjenester:** Runbook omtaler Anthropic, men koden bruker Gemini + OpenAI.  
-  **Bevis:** `RUNBOOK.md`, `src/lib/vertex-chat.ts`, `src/lib/embeddings.ts`
+- **AI‑tjenester:** ✅ FIKSET - Runbook oppdatert til Vertex AI / Gemini (ikke Anthropic/OpenAI).
+  **Bevis:** `RUNBOOK.md`
 - **GDPR cleanup:** Runbook nevner ikke GCS‑opprydding eller `ai_unanswered_questions`.  
   **Bevis:** `RUNBOOK.md`, `src/app/api/gdpr-cleanup/route.ts`, `supabase/sql/consolidated/07_gdpr.sql`
 
 ### docs/opus.md (sesjonsnotat)
-- **Edge payload‑format:** Dokumentet beskriver payload som ikke matcher funksjons‑signaturer.  
-  **Bevis:** `docs/opus.md`, `supabase/functions/*`
-- **Document AI‑flyt:** Beskrevet “storagePath/processorId” er ikke i aktiv funksjonssignatur.  
-  **Bevis:** `docs/opus.md`, `supabase/functions/process-document/index.ts`
+- ✅ OMSKREVET 2026-01-28 - Komplett dokumentasjon av alle Edge Functions og arkitektur.
+- Inkluderer nå alle 5 Edge Functions med korrekte signaturer og flyt.
 
 ---
 
