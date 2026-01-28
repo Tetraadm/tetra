@@ -33,7 +33,15 @@ const UploadFormSchema = z.object({
 const PDF_MAX_PAGES = parseInt(process.env.PDF_MAX_PAGES || '50', 10)
 const PDF_TIMEOUT_MS = parseInt(process.env.PDF_TIMEOUT_MS || '20000', 10) // P0-3: Reduced from 30s to 20s total budget
 const PDF_MAX_CHARS = parseInt(process.env.PDF_MAX_CHARS || '500000', 10)
-const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'tetrivo-documents-eu'
+
+// GCS bucket - required, no default to prevent accidental prod writes
+function getGcsBucketName(): string {
+  const bucket = process.env.GCS_BUCKET_NAME
+  if (!bucket) {
+    throw new Error('GCS_BUCKET_NAME environment variable is required')
+  }
+  return bucket
+}
 
 type GlobalPdfPolyfills = typeof globalThis & {
   DOMMatrix?: typeof DOMMatrix
@@ -311,7 +319,7 @@ export async function POST(request: NextRequest) {
         ...getGoogleAuthOptions(),
         projectId: getGoogleAuthOptions().projectId // Ensure projectId is passed explicitly if needed
       })
-      const bucket = storage.bucket(GCS_BUCKET_NAME)
+      const bucket = storage.bucket(getGcsBucketName())
       const gcsFile = bucket.file(fileName)
 
       // Upload to GCS
@@ -396,7 +404,7 @@ export async function POST(request: NextRequest) {
           ...getGoogleAuthOptions(),
           projectId: getGoogleAuthOptions().projectId
         })
-        const bucket = storage.bucket(GCS_BUCKET_NAME)
+        const bucket = storage.bucket(getGcsBucketName())
         const gcsFile = bucket.file(fileName)
         
         await gcsFile.setMetadata({

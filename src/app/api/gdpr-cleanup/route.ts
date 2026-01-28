@@ -3,7 +3,14 @@ import { NextResponse } from 'next/server'
 import { Storage } from '@google-cloud/storage'
 import { getGoogleAuthOptions } from '@/lib/vertex-auth'
 
-const GCS_BUCKET_NAME = process.env.GCS_BUCKET_NAME || 'tetrivo-documents-eu'
+// GCS bucket - required, no default to prevent accidental prod writes
+function getGcsBucketName(): string {
+  const bucket = process.env.GCS_BUCKET_NAME
+  if (!bucket) {
+    throw new Error('GCS_BUCKET_NAME environment variable is required')
+  }
+  return bucket
+}
 
 /**
  * GDPR Cleanup API
@@ -88,7 +95,7 @@ export async function POST(request: Request) {
                     ...getGoogleAuthOptions(),
                     projectId: getGoogleAuthOptions().projectId
                 })
-                const bucket = storage.bucket(GCS_BUCKET_NAME)
+                const bucket = storage.bucket(getGcsBucketName())
 
                 for (const instruction of deletedInstructions) {
                     if (instruction.file_path) {

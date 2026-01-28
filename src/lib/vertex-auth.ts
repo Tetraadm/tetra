@@ -27,7 +27,9 @@ export function getProjectId(): string {
     const options = getGoogleAuthOptions()
     if (options.projectId) return options.projectId
     
-    // Fallback or throw if critical
-    // Ideally user sets PROJECT_ID explicitly too, but JSON usually has it
-    return process.env.GOOGLE_CLOUD_PROJECT || 'tetrivo-production' 
+    if (process.env.GOOGLE_CLOUD_PROJECT) {
+      return process.env.GOOGLE_CLOUD_PROJECT
+    }
+    
+    throw new Error('GOOGLE_CLOUD_PROJECT not configured and not found in credentials')
 }
