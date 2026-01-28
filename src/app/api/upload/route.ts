@@ -92,7 +92,7 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
 
   // Fallback to pdf-parse
   storageLogger.info({ bytes: pdfBytes.length }, 'Extracting PDF with pdf-parse (Document AI not configured)')
-  
+
   // Use dynamic import for legacy CommonJS module compatibility
   const { default: pdfParse } = await import('pdf-parse')
 
@@ -117,11 +117,15 @@ async function extractPdfText(pdfBytes: Uint8Array): Promise<string> {
     if (timeoutId) clearTimeout(timeoutId)
 
     const text = data.text
-    console.log('[PDF] Extraction success. Pages:', data.numrender, 'Chars:', text.length)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[PDF] Extraction success. Pages:', data.numrender, 'Chars:', text.length)
+    }
 
     // Basic cleanup and char limit check
     if (text.length > PDF_MAX_CHARS) {
-      console.warn(`[PDF] Truncating text: ${text.length} -> ${PDF_MAX_CHARS}`)
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(`[PDF] Truncating text: ${text.length} -> ${PDF_MAX_CHARS}`)
+      }
       return text.slice(0, PDF_MAX_CHARS)
     }
 
@@ -406,7 +410,7 @@ export async function POST(request: NextRequest) {
         })
         const bucket = storage.bucket(getGcsBucketName())
         const gcsFile = bucket.file(fileName)
-        
+
         await gcsFile.setMetadata({
           metadata: {
             instructionId: instruction.id,
@@ -438,7 +442,7 @@ export async function POST(request: NextRequest) {
         }).catch(err => {
           storageLogger.warn({ error: err }, 'Edge Function trigger failed')
         })
-        
+
         storageLogger.info({ instructionId: instruction.id }, 'Embedding generation triggered async')
       } else if (file.type === 'application/pdf') {
         // PDF with no extracted content - use Document AI Edge Function
@@ -455,7 +459,7 @@ export async function POST(request: NextRequest) {
         }).catch(err => {
           storageLogger.warn({ error: err }, 'Document processing Edge Function trigger failed')
         })
-        
+
         storageLogger.info({ instructionId: instruction.id }, 'Document processing triggered async for PDF')
       }
     } else if (instruction && effectiveContent) {
@@ -495,7 +499,7 @@ export async function POST(request: NextRequest) {
             storageLogger.error({ error: chunksError }, 'Failed to insert chunks')
           }
         }
-        
+
         storageLogger.info({ instructionId: instruction.id }, 'Embeddings generated synchronously')
       } catch (embeddingErr) {
         // Log but don't fail the upload

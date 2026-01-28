@@ -112,22 +112,22 @@ function countKeywordOverlap(
  * 2. Severity (critical > medium > low)
  * 3. Recency (recently updated instructions get a boost)
  */
-function smartRerank<T extends { 
+function smartRerank<T extends {
   title: string
   severity?: string
   updated_at?: string | null
-  similarity?: number 
+  similarity?: number
 }>(
   results: T[],
   query: string
 ): T[] {
   const queryLower = query.toLowerCase().trim()
   const queryWords = queryLower.split(/\s+/).filter(w => w.length > 2)
-  
+
   const scored = results.map(result => {
     let score = result.similarity || 0.5
     const titleLower = (result.title || '').toLowerCase()
-    
+
     // 1. Title match boost (strongest signal)
     if (titleLower === queryLower) {
       // Exact title match - huge boost
@@ -142,7 +142,7 @@ function smartRerank<T extends {
         score += 0.15 * (titleMatchCount / queryWords.length)
       }
     }
-    
+
     // 2. Severity boost (critical instructions are more important)
     const severity = result.severity?.toLowerCase() || 'medium'
     if (severity === 'critical') {
@@ -150,7 +150,7 @@ function smartRerank<T extends {
     } else if (severity === 'low') {
       score -= 0.05
     }
-    
+
     // 3. Recency boost (updated in last 30 days)
     if (result.updated_at) {
       const updatedAt = new Date(result.updated_at)
@@ -161,13 +161,13 @@ function smartRerank<T extends {
         score -= 0.02 // Slight penalty for old instructions
       }
     }
-    
+
     return { result, score }
   })
-  
+
   // Sort by smart score descending
   scored.sort((a, b) => b.score - a.score)
-  
+
   // Log for debugging in development
   if (process.env.NODE_ENV === 'development') {
     console.log('[RERANK] Top 3 results:', scored.slice(0, 3).map(s => ({
@@ -176,7 +176,7 @@ function smartRerank<T extends {
       smartScore: s.score.toFixed(3)
     })))
   }
-  
+
   return scored.map(s => s.result)
 }
 
@@ -206,44 +206,48 @@ async function findRelevantInstructions(
   // 1. Try Vertex AI Search first (The new primary search)
   try {
     const vertexResults = await searchDocuments(question, 5, orgId)
-    console.log('[ASK_DEBUG] vertexResults length:', vertexResults.length)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[ASK_DEBUG] vertexResults length:', vertexResults.length)
+    }
     if (vertexResults.length > 0) {
       // Extract file paths and UUIDs from Vertex results to match with database
       // Link format: gs://bucket/orgId/uuid.pdf or just orgId/uuid.pdf
       // Title might be: "uuid.pdf" or "orgId/uuid.pdf" or a readable title
       const uuidRegex = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i
-      
+
       const extractedData = vertexResults.map((r: VertexSearchResult) => {
         const link = r.link || ''
-        
+
         // Try to extract file path from GCS link
         const gcsMatch = link.match(/gs:\/\/[^/]+\/(.+)$/)
         if (gcsMatch) return { type: 'path', value: gcsMatch[1] }
-        
+
         // Try to extract from title if it looks like a file path
         if (r.title && r.title.includes('/')) return { type: 'path', value: r.title }
-        
+
         // Try to extract UUID from title (e.g., "2cdfa043-e368-4cbd-9b9a-b798be54ae51.pdf")
         const uuidMatch = r.title?.match(uuidRegex)
         if (uuidMatch) return { type: 'uuid', value: uuidMatch[1] }
-        
+
         return null
       })
-      
+
       const filePaths = extractedData
         .filter(d => d?.type === 'path')
         .map(d => d!.value)
-      
+
       const uuids = extractedData
         .filter(d => d?.type === 'uuid')
         .map(d => d!.value)
-      
-      console.log('[ASK_DEBUG] Extracted file paths:', filePaths)
-      console.log('[ASK_DEBUG] Extracted UUIDs:', uuids)
-      
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ASK_DEBUG] Extracted file paths:', filePaths)
+        console.log('[ASK_DEBUG] Extracted UUIDs:', uuids)
+      }
+
       // Lookup instructions by file_path or id to get correct id and title
       let enrichedInstructions: VectorSearchResult[] = []
-      
+
       if (filePaths.length > 0 || uuids.length > 0) {
         // Try to find instructions by file_path first
         let dbInstructions: Array<{
@@ -255,25 +259,25 @@ async function findRelevantInstructions(
           updated_at: string | null
           file_path: string | null
         }> = []
-        
+
         if (filePaths.length > 0) {
           const { data: pathResults, error: pathError } = await supabase
             .from('instructions')
             .select('id, title, content, severity, folder_id, updated_at, file_path')
             .in('file_path', filePaths)
-          
+
           if (!pathError && pathResults) {
             dbInstructions = pathResults
           }
         }
-        
+
         // Also try to find by UUID if we have any
         if (uuids.length > 0) {
           const { data: uuidResults, error: uuidError } = await supabase
             .from('instructions')
             .select('id, title, content, severity, folder_id, updated_at, file_path')
             .in('id', uuids)
-          
+
           if (!uuidError && uuidResults) {
             // Merge results, avoiding duplicates
             const existingIds = new Set(dbInstructions.map(i => i.id))
@@ -284,7 +288,7 @@ async function findRelevantInstructions(
             }
           }
         }
-        
+
         if (dbInstructions.length > 0) {
           // Create maps for quick lookup
           const instructionByPath = new Map(
@@ -293,7 +297,7 @@ async function findRelevantInstructions(
           const instructionById = new Map(
             dbInstructions.map(inst => [inst.id, inst])
           )
-          
+
           // Enrich Vertex results with database data
           enrichedInstructions = vertexResults.map((r: VertexSearchResult) => {
             const link = r.link || ''
@@ -301,19 +305,21 @@ async function findRelevantInstructions(
             const filePath = gcsMatch ? gcsMatch[1] : (r.title && r.title.includes('/') ? r.title : null)
             const uuidMatch = r.title?.match(uuidRegex)
             const uuid = uuidMatch ? uuidMatch[1] : null
-            
+
             // Try to match by file_path first, then by UUID
             let dbInst = filePath ? instructionByPath.get(filePath) : null
             if (!dbInst && uuid) {
               dbInst = instructionById.get(uuid)
             }
-            
+
             if (dbInst) {
-              console.log('[ASK_DEBUG] Matched Vertex result to DB instruction:', {
-                vertexTitle: r.title,
-                dbId: dbInst.id,
-                dbTitle: dbInst.title
-              })
+              if (process.env.NODE_ENV === 'development') {
+                console.log('[ASK_DEBUG] Matched Vertex result to DB instruction:', {
+                  vertexTitle: r.title,
+                  dbId: dbInst.id,
+                  dbTitle: dbInst.title
+                })
+              }
               return {
                 id: dbInst.id,
                 title: dbInst.title,
@@ -324,7 +330,7 @@ async function findRelevantInstructions(
                 similarity: r.score
               }
             }
-            
+
             // Fallback: use Vertex data as-is (may have UUID as title)
             return {
               id: r.id,
@@ -336,20 +342,26 @@ async function findRelevantInstructions(
               similarity: r.score
             }
           })
-          
-          console.log('[ASK_DEBUG] Enriched instructions count:', enrichedInstructions.length)
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[ASK_DEBUG] Enriched instructions count:', enrichedInstructions.length)
+          }
           return {
             instructions: enrichedInstructions,
             usedVectorSearch: true
           }
         }
       }
-      
+
       // No database match found for Vertex results - skip to embedding search
       // This happens when Vertex Data Store has stale documents not in the database
-      console.log('[ASK_DEBUG] Vertex results found but no DB match, falling back to embedding search')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ASK_DEBUG] Vertex results found but no DB match, falling back to embedding search')
+      }
     } else {
-      console.log('[ASK_DEBUG] Vertex search returned 0 results')
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[ASK_DEBUG] Vertex search returned 0 results')
+      }
     }
   } catch (vertexError) {
     console.warn('[ASK] Vertex Search failed, falling back to database:', vertexError)

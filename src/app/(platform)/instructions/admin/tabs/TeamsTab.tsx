@@ -101,8 +101,12 @@ export default function TeamsTab({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Rediger</DropdownMenuItem>
-                      <DropdownMenuItem>Administrer medlemmer</DropdownMenuItem>
+                      <DropdownMenuItem disabled className="text-muted-foreground cursor-not-allowed">
+                        Rediger (kommer snart)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem disabled className="text-muted-foreground cursor-not-allowed">
+                        Administrer medlemmer (kommer snart)
+                      </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => deleteTeam(team.id)}
