@@ -128,9 +128,16 @@ serve(async (req: Request) => {
     return new Response('ok', { headers })
   }
 
-  // Verify Edge Function Secret (H-001 security fix)
+  // Verify Edge Function Secret (C-002 security fix: fail-hard)
+  if (!EDGE_SECRET) {
+    console.error('EDGE_FUNCTION_SECRET is not configured')
+    return new Response(
+      JSON.stringify({ error: 'Server misconfigured' }),
+      { headers, status: 503 }
+    )
+  }
   const clientSecret = req.headers.get('X-Edge-Secret')
-  if (EDGE_SECRET && clientSecret !== EDGE_SECRET) {
+  if (clientSecret !== EDGE_SECRET) {
     return new Response(
       JSON.stringify({ error: 'Unauthorized' }),
       { headers, status: 401 }
