@@ -122,7 +122,7 @@ tetrivo/
 │   │   │   └── deviations/     # Avviksmodul (Feature flagged)
 │   │   ├── (public)/           # Offentlige ruter (Login, Invite)
 │   │   ├── api/                # API Routes
-│   │   │   ├── ask/            # AI Q&A (Vertex/Claude)
+│   │   │   ├── ask/            # AI Q&A (Vertex AI)
 │   │   │   ├── tasks/          # Async oppgaver (Stub)
 │   │   │   ├── audit/          # Logging
 │   │   │   ├── upload/         # Filopplasting
@@ -148,10 +148,9 @@ tetrivo/
 
 | Endepunkt | Metode | Beskrivelse |
 |-----------|--------|-------------|
-| `/api/ask` | POST | AI-drevet Q&A (Vertex + Claude) |
+| `/api/ask` | POST | AI-drevet Q&A (Vertex AI Gemini) |
 | `/api/contact` | POST | Kontaktskjema |
 | `/api/upload` | POST | Filopplasting (Admin) |
-| `/api/tasks/process` | POST | Async oppgaveprosessering |
 | `/api/audit-logs` | GET | Hent audit logs (Admin) |
 | `/api/read-confirmations` | POST | Signer instruks |
 | `/api/health` | GET | Health check m/ Vertex sjekk |

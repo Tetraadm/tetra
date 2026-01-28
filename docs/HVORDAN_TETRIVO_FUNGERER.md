@@ -28,9 +28,9 @@ Tetrivo er en **HMS-plattform** (Helse, Miljø og Sikkerhet) for norske bedrifte
          ┌──────────────────────┼──────────────────────┐
          │                      │                      │
 ┌────────▼────────┐    ┌────────▼────────┐    ┌────────▼────────┐
-│    Supabase     │    │   Anthropic     │    │     OpenAI      │
-│   (Database +   │    │   Claude AI     │    │   (Embeddings)  │
-│    Storage)     │    │                 │    │                 │
+│    Supabase     │    │  Google Cloud   │    │  Google Cloud   │
+│   (Database +   │    │   Vertex AI     │    │   Document AI   │
+│    Storage)     │    │  (Chat + Emb)   │    │   (PDF OCR)     │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -61,7 +61,7 @@ Tetrivo er en **HMS-plattform** (Helse, Miljø og Sikkerhet) for norske bedrifte
         ↓
 5. Nøkkelord ekstraheres fra teksten
         ↓
-6. Vektor-embedding genereres (OpenAI)
+6. Vektor-embedding genereres (Vertex AI)
         ↓
 7. Instruks lagres i databasen med all metadata
         ↓
@@ -83,7 +83,7 @@ Tetrivo er en **HMS-plattform** (Helse, Miljø og Sikkerhet) for norske bedrifte
 
 **AI-forberedelse:**
 - Ekstraherer 10 nøkkelord fra tittel + innhold
-- Genererer vektor-embedding (1536 dimensjoner) via OpenAI
+- Genererer vektor-embedding (768 dimensjoner) via Vertex AI
 - Lagrer embedding for semantisk søk
 
 ---
@@ -107,7 +107,7 @@ Tetrivo er en **HMS-plattform** (Helse, Miljø og Sikkerhet) for norske bedrifte
         ↓
 6. Kontekst bygges fra disse dokumentene
         ↓
-7. Claude AI (Haiku 3.5) får spørsmål + kontekst
+7. Gemini 2.0 Flash (Vertex AI) får spørsmål + kontekst
         ↓
 8. AI svarer KUN basert på dokumentene
         ↓
@@ -140,7 +140,7 @@ Dette sikres via SQL-funksjonen `get_user_instructions()` og `match_instructions
 - Terskel: minimum 0.25 similarity score
 
 **Nøkkelord-søk (siste fallback):**
-- Brukes hvis OpenAI ikke er konfigurert
+- Brukes hvis Vertex AI ikke er konfigurert
 - Scorer dokumenter basert på nøkkelord-overlapp
 - Minimum relevans-score: 0.35
 
@@ -259,13 +259,14 @@ Vi arbeider kontinuerlig etter strenge internasjonale standarder:
 | Frontend | Next.js 16.1, React 19, TypeScript |
 | Styling | Tailwind CSS v4 |
 | Database | PostgreSQL (Supabase) |
-| Vektor-søk | pgvector + OpenAI embeddings |
-| AI | Claude Haiku 3.5 (Anthropic) |
+| Vektor-søk | pgvector + Vertex AI embeddings (768 dim) |
+| AI Chat | Gemini 2.0 Flash (Vertex AI) |
+| PDF OCR | Google Document AI |
 | E-post | Resend |
 | Rate Limiting | Upstash Redis |
 | Error Tracking | Sentry |
 | Hosting | Vercel |
-| Storage | Supabase Storage (EU/Sverige) |
+| Storage | Supabase Storage (EU/Sverige) + Google Cloud Storage |
 
 ---
 

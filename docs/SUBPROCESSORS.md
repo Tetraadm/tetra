@@ -16,8 +16,7 @@ Tetrivo bruker følgende underleverandører (subprosessorer) for å levere HMS-t
 | Leverandør | Tjeneste | Databehandling | Region | DPA Status |
 |------------|----------|----------------|--------|------------|
 | **Supabase Inc.** | Database, Autentisering, Lagring | Brukerdata, HMS-dokumenter, audit logs | Stockholm, Sverige (EU) | ✅ Inkludert i ToS |
-| **Anthropic** | AI-assistanse (Claude) | Anonymiserte HMS-spørsmål | EU endpoint | ✅ DPA tilgjengelig |
-| **OpenAI** | Tekst-embeddings | Dokumentinnhold (for søk) | US | ⚠️ SCC kreves |
+| **Google Cloud** | AI Chat (Gemini), Embeddings (Vertex AI), OCR (Document AI), Lagring (GCS) | Anonymiserte HMS-spørsmål, dokumentinnhold | EU (Belgium/Netherlands) | ✅ DPA tilgjengelig |
 | **Upstash** | Rate limiting (Redis) | IP-hasher, bruker-ID | Frankfurt, Tyskland (EU) | ✅ GDPR-compliant |
 | **Vercel Inc.** | Webhosting | Trafikkdata, logger | Frankfurt, Tyskland (EU) | ✅ Inkludert i DPA |
 | **Resend** | Transaksjonell e-post | E-postadresser, navn | US | ⚠️ SCC kreves |

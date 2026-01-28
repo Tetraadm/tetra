@@ -14,8 +14,8 @@
 │   (Vercel EU)   │     │   (Stockholm)    │     │   + pgvector    │
 └────────┬────────┘     └──────────────────┘     └─────────────────┘
          │
-         ├──▶ Claude API (Anthropic EU) - AI-svar
-         ├──▶ OpenAI API - Embeddings/søk
+         ├──▶ Google Cloud (Vertex AI EU) - AI-chat + embeddings
+         ├──▶ Google Document AI (EU) - PDF OCR
          └──▶ Upstash Redis (Frankfurt) - Rate limiting
 ```
 

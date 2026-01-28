@@ -1,7 +1,23 @@
+/**
+ * Escape HTML special characters to prevent XSS
+ */
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function generateInviteHtml(inviteUrl: string, role: string, inviterName: string = 'En administrator') {
+  // Escape user-provided values to prevent XSS
+  const safeInviterName = escapeHtml(inviterName);
+  const safeRole = escapeHtml(role);
+
   const brandColor = '#4F46E5';
   const logoUrl = 'https://tetrivo.com/tetrivo-logo.svg';
-  const previewText = `${inviterName} har invitert deg til Tetrivo HMS.`;
+  const previewText = `${safeInviterName} har invitert deg til Tetrivo HMS.`;
 
   return `
 <!DOCTYPE html>
@@ -65,11 +81,11 @@ export function generateInviteHtml(inviteUrl: string, role: string, inviterName:
               <p style="margin:0 0 16px 0;font-size:16px;line-height:24px;color:#374151;">Hei,</p>
               
               <p style="margin:0 0 16px 0;font-size:16px;line-height:24px;color:#374151;">
-                <strong>${inviterName}</strong> har invitert deg til å bli med i organisasjonen i Tetrivo HMS – systemet for enkel og effektiv HMS-håndtering.
+                <strong>${safeInviterName}</strong> har invitert deg til å bli med i organisasjonen i Tetrivo HMS – systemet for enkel og effektiv HMS-håndtering.
               </p>
 
               <p style="margin:0 0 24px 0;font-size:16px;line-height:24px;color:#374151;">
-                Din rolle: <span class="role-badge" style="background-color:#e0e7ff;color:#4338ca;padding:4px 8px;border-radius:4px;font-weight:600;font-size:14px;display:inline-block;">${role}</span>
+                Din rolle: <span class="role-badge" style="background-color:#e0e7ff;color:#4338ca;padding:4px 8px;border-radius:4px;font-weight:600;font-size:14px;display:inline-block;">${safeRole}</span>
               </p>
 
               <!-- Button -->

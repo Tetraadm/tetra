@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' data:",
 
               // Connections: Supabase API, realtime, and Sentry
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.anthropic.com https://*.sentry.io",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io",
 
               // Block all frame embedding
               "frame-ancestors 'none'",

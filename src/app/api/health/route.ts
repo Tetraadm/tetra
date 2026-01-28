@@ -56,7 +56,6 @@ export async function GET() {
     // External services configuration check (not connectivity - just config presence)
     // SECURITY: Don't expose which specific services are missing - reduces attack surface
     const externalServices = {
-        anthropic: !!process.env.ANTHROPIC_API_KEY,
         resend: !!process.env.RESEND_API_KEY,
         sentry: !!process.env.NEXT_PUBLIC_SENTRY_DSN,
     }
