@@ -12,7 +12,7 @@ import {
 } from '@/lib/keyword-extraction'
 import { maskPII } from '@/lib/pii'
 
-const FALLBACK_ANSWER = 'Jeg finner ingen relevant instruks i Tetrivo for dette. Kontakt din leder eller sikkerhetsansvarlig.'
+const FALLBACK_ANSWER = 'Finner ingen instrukser knyttet til dette i Tetrivo. Kontakt din nærmeste leder.'
 const RAW_MIN_SCORE = Number(process.env.AI_MIN_RELEVANCE_SCORE ?? '0.35')
 const MIN_SCORE = Number.isFinite(RAW_MIN_SCORE) ? RAW_MIN_SCORE : 0.35
 const VECTOR_SEARCH_THRESHOLD = 0.25 // Minimum similarity for vector search (lowered for short queries)
@@ -344,21 +344,9 @@ async function findRelevantInstructions(
         }
       }
       
-      // Fallback: use Vertex results without enrichment
-      const mapped = vertexResults.map((r: VertexSearchResult) => ({
-        id: r.id,
-        title: r.title,
-        content: r.content,
-        severity: 'normal',
-        folder_id: null,
-        updated_at: null,
-        similarity: r.score
-      }))
-      console.log('[ASK_DEBUG] Mapped instructions count (no DB match):', mapped.length)
-      return {
-        instructions: mapped,
-        usedVectorSearch: true
-      }
+      // No database match found for Vertex results - skip to embedding search
+      // This happens when Vertex Data Store has stale documents not in the database
+      console.log('[ASK_DEBUG] Vertex results found but no DB match, falling back to embedding search')
     } else {
       console.log('[ASK_DEBUG] Vertex search returned 0 results')
     }
