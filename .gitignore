@@ -67,3 +67,4 @@ docs/**/REPO_CLEANUP*.md
 gcp-service-account.json
 *-service-account.json
 tetrivo-eu-*.json
+.mcp.json
