@@ -7,6 +7,7 @@
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const EDGE_FUNCTION_SECRET = process.env.EDGE_FUNCTION_SECRET
 
 const FALLBACK_MESSAGE = 'Finner ingen instrukser knyttet til dette i Tetrivo. Kontakt din nærmeste leder.'
 
@@ -18,6 +19,24 @@ export type ChatMessage = {
 type GeminiResponse = {
     answer: string
     error?: string
+}
+
+/**
+ * Get headers for Edge Function calls
+ */
+function getEdgeFunctionHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY || ''
+    }
+    
+    // Add shared secret for internal authentication
+    if (EDGE_FUNCTION_SECRET) {
+        headers['X-Edge-Secret'] = EDGE_FUNCTION_SECRET
+    }
+    
+    return headers
 }
 
 /**
@@ -40,11 +59,7 @@ export async function streamGeminiAnswer(
         
         const response = await fetch(`${SUPABASE_URL}/functions/v1/gemini-chat`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'apikey': SUPABASE_ANON_KEY
-            },
+            headers: getEdgeFunctionHeaders(),
             body: JSON.stringify({
                 systemPrompt: systemInstruction,
                 userMessage: userMessage,
@@ -95,11 +110,7 @@ export async function generateGeminiAnswer(
         
         const response = await fetch(`${SUPABASE_URL}/functions/v1/gemini-chat`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'apikey': SUPABASE_ANON_KEY
-            },
+            headers: getEdgeFunctionHeaders(),
             body: JSON.stringify({
                 systemPrompt: systemInstruction,
                 userMessage: userMessage,

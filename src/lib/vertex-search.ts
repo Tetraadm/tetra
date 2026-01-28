@@ -1,8 +1,16 @@
 /**
  * Vertex AI Search Client
  * 
- * Calls the vertex-search Edge Function to perform semantic search.
- * This avoids using the Google Cloud SDK which doesn't work with Turbopack.
+ * SECURITY NOTE (H-003): Vertex AI Search is currently DISABLED because it doesn't
+ * respect organization boundaries. The Data Store contains documents from all orgs,
+ * and filtering by orgId is not implemented in Discovery Engine.
+ * 
+ * The embedding search (via Supabase) respects RLS and is used instead.
+ * 
+ * To re-enable Vertex AI Search:
+ * 1. Implement org filtering in the Edge Function (filter by GCS path prefix)
+ * 2. Or create separate Data Stores per org
+ * 3. Set ENABLE_VERTEX_SEARCH=true in environment
  */
 
 import { getCachedSearchResults, cacheSearchResults } from './cache'
@@ -11,7 +19,11 @@ import { aiLogger, createTimer } from './logger'
 // Configuration
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-const ENABLE_SEARCH_CACHE = process.env.ENABLE_SEARCH_CACHE !== 'false' // Default enabled
+const EDGE_FUNCTION_SECRET = process.env.EDGE_FUNCTION_SECRET
+const ENABLE_SEARCH_CACHE = process.env.ENABLE_SEARCH_CACHE !== 'false'
+
+// SECURITY: Disabled by default until org filtering is implemented
+const ENABLE_VERTEX_SEARCH = process.env.ENABLE_VERTEX_SEARCH === 'true'
 
 export type VertexSearchResult = {
     id: string
@@ -29,7 +41,27 @@ type EdgeFunctionResponse = {
 }
 
 /**
+ * Get headers for Edge Function calls
+ */
+function getEdgeFunctionHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY || ''
+    }
+    
+    if (EDGE_FUNCTION_SECRET) {
+        headers['X-Edge-Secret'] = EDGE_FUNCTION_SECRET
+    }
+    
+    return headers
+}
+
+/**
  * Search documents using Vertex AI Search via Edge Function
+ * 
+ * NOTE: Currently disabled for security (H-003). Returns empty results.
+ * The embedding search in /api/ask handles search instead.
  */
 export async function searchDocuments(
     query: string, 
@@ -37,6 +69,13 @@ export async function searchDocuments(
     orgId?: string
 ): Promise<VertexSearchResult[]> {
     const timer = createTimer(aiLogger, 'vertex_search')
+    
+    // SECURITY: Vertex Search disabled until org filtering is implemented
+    if (!ENABLE_VERTEX_SEARCH) {
+        aiLogger.debug({ query }, 'Vertex Search disabled (H-003 security), using embedding search instead')
+        timer.end({ source: 'disabled', reason: 'security_h003' })
+        return []
+    }
     
     // Check cache first
     if (ENABLE_SEARCH_CACHE) {
@@ -47,7 +86,6 @@ export async function searchDocuments(
         }
     }
 
-    // Validate configuration
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
         aiLogger.warn('Supabase not configured for Vertex Search Edge Function')
         timer.end({ source: 'skipped', reason: 'not_configured' })
@@ -59,16 +97,12 @@ export async function searchDocuments(
         
         const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'apikey': SUPABASE_ANON_KEY
-            },
+            headers: getEdgeFunctionHeaders(),
             body: JSON.stringify({
                 query,
                 limit,
                 orgId,
-                includeAnswer: false // We generate answers with Gemini separately
+                includeAnswer: false
             })
         })
 
@@ -97,7 +131,6 @@ export async function searchDocuments(
             }, 'Vertex search completed via Edge Function')
         }
 
-        // Cache results
         if (ENABLE_SEARCH_CACHE && results.length > 0) {
             await cacheSearchResults(query, results, orgId)
         }
@@ -114,7 +147,8 @@ export async function searchDocuments(
 
 /**
  * Search documents with grounded answer generation
- * This uses Vertex AI Search's built-in summarization with citations
+ * 
+ * NOTE: Currently disabled for security (H-003). Returns empty results.
  */
 export async function searchWithAnswer(
     query: string,
@@ -122,6 +156,12 @@ export async function searchWithAnswer(
     orgId?: string
 ): Promise<{ results: VertexSearchResult[]; answer?: string; citations?: Array<{ title: string; uri: string }> }> {
     const timer = createTimer(aiLogger, 'vertex_search_with_answer')
+
+    // SECURITY: Vertex Search disabled until org filtering is implemented
+    if (!ENABLE_VERTEX_SEARCH) {
+        timer.end({ source: 'disabled', reason: 'security_h003' })
+        return { results: [] }
+    }
 
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
         aiLogger.warn('Supabase not configured for Vertex Search Edge Function')
@@ -134,16 +174,12 @@ export async function searchWithAnswer(
         
         const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-                'apikey': SUPABASE_ANON_KEY
-            },
+            headers: getEdgeFunctionHeaders(),
             body: JSON.stringify({
                 query,
                 limit,
                 orgId,
-                includeAnswer: true // Enable grounded answer generation
+                includeAnswer: true
             })
         })
 

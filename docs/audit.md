@@ -19,22 +19,31 @@ Ingen kritiske funn bekreftet i statisk gjennomgang.
 
 ## High
 
-### H‑001 Åpne Supabase Edge Functions uten tydelig auth
+### H‑001 Åpne Supabase Edge Functions uten tydelig auth - LØST
 - **Hva:** Deno‑funksjonene aksepterer alle requests og bruker `SUPABASE_SERVICE_ROLE_KEY`. CORS er `*`.
 - **Bevis:** `supabase/functions/generate-embeddings/index.ts`, `supabase/functions/process-document/index.ts`
-- **Risiko:** Uvedkommende kan trigge ressurskrevende operasjoner, kostnads‑ og DoS‑risiko.
-- **Anbefaling:** Sikre `verify_jwt=true` ved deploy **og** legg inn egen auth‑sjekk (token/signatur) i funksjonene. Stram inn CORS.
+- **Status:** ✅ LØST 2026-01-28
+- **Løsning:**
+  - Alle 5 Edge Functions har nå `X-Edge-Secret` header-verifisering
+  - Client libraries (`src/lib/edge-functions.ts`) sender `X-Edge-Secret` header
+  - CORS oppdatert til å tillate `x-edge-secret` header
+  - Secret settes via `EDGE_FUNCTION_SECRET` env var i Supabase og Vercel
+- **Neste steg:** Sett `EDGE_FUNCTION_SECRET` i Supabase Dashboard og Vercel environment variables
 
 ### H‑002 Cloud Tasks‑endepunkt - DEPRECATED
 - **Hva:** `/api/tasks/process` brukes ikke lenger.
 - **Status:** ⚠️ DEPRECATED - All async processing går nå via Supabase Edge Functions.
 - **Anbefaling:** Vurder å fjerne `/api/tasks/process` og `src/lib/cloud-tasks.ts` helt.
 
-### H‑003 Potensiell tenant‑lekkasje i Vertex Search
+### H‑003 Potensiell tenant‑lekkasje i Vertex Search - MITIGERT
 - **Hva:** `searchDocuments()` støtter `orgId`, men `ask` sender det ikke. Cache blir dermed global.
 - **Bevis:** `src/lib/vertex-search.ts`, `src/app/api/ask/route.ts`
-- **Risiko:** Kryss‑org datalekkasjer hvis Discovery Engine datasett er multitenant.
-- **Anbefaling:** Send `orgId` fra `ask`‑ruten og filtrer i Discovery Engine (serving config/filter).
+- **Status:** ⚠️ MITIGERT 2026-01-28
+- **Løsning:**
+  - Vertex AI Search er **DEAKTIVERT** som standard (`ENABLE_VERTEX_SEARCH=false`)
+  - Alle søk bruker nå embedding-basert search via Supabase (respekterer RLS)
+  - GCS Data Store inneholder dokumenter fra alle organisasjoner uten org-filtrering
+- **Advarsel:** IKKE aktiver `ENABLE_VERTEX_SEARCH=true` før org-filtrering er implementert i Discovery Engine
 
 ### H‑004 Minneeksplosjon ved Document AI - LØST
 - **Hva:** `process-document` base64‑enkoder PDF via `String.fromCharCode(...Uint8Array)`.
@@ -197,7 +206,10 @@ Ingen kritiske funn bekreftet i statisk gjennomgang.
 ---
 
 ## Pilot‑anbefaling (kort)
-**Må fikses før pilot:** H‑001, H‑002, H‑003, H‑004.  
+**Løst:** H‑001 (Edge Function auth), H‑002 (deprecated), H‑003 (mitigert), H‑004 (minneproblem).  
 **Bør fikses før pilot hvis tid:** M‑001 til M‑004.  
 **Kan utsettes:** Low/Info, men dokumentasjonsavvik bør ryddes før eksterne brukere.
+
+**Viktig miljøvariabel som må settes:**
+- `EDGE_FUNCTION_SECRET` - Må settes i både Supabase Edge Functions secrets og Vercel environment variables
 

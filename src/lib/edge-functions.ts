@@ -10,6 +10,7 @@ import { aiLogger, createTimer, logError } from './logger'
 // Configuration
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const EDGE_FUNCTION_SECRET = process.env.EDGE_FUNCTION_SECRET // Shared secret for internal calls
 
 interface EdgeFunctionResponse<T = unknown> {
   success: boolean
@@ -35,12 +36,19 @@ async function callEdgeFunction<T>(
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`
   
   try {
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
+      'Content-Type': 'application/json'
+    }
+    
+    // Add shared secret for internal authentication
+    if (EDGE_FUNCTION_SECRET) {
+      headers['X-Edge-Secret'] = EDGE_FUNCTION_SECRET
+    }
+    
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
-        'Content-Type': 'application/json'
-      },
+      headers,
       body: JSON.stringify(payload)
     })
 

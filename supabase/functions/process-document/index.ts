@@ -46,15 +46,27 @@ interface ProcessRequest {
   triggerEmbeddings?: boolean
 }
 
+// Edge Function Secret for internal auth (H-001 security fix)
+const EDGE_SECRET = Deno.env.get('EDGE_FUNCTION_SECRET')
+
 serve(async (req: Request) => {
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-edge-secret',
     'Content-Type': 'application/json'
   }
 
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers })
+  }
+
+  // Verify Edge Function Secret (H-001 security fix)
+  const clientSecret = req.headers.get('X-Edge-Secret')
+  if (EDGE_SECRET && clientSecret !== EDGE_SECRET) {
+    return new Response(
+      JSON.stringify({ error: 'Unauthorized' }),
+      { headers, status: 401 }
+    )
   }
 
   try {
