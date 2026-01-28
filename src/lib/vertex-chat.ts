@@ -1,112 +1,123 @@
-import { VertexAI } from '@google-cloud/vertexai'
-import { getGoogleAuthOptions, getProjectId } from './vertex-auth'
+/**
+ * Vertex AI Chat Client
+ * 
+ * Calls the gemini-chat Edge Function for AI responses.
+ * This avoids using the Google Cloud SDK which doesn't work with Turbopack.
+ */
 
-const LOCATION = 'europe-west4'; // Creating the client for specific region for Gemini models
-const MODEL_NAME = 'gemini-2.0-flash-001' // Stable fast model
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL
+const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+const FALLBACK_MESSAGE = 'Finner ingen instrukser knyttet til dette i Tetrivo. Kontakt din nærmeste leder.'
 
 export type ChatMessage = {
     role: 'user' | 'model' | 'system'
     content: string
 }
 
-// Reusable VertexAI client (connection pooling)
-let cachedVertexAI: VertexAI | null = null
-
-function getVertexAI(): VertexAI {
-    if (!cachedVertexAI) {
-        const projectId = getProjectId()
-        const authOptions = getGoogleAuthOptions()
-        
-        cachedVertexAI = new VertexAI({
-            project: projectId,
-            location: LOCATION,
-            googleAuthOptions: authOptions.credentials ? { credentials: authOptions.credentials } : undefined
-        })
-    }
-    return cachedVertexAI
+type GeminiResponse = {
+    answer: string
+    error?: string
 }
 
+/**
+ * Stream Gemini answer (currently non-streaming via Edge Function)
+ * The Edge Function returns the full response, which we pass to onChunk
+ */
 export async function streamGeminiAnswer(
     systemInstruction: string,
     messages: ChatMessage[],
     onChunk: (text: string) => void
 ): Promise<string> {
-    const vertexAI = getVertexAI()
-
-    const model = vertexAI.getGenerativeModel({
-        model: MODEL_NAME,
-        systemInstruction: {
-            role: 'system',
-            parts: [{ text: systemInstruction }]
-        },
-        generationConfig: {
-            temperature: 0.1, // Low temperature for factual RAG
-            maxOutputTokens: 800, // Reduced for faster response
-            candidateCount: 1
-        }
-    })
-
-    // Convert messages to Gemini format
-    // Note: Gemini doesn't support 'system' in history (it's separate above), and roles are 'user'/'model'
-    const history = messages
-        .filter(m => m.role !== 'system')
-        .map(m => ({
-            role: m.role === 'model' ? 'model' : 'user', // Ensure strict mapping
-            parts: [{ text: m.content }]
-        }))
-
-    // The last message is the new prompt
-    const lastMessage = history.pop()
-    if (!lastMessage) throw new Error('No messages provided')
-
-    const chatSession = model.startChat({
-        history: history
-    })
-
     try {
-        const result = await chatSession.sendMessageStream(lastMessage.parts[0].text)
-
-        let fullText = ''
-
-        for await (const chunk of result.stream) {
-            const chunkText = chunk.candidates?.[0].content.parts[0].text || ''
-            if (chunkText) {
-                fullText += chunkText
-                onChunk(chunkText)
-            }
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.error('Supabase not configured for Gemini Edge Function')
+            onChunk(FALLBACK_MESSAGE)
+            return FALLBACK_MESSAGE
         }
 
-        return fullText
+        const userMessage = messages.map(m => m.content).join('\n')
+        
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/gemini-chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({
+                systemPrompt: systemInstruction,
+                userMessage: userMessage,
+                stream: false
+            })
+        })
+
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Gemini Edge Function error:', response.status, errorText)
+            onChunk(FALLBACK_MESSAGE)
+            return FALLBACK_MESSAGE
+        }
+
+        const data: GeminiResponse = await response.json()
+
+        if (data.error || !data.answer) {
+            console.error('Gemini returned error:', data.error)
+            onChunk(FALLBACK_MESSAGE)
+            return FALLBACK_MESSAGE
+        }
+
+        // Send the full response as a single chunk
+        onChunk(data.answer)
+        return data.answer
 
     } catch (error) {
         console.error('Gemini Stream Error:', error)
-        // Return a fallback message instead of throwing
-        const fallbackMessage = 'Beklager, jeg kunne ikke generere et svar akkurat nå. Prøv igjen.'
-        onChunk(fallbackMessage)
-        return fallbackMessage
+        onChunk(FALLBACK_MESSAGE)
+        return FALLBACK_MESSAGE
     }
 }
 
-// Non-streaming fallback
+/**
+ * Generate Gemini answer (non-streaming)
+ */
 export async function generateGeminiAnswer(
     systemInstruction: string,
     messages: ChatMessage[]
 ): Promise<string> {
-    const projectId = getProjectId()
-    const vertexAI = new VertexAI({
-        project: projectId,
-        location: LOCATION,
-        // credentials handled auto or via env
-    })
+    try {
+        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+            console.error('Supabase not configured for Gemini Edge Function')
+            return ''
+        }
 
-    const model = vertexAI.getGenerativeModel({
-        model: MODEL_NAME,
-        systemInstruction: systemInstruction
-    })
+        const userMessage = messages.map(m => m.content).join('\n')
+        
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/gemini-chat`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                'apikey': SUPABASE_ANON_KEY
+            },
+            body: JSON.stringify({
+                systemPrompt: systemInstruction,
+                userMessage: userMessage,
+                stream: false
+            })
+        })
 
-    const content = messages.map(m => m.content).join('\n') // Simple join for single-turn usually used in RAG
+        if (!response.ok) {
+            const errorText = await response.text()
+            console.error('Gemini Edge Function error:', response.status, errorText)
+            return ''
+        }
 
-    const result = await model.generateContent(content)
-    const response = await result.response
-    return response.candidates?.[0].content.parts[0].text || ''
+        const data: GeminiResponse = await response.json()
+        return data.answer || ''
+
+    } catch (error) {
+        console.error('Gemini Error:', error)
+        return ''
+    }
 }
