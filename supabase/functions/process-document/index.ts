@@ -20,6 +20,24 @@ import { getAccessToken, getProjectId } from '../_shared/google-auth.ts'
 const DOCUMENT_AI_LOCATION = Deno.env.get('DOCUMENT_AI_LOCATION') || 'eu'
 const DOCUMENT_AI_PROCESSOR_ID = Deno.env.get('DOCUMENT_AI_PROCESSOR_ID')
 const GCS_BUCKET = Deno.env.get('GCS_BUCKET_NAME') || 'tetrivo-documents-eu'
+const MAX_FILE_SIZE_MB = 10 // Document AI limit
+
+/**
+ * Safe base64 encoding for large ArrayBuffers
+ * Avoids stack overflow from spread operator
+ */
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer)
+  const chunkSize = 8192
+  let result = ''
+  
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize)
+    result += String.fromCharCode(...chunk)
+  }
+  
+  return btoa(result)
+}
 
 interface ProcessRequest {
   instructionId: string
@@ -138,7 +156,9 @@ async function extractWithDocumentAI(gcsUri: string): Promise<string> {
   // For GCS files, we use batch processing endpoint
   // But for simplicity, we'll download and send inline
   const fileContent = await downloadFromGCS(gcsUri)
-  const base64Content = btoa(String.fromCharCode(...new Uint8Array(fileContent)))
+  
+  // Safe base64 encoding that doesn't blow up the stack for large files
+  const base64Content = arrayBufferToBase64(fileContent)
 
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -169,7 +189,7 @@ async function extractWithDocumentAI(gcsUri: string): Promise<string> {
 }
 
 /**
- * Download file from GCS
+ * Download file from GCS with size limit
  */
 async function downloadFromGCS(gcsUri: string): Promise<ArrayBuffer> {
   const accessToken = await getAccessToken(['https://www.googleapis.com/auth/devstorage.read_only'])
@@ -180,6 +200,24 @@ async function downloadFromGCS(gcsUri: string): Promise<ArrayBuffer> {
   
   const [, bucket, object] = match
   const encodedObject = encodeURIComponent(object)
+  
+  // First, check file size via metadata
+  const metaUrl = `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodedObject}`
+  const metaResponse = await fetch(metaUrl, {
+    headers: { 'Authorization': `Bearer ${accessToken}` }
+  })
+  
+  if (metaResponse.ok) {
+    const metadata = await metaResponse.json()
+    const sizeBytes = parseInt(metadata.size || '0', 10)
+    const sizeMB = sizeBytes / (1024 * 1024)
+    
+    if (sizeMB > MAX_FILE_SIZE_MB) {
+      throw new Error(`File too large: ${sizeMB.toFixed(1)}MB exceeds ${MAX_FILE_SIZE_MB}MB limit`)
+    }
+    
+    console.log(`File size: ${sizeMB.toFixed(2)}MB`)
+  }
   
   const url = `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodedObject}?alt=media`
   

@@ -25,11 +25,10 @@ Ingen kritiske funn bekreftet i statisk gjennomgang.
 - **Risiko:** Uvedkommende kan trigge ressurskrevende operasjoner, kostnads‑ og DoS‑risiko.
 - **Anbefaling:** Sikre `verify_jwt=true` ved deploy **og** legg inn egen auth‑sjekk (token/signatur) i funksjonene. Stram inn CORS.
 
-### H‑002 Cloud Tasks‑endepunkt kan spoofes
-- **Hva:** `/api/tasks/process` godkjenner kun at noen Cloud Tasks‑headers eksisterer.
-- **Bevis:** `src/lib/cloud-tasks.ts`, `src/app/api/tasks/process/route.ts`
-- **Risiko:** Endepunktet kjører med `service_role`. Spoofet request kan trigge tunge prosesser.
-- **Anbefaling:** Verifiser signert OIDC‑token fra Cloud Tasks, bruk delt hemmelighet, og/eller IP‑allowlist. Vurder å deaktivere i prod hvis ikke brukt.
+### H‑002 Cloud Tasks‑endepunkt - DEPRECATED
+- **Hva:** `/api/tasks/process` brukes ikke lenger.
+- **Status:** ⚠️ DEPRECATED - All async processing går nå via Supabase Edge Functions.
+- **Anbefaling:** Vurder å fjerne `/api/tasks/process` og `src/lib/cloud-tasks.ts` helt.
 
 ### H‑003 Potensiell tenant‑lekkasje i Vertex Search
 - **Hva:** `searchDocuments()` støtter `orgId`, men `ask` sender det ikke. Cache blir dermed global.
@@ -37,11 +36,13 @@ Ingen kritiske funn bekreftet i statisk gjennomgang.
 - **Risiko:** Kryss‑org datalekkasjer hvis Discovery Engine datasett er multitenant.
 - **Anbefaling:** Send `orgId` fra `ask`‑ruten og filtrer i Discovery Engine (serving config/filter).
 
-### H‑004 Minneeksplosjon ved Document AI‑prosessering
+### H‑004 Minneeksplosjon ved Document AI - LØST
 - **Hva:** `process-document` base64‑enkoder PDF via `String.fromCharCode(...Uint8Array)`.
-- **Bevis:** `supabase/functions/process-document/index.ts`
-- **Risiko:** Store PDF‑er kan krasje funksjonen (RangeError / høyt minneforbruk).
-- **Anbefaling:** Bruk `Buffer.from(bytes).toString('base64')` eller streaming. Sett maks filstørrelse.
+- **Status:** ✅ LØST 2026-01-28
+- **Løsning:** 
+  - Chunked base64 encoding (`arrayBufferToBase64()`) unngår stack overflow
+  - Filstørrelse-sjekk før prosessering (maks 10MB)
+  - Logging av filstørrelse for debugging
 
 ---
 
