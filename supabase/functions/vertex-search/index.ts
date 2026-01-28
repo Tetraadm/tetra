@@ -16,7 +16,7 @@ interface SearchRequest {
   query: string
   limit?: number
   includeAnswer?: boolean // Enable grounded answer generation
-  orgId?: string // For filtering by organization
+  orgId: string // Required: filters results to user's organization (H-01 security)
 }
 
 interface SearchResult {
@@ -146,7 +146,7 @@ serve(async (req: Request) => {
 
   try {
     const payload: SearchRequest = await req.json()
-    const { query, limit = 5, includeAnswer = false } = payload
+    const { query, limit = 5, includeAnswer = false, orgId } = payload
 
     if (!query || query.trim().length === 0) {
       return new Response(
@@ -155,7 +155,15 @@ serve(async (req: Request) => {
       )
     }
 
-    console.log(`Vertex Search: "${query}" (limit: ${limit}, includeAnswer: ${includeAnswer})`)
+    // H-01 Security: Require orgId to ensure org isolation
+    if (!orgId) {
+      return new Response(
+        JSON.stringify({ error: 'orgId is required for search' }),
+        { headers, status: 400 }
+      )
+    }
+
+    console.log(`Vertex Search: "${query}" (limit: ${limit}, includeAnswer: ${includeAnswer}, orgId: ${orgId})`)
 
     const projectId = getProjectId()
     const accessToken = await getAccessToken(['https://www.googleapis.com/auth/cloud-platform'])
@@ -175,9 +183,11 @@ serve(async (req: Request) => {
     const endpoint = `https://discoveryengine.googleapis.com/v1/${servingConfig}:search`
 
     // Build search request body
+    // H-01 Security: Fetch more results for post-filtering by orgId
+    // Discovery Engine unstructured data stores don't support filter queries
     const searchBody: Record<string, unknown> = {
       query: query,
-      pageSize: limit,
+      pageSize: limit * 3, // Fetch extra for post-filtering
       contentSearchSpec: {
         snippetSpec: {
           returnSnippet: true,
@@ -232,7 +242,7 @@ serve(async (req: Request) => {
     console.log(`Vertex Search returned ${data.results?.length || 0} results`)
 
     // Parse results
-    const results: SearchResult[] = (data.results || []).map((result: Record<string, unknown>, index: number) => {
+    const allResults: SearchResult[] = (data.results || []).map((result: Record<string, unknown>, index: number) => {
       const document = result.document as Record<string, unknown> | undefined
       const derivedData = document?.derivedStructData as Record<string, unknown> | undefined
       const structData = document?.structData as Record<string, unknown> | undefined
@@ -255,13 +265,13 @@ serve(async (req: Request) => {
       if (snippets && snippets.length > 0) {
         content = snippets.map(s => String(s.snippet || '')).join(' ... ')
       }
-      
+
       const extractiveAnswers = derivedData?.extractive_answers as Array<Record<string, unknown>> | undefined
       if (!content && extractiveAnswers && extractiveAnswers.length > 0) {
         content = String(extractiveAnswers[0].content || '')
       }
 
-      // Extract link/URI
+      // Extract link/URI - used for org filtering
       let link = ''
       if (derivedData?.link) {
         link = String(derivedData.link)
@@ -280,6 +290,13 @@ serve(async (req: Request) => {
         score: 0.9 - (index * 0.1) // Descending score based on rank
       }
     })
+
+    // H-01 Security: Post-filter results by orgId in document URI
+    // Documents are stored as gs://bucket/{orgId}/{docId}.pdf
+    const filteredResults = allResults.filter(r => r.link?.includes(orgId))
+    const results = filteredResults.slice(0, limit)
+
+    console.log(`Vertex Search: ${allResults.length} total, ${filteredResults.length} for org, returning ${results.length}`)
 
     // Build response
     const searchResponse: SearchResponse = { results }

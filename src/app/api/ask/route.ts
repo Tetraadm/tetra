@@ -197,14 +197,15 @@ function filterByKeywordOverlap<T extends InstructionLike>(
 async function findRelevantInstructions(
   supabase: Awaited<ReturnType<typeof createClient>>,
   question: string,
-  userId: string
+  userId: string,
+  orgId: string
 ): Promise<{
   instructions: Array<VectorSearchResult | InstructionWithKeywords>
   usedVectorSearch: boolean
 }> {
   // 1. Try Vertex AI Search first (The new primary search)
   try {
-    const vertexResults = await searchDocuments(question)
+    const vertexResults = await searchDocuments(question, 5, orgId)
     console.log('[ASK_DEBUG] vertexResults length:', vertexResults.length)
     if (vertexResults.length > 0) {
       // Extract file paths and UUIDs from Vertex results to match with database
@@ -535,7 +536,8 @@ export async function POST(request: NextRequest) {
     const { instructions: rawInstructions, usedVectorSearch } = await findRelevantInstructions(
       supabase,
       question,
-      userId
+      userId,
+      orgId
     )
 
     // Apply smart re-ranking based on title match, severity, and recency

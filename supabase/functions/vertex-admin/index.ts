@@ -11,7 +11,7 @@ const LOCATION = 'global'
 const GCS_BUCKET = Deno.env.get('GCS_BUCKET_NAME')
 
 interface AdminRequest {
-  action: 'list-datastores' | 'import-gcs' | 'check-status' | 'list-documents'
+  action: 'list-datastores' | 'import-gcs' | 'import-jsonl' | 'check-status' | 'list-documents'
   dataStoreId?: string
 }
 
@@ -204,6 +204,45 @@ serve(async (req: Request) => {
         const data = await response.json()
         console.log('Import response:', JSON.stringify(data))
         return new Response(JSON.stringify(data), { headers })
+      }
+
+      case 'import-jsonl': {
+        // H-01: Import JSONL with structData metadata for org filtering
+        if (!dataStoreId) {
+          return new Response(
+            JSON.stringify({ error: 'dataStoreId required' }),
+            { headers, status: 400 }
+          )
+        }
+
+        // Import JSONL with custom schema supporting structData metadata
+        const jsonlImportBody = {
+          gcsSource: {
+            inputUris: [`gs://${GCS_BUCKET}/vertex-export/export.jsonl`],
+            dataSchema: 'custom'
+          },
+          reconciliationMode: 'INCREMENTAL'
+        }
+
+        const jsonlResponse = await fetch(
+          `${baseUrl}/collections/default_collection/dataStores/${dataStoreId}/branches/default_branch/documents:import`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(jsonlImportBody)
+          }
+        )
+
+        const jsonlData = await jsonlResponse.json()
+        console.log('JSONL Import response:', JSON.stringify(jsonlData))
+        return new Response(JSON.stringify({
+          ...jsonlData,
+          source: `gs://${GCS_BUCKET}/vertex-export/export.jsonl`,
+          schema: 'custom'
+        }), { headers })
       }
 
       case 'check-status': {

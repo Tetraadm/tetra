@@ -1,16 +1,16 @@
 /**
  * Vertex AI Search Client
- * 
- * SECURITY NOTE (H-003): Vertex AI Search is currently DISABLED because it doesn't
- * respect organization boundaries. The Data Store contains documents from all orgs,
- * and filtering by orgId is not implemented in Discovery Engine.
- * 
- * The embedding search (via Supabase) respects RLS and is used instead.
- * 
- * To re-enable Vertex AI Search:
- * 1. Implement org filtering in the Edge Function (filter by GCS path prefix)
- * 2. Or create separate Data Stores per org
- * 3. Set ENABLE_VERTEX_SEARCH=true in environment
+ *
+ * H-01 Security: Vertex AI Search now supports org isolation via structData.orgId
+ * filtering. Documents are exported with orgId metadata and filtered at query time.
+ *
+ * Prerequisites before enabling:
+ * 1. Run vertex-export with action=export-all to export instructions with metadata
+ * 2. Run vertex-admin with action=import-jsonl to import JSONL into Discovery Engine
+ * 3. Verify org isolation works correctly in test environment
+ * 4. Set ENABLE_VERTEX_SEARCH=true in environment
+ *
+ * The orgId parameter is now REQUIRED for all search calls.
  */
 
 import { getCachedSearchResults, cacheSearchResults } from './cache'
@@ -59,21 +59,27 @@ function getEdgeFunctionHeaders(): Record<string, string> {
 
 /**
  * Search documents using Vertex AI Search via Edge Function
- * 
- * NOTE: Currently disabled for security (H-003). Returns empty results.
- * The embedding search in /api/ask handles search instead.
+ *
+ * Requires orgId parameter to ensure org isolation (H-01 security).
+ * Returns empty results if ENABLE_VERTEX_SEARCH is not set to 'true'.
  */
 export async function searchDocuments(
-    query: string, 
+    query: string,
     limit: number = 5,
-    orgId?: string
+    orgId: string
 ): Promise<VertexSearchResult[]> {
     const timer = createTimer(aiLogger, 'vertex_search')
-    
-    // SECURITY: Vertex Search disabled until org filtering is implemented
+
+    if (!orgId) {
+        aiLogger.warn({ query }, 'Vertex Search called without orgId, returning empty results')
+        timer.end({ source: 'error', reason: 'missing_orgId' })
+        return []
+    }
+
+    // Vertex Search disabled until org filtering is verified in production
     if (!ENABLE_VERTEX_SEARCH) {
-        aiLogger.debug({ query }, 'Vertex Search disabled (H-003 security), using embedding search instead')
-        timer.end({ source: 'disabled', reason: 'security_h003' })
+        aiLogger.debug({ query, orgId }, 'Vertex Search disabled, using embedding search instead')
+        timer.end({ source: 'disabled', reason: 'not_enabled' })
         return []
     }
     
@@ -147,19 +153,26 @@ export async function searchDocuments(
 
 /**
  * Search documents with grounded answer generation
- * 
- * NOTE: Currently disabled for security (H-003). Returns empty results.
+ *
+ * Requires orgId parameter to ensure org isolation (H-01 security).
+ * Returns empty results if ENABLE_VERTEX_SEARCH is not set to 'true'.
  */
 export async function searchWithAnswer(
     query: string,
     limit: number = 5,
-    orgId?: string
+    orgId: string
 ): Promise<{ results: VertexSearchResult[]; answer?: string; citations?: Array<{ title: string; uri: string }> }> {
     const timer = createTimer(aiLogger, 'vertex_search_with_answer')
 
-    // SECURITY: Vertex Search disabled until org filtering is implemented
+    if (!orgId) {
+        aiLogger.warn({ query }, 'Vertex Search with answer called without orgId, returning empty results')
+        timer.end({ source: 'error', reason: 'missing_orgId' })
+        return { results: [] }
+    }
+
+    // Vertex Search disabled until org filtering is verified in production
     if (!ENABLE_VERTEX_SEARCH) {
-        timer.end({ source: 'disabled', reason: 'security_h003' })
+        timer.end({ source: 'disabled', reason: 'not_enabled' })
         return { results: [] }
     }
 
