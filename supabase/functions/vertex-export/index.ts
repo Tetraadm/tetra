@@ -170,14 +170,13 @@ function buildJsonlDocument(instruction: InstructionRow): JsonlDocument {
 const EDGE_SECRET = Deno.env.get('EDGE_FUNCTION_SECRET')
 
 serve(async (req: Request) => {
+  // M-05: Removed CORS - these are server-to-server only
   const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-edge-secret',
     'Content-Type': 'application/json'
   }
 
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers })
+    return new Response('ok', { status: 204 })
   }
 
   // Verify Edge Function Secret (C-002 security fix: fail-hard)

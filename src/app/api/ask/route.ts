@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest } from 'next/server'
-import { aiRatelimit, getClientIp } from '@/lib/ratelimit'
+import { aiRatelimit } from '@/lib/ratelimit'
 import { z } from 'zod'
 import { generateEmbedding } from '@/lib/embeddings'
 import { searchDocuments, type VertexSearchResult } from '@/lib/vertex-search'
@@ -495,7 +495,6 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Ikke autentisert' }, { status: 401 })
     }
 
-    const ip = getClientIp(request)
     const rateLimitKey = `user:${user.id}`
     const { success, limit, remaining, reset, isMisconfigured } = await aiRatelimit.limit(rateLimitKey)
 
@@ -520,8 +519,6 @@ export async function POST(request: NextRequest) {
         }
       )
     }
-
-    void ip
 
     const { data: profile, error: profileError } = await supabase
       .from('profiles')

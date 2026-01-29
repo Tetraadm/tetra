@@ -30,12 +30,12 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer)
   const chunkSize = 8192
   let result = ''
-  
+
   for (let i = 0; i < bytes.length; i += chunkSize) {
     const chunk = bytes.subarray(i, i + chunkSize)
     result += String.fromCharCode(...chunk)
   }
-  
+
   return btoa(result)
 }
 
@@ -50,14 +50,13 @@ interface ProcessRequest {
 const EDGE_SECRET = Deno.env.get('EDGE_FUNCTION_SECRET')
 
 serve(async (req: Request) => {
+  // M-05: Removed CORS - these are server-to-server only
   const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-edge-secret',
     'Content-Type': 'application/json'
   }
 
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers })
+    return new Response('ok', { status: 204 })
   }
 
   // Verify Edge Function Secret (C-002 security fix: fail-hard)
@@ -95,9 +94,9 @@ serve(async (req: Request) => {
 
     // Get the file from GCS
     const gcsUri = `gs://${GCS_BUCKET}/${payload.filePath}`
-    
+
     let extractedText: string
-    
+
     if (DOCUMENT_AI_PROCESSOR_ID) {
       // Use Document AI for extraction
       console.log('Extracting text with Document AI')
@@ -132,28 +131,38 @@ serve(async (req: Request) => {
       if (instruction) {
         // Call the embeddings function
         const embeddingsUrl = `${supabaseUrl}/functions/v1/generate-embeddings`
-        
-        await fetch(embeddingsUrl, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${supabaseKey}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            instructionId: payload.instructionId,
-            title: instruction.title,
-            content: extractedText,
-            orgId: payload.orgId
+
+        try {
+          const embeddingsResponse = await fetch(embeddingsUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              instructionId: payload.instructionId,
+              title: instruction.title,
+              content: extractedText,
+              orgId: payload.orgId
+            })
           })
-        })
-        
-        console.log('Triggered embedding generation')
+
+          if (!embeddingsResponse.ok) {
+            const errorText = await embeddingsResponse.text()
+            console.error('Failed to trigger embeddings:', embeddingsResponse.status, errorText)
+          } else {
+            console.log('Triggered embedding generation')
+          }
+        } catch (embeddingError) {
+          // Log but don't fail the document processing
+          console.error('Error triggering embeddings:', embeddingError)
+        }
       }
     }
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         instructionId: payload.instructionId,
         extractedLength: extractedText.length,
         method: DOCUMENT_AI_PROCESSOR_ID ? 'document-ai' : 'basic'
@@ -176,14 +185,14 @@ serve(async (req: Request) => {
 async function extractWithDocumentAI(gcsUri: string): Promise<string> {
   const projectId = getProjectId()
   const accessToken = await getAccessToken(['https://www.googleapis.com/auth/cloud-platform'])
-  
+
   const processorName = `projects/${projectId}/locations/${DOCUMENT_AI_LOCATION}/processors/${DOCUMENT_AI_PROCESSOR_ID}`
   const endpoint = `https://${DOCUMENT_AI_LOCATION}-documentai.googleapis.com/v1/${processorName}:process`
 
   // For GCS files, we use batch processing endpoint
   // But for simplicity, we'll download and send inline
   const fileContent = await downloadFromGCS(gcsUri)
-  
+
   // Safe base64 encoding that doesn't blow up the stack for large files
   const base64Content = arrayBufferToBase64(fileContent)
 
@@ -207,7 +216,7 @@ async function extractWithDocumentAI(gcsUri: string): Promise<string> {
   }
 
   const data = await response.json()
-  
+
   if (!data.document?.text) {
     throw new Error('Document AI returned no text')
   }
@@ -220,34 +229,34 @@ async function extractWithDocumentAI(gcsUri: string): Promise<string> {
  */
 async function downloadFromGCS(gcsUri: string): Promise<ArrayBuffer> {
   const accessToken = await getAccessToken(['https://www.googleapis.com/auth/devstorage.read_only'])
-  
+
   // Parse gs:// URI
   const match = gcsUri.match(/^gs:\/\/([^/]+)\/(.+)$/)
   if (!match) throw new Error(`Invalid GCS URI: ${gcsUri}`)
-  
+
   const [, bucket, object] = match
   const encodedObject = encodeURIComponent(object)
-  
+
   // First, check file size via metadata
   const metaUrl = `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodedObject}`
   const metaResponse = await fetch(metaUrl, {
     headers: { 'Authorization': `Bearer ${accessToken}` }
   })
-  
+
   if (metaResponse.ok) {
     const metadata = await metaResponse.json()
     const sizeBytes = parseInt(metadata.size || '0', 10)
     const sizeMB = sizeBytes / (1024 * 1024)
-    
+
     if (sizeMB > MAX_FILE_SIZE_MB) {
       throw new Error(`File too large: ${sizeMB.toFixed(1)}MB exceeds ${MAX_FILE_SIZE_MB}MB limit`)
     }
-    
+
     console.log(`File size: ${sizeMB.toFixed(2)}MB`)
   }
-  
+
   const url = `https://storage.googleapis.com/storage/v1/b/${bucket}/o/${encodedObject}?alt=media`
-  
+
   const response = await fetch(url, {
     headers: { 'Authorization': `Bearer ${accessToken}` }
   })
@@ -265,7 +274,7 @@ async function downloadFromGCS(gcsUri: string): Promise<ArrayBuffer> {
  * Downloads from Supabase Storage
  */
 async function extractBasic(
-  filePath: string, 
+  filePath: string,
   supabase: ReturnType<typeof createClient>
 ): Promise<string> {
   // Download file from Supabase Storage

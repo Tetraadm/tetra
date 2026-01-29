@@ -1,4 +1,5 @@
 import './globals.css'
+import { headers } from 'next/headers'
 import { Toaster } from 'react-hot-toast'
 import OfflineBanner from '@/components/OfflineBanner'
 import { ThemeProvider } from '@/components/theme-provider'
@@ -30,15 +31,19 @@ export const metadata = {
   description: 'Digital sikkerhet og instruksjonsverktøy',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // M-01: Read CSP nonce from middleware for next-themes script injection
+  const headersList = await headers()
+  const nonce = headersList.get('x-nonce') || undefined
+
   return (
     <html lang="no" suppressHydrationWarning>
       <body className={`${plexSans.variable} ${plexSerif.variable} ${plexMono.variable} font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange nonce={nonce}>
           <OfflineBanner />
           {children}
           <Toaster

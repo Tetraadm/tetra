@@ -202,13 +202,21 @@ export async function POST(request: NextRequest) {
                     }))
                 )
 
+            // M-04: If team linking fails, rollback by soft-deleting the instruction
+            // This prevents instructions from being visible org-wide when team linking fails
             if (teamLinkError) {
                 console.error('TEAM_LINK_ERROR:', teamLinkError)
-                // Soft delete instruction if team linking fails? Or just warn?
-                // Let's warn but keep it, user can fix or delete.
-                // Actually soft-delete is safer to avoid "ghost" instructions visible to no one (or everyone depending on RLS).
-                // For now, let's just return success but with warning logic implies complexity. 
-                // We'll trust it works mostly.
+                
+                // Soft-delete the instruction to prevent org-wide visibility
+                await adminClient
+                    .from('instructions')
+                    .update({ deleted_at: new Date().toISOString() })
+                    .eq('id', instruction.id)
+
+                return NextResponse.json(
+                    { error: 'Kunne ikke koble instruks til team. Prøv igjen.' },
+                    { status: 500 }
+                )
             }
         }
 

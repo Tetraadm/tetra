@@ -43,11 +43,14 @@ export interface RateLimitCheckResult extends RateLimitResult {
 }
 
 // In-memory fallback for development
+// M-13: Added periodic cleanup to prevent memory leak
 class InMemoryRatelimit {
   readonly isMisconfigured = false
   private requests: Map<string, number[]> = new Map()
   private maxRequests: number
   private window: number
+  private cleanupCounter = 0
+  private readonly CLEANUP_INTERVAL = 100 // Run cleanup every 100 requests
 
   constructor(limit: number, windowSeconds: number) {
     this.maxRequests = limit
@@ -60,6 +63,13 @@ class InMemoryRatelimit {
 
     // Remove old timestamps outside the window
     const validTimestamps = timestamps.filter(ts => now - ts < this.window)
+
+    // M-13: Periodic cleanup of stale entries to prevent memory leak
+    this.cleanupCounter++
+    if (this.cleanupCounter >= this.CLEANUP_INTERVAL) {
+      this.cleanupCounter = 0
+      this.cleanupStaleEntries(now)
+    }
 
     if (validTimestamps.length >= this.maxRequests) {
       const oldestTimestamp = validTimestamps[0]
@@ -82,6 +92,18 @@ class InMemoryRatelimit {
       remaining: this.maxRequests - validTimestamps.length,
       reset: now + this.window,
       isMisconfigured: false,
+    }
+  }
+
+  // M-13: Remove entries with no valid timestamps to prevent memory leak
+  private cleanupStaleEntries(now: number): void {
+    for (const [key, timestamps] of this.requests.entries()) {
+      const valid = timestamps.filter(ts => now - ts < this.window)
+      if (valid.length === 0) {
+        this.requests.delete(key)
+      } else {
+        this.requests.set(key, valid)
+      }
     }
   }
 }
@@ -129,8 +151,6 @@ class MisconfiguredRatelimit {
     }
   }
 }
-
-
 
 const IS_PRODUCTION = process.env.NODE_ENV === 'production'
 
@@ -234,4 +254,3 @@ export function getRateLimiterStatus(): {
     provider: useUpstash ? 'upstash' : (IS_PRODUCTION ? 'misconfigured' : 'in-memory')
   }
 }
-

@@ -41,7 +41,7 @@ async function getAccessToken(scopes: string[]): Promise<string> {
   const credentialsJson = Deno.env.get('GOOGLE_CREDENTIALS_JSON')
   if (!credentialsJson) throw new Error('GOOGLE_CREDENTIALS_JSON not set')
   const credentials = JSON.parse(credentialsJson)
-  
+
   const header = { alg: 'RS256', typ: 'JWT' }
   const now = Math.floor(Date.now() / 1000)
   const payload = {
@@ -51,25 +51,25 @@ async function getAccessToken(scopes: string[]): Promise<string> {
     iat: now,
     exp: now + 3600
   }
-  
+
   const base64url = (obj: object) => {
     const json = JSON.stringify(obj)
     const base64 = btoa(json)
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
   }
-  
+
   const encodedHeader = base64url(header)
   const encodedPayload = base64url(payload)
   const signatureInput = `${encodedHeader}.${encodedPayload}`
-  
+
   const privateKey = credentials.private_key
   const keyData = privateKey
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
     .replace(/\s/g, '')
-  
+
   const binaryKey = Uint8Array.from(atob(keyData), (c: string) => c.charCodeAt(0))
-  
+
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
     binaryKey,
@@ -77,20 +77,20 @@ async function getAccessToken(scopes: string[]): Promise<string> {
     false,
     ['sign']
   )
-  
+
   const signatureBuffer = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
     cryptoKey,
     new TextEncoder().encode(signatureInput)
   )
-  
+
   const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '')
-  
+
   const jwt = `${signatureInput}.${signature}`
-  
+
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -99,12 +99,12 @@ async function getAccessToken(scopes: string[]): Promise<string> {
       assertion: jwt
     })
   })
-  
+
   if (!tokenResponse.ok) {
     const error = await tokenResponse.text()
     throw new Error(`Failed to get access token: ${error}`)
   }
-  
+
   const tokenData = await tokenResponse.json()
   return tokenData.access_token
 }
@@ -114,14 +114,13 @@ async function getAccessToken(scopes: string[]): Promise<string> {
 const EDGE_SECRET = Deno.env.get('EDGE_FUNCTION_SECRET')
 
 serve(async (req: Request) => {
+  // M-05: Removed CORS - these are server-to-server only
   const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-edge-secret',
     'Content-Type': 'application/json'
   }
 
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers })
+    return new Response('ok', { status: 204 })
   }
 
   // Verify Edge Function Secret (C-002 security fix: fail-hard)
@@ -149,7 +148,7 @@ serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey)
 
     const fullText = `${payload.title}\n\n${payload.content}`.slice(0, MAX_INPUT_CHARS)
-    
+
     // Generate embedding with Vertex AI
     const embeddings = await generateVertexEmbedding(fullText)
     console.log(`Generated embedding with Vertex AI (${embeddings.length} dimensions)`)
@@ -166,7 +165,7 @@ serve(async (req: Request) => {
 
     // Generate chunks and their embeddings
     const chunks = chunkText(payload.content)
-    
+
     if (chunks.length > 0) {
       // Delete existing chunks
       await supabase
@@ -198,8 +197,8 @@ serve(async (req: Request) => {
     console.log(`Successfully processed embeddings for instruction: ${payload.instructionId}`)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
+      JSON.stringify({
+        success: true,
         instructionId: payload.instructionId,
         embeddingDimensions: embeddings.length,
         chunksProcessed: chunks.length,
@@ -223,9 +222,9 @@ serve(async (req: Request) => {
 async function generateVertexEmbedding(text: string): Promise<number[]> {
   const projectId = getProjectId()
   const accessToken = await getAccessToken(['https://www.googleapis.com/auth/cloud-platform'])
-  
+
   const endpoint = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${VERTEX_MODEL}:predict`
-  
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -252,9 +251,9 @@ async function generateVertexEmbedding(text: string): Promise<number[]> {
 async function generateVertexEmbeddings(texts: string[]): Promise<number[][]> {
   const projectId = getProjectId()
   const accessToken = await getAccessToken(['https://www.googleapis.com/auth/cloud-platform'])
-  
+
   const endpoint = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${VERTEX_MODEL}:predict`
-  
+
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -289,13 +288,13 @@ function chunkText(text: string): Array<{ index: number; content: string }> {
 
   while (start < text.length) {
     let end = start + CHUNK_SIZE
-    
+
     // Try to break at sentence boundary
     if (end < text.length) {
       const lastPeriod = text.lastIndexOf('.', end)
       const lastNewline = text.lastIndexOf('\n', end)
       const breakPoint = Math.max(lastPeriod, lastNewline)
-      
+
       if (breakPoint > start + CHUNK_SIZE / 2) {
         end = breakPoint + 1
       }

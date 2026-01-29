@@ -26,7 +26,7 @@ async function getAccessToken(): Promise<string> {
   }
 
   const auth = getGoogleAuthOptions()
-  
+
   // Create JWT for service account auth
   const header = { alg: 'RS256', typ: 'JWT' }
   const now = Math.floor(Date.now() / 1000)
@@ -37,17 +37,17 @@ async function getAccessToken(): Promise<string> {
     iat: now,
     exp: now + 3600
   }
-  
+
   const base64url = (obj: object) => {
     const json = JSON.stringify(obj)
     const base64 = Buffer.from(json).toString('base64')
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
   }
-  
+
   const encodedHeader = base64url(header)
   const encodedPayload = base64url(payload)
   const signatureInput = `${encodedHeader}.${encodedPayload}`
-  
+
   // Sign with private key
   const crypto = await import('crypto')
   const sign = crypto.createSign('RSA-SHA256')
@@ -56,9 +56,9 @@ async function getAccessToken(): Promise<string> {
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '')
-  
+
   const jwt = `${signatureInput}.${signature}`
-  
+
   // Exchange JWT for access token
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
@@ -68,20 +68,20 @@ async function getAccessToken(): Promise<string> {
       assertion: jwt
     })
   })
-  
+
   if (!tokenResponse.ok) {
     const error = await tokenResponse.text()
     throw new Error(`Failed to get access token: ${error}`)
   }
-  
+
   const tokenData = await tokenResponse.json()
-  
+
   // Cache the token
   cachedAccessToken = {
     token: tokenData.access_token,
     expiry: Date.now() + (tokenData.expires_in * 1000)
   }
-  
+
   return tokenData.access_token
 }
 
@@ -110,9 +110,9 @@ export async function generateEmbedding(text: string): Promise<number[]> {
   try {
     const projectId = getProjectId()
     const accessToken = await getAccessToken()
-    
+
     const endpoint = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${VERTEX_MODEL}:predict`
-    
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -130,8 +130,18 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     }
 
     const data = (await response.json()) as VertexEmbeddingResponse
+
+    // M-08: Validate response structure before accessing nested properties
+    if (!data?.predictions?.[0]?.embeddings?.values) {
+      throw new Error('Invalid Vertex AI response: missing embeddings data')
+    }
+
     const embedding = data.predictions[0].embeddings.values
-    
+
+    if (!Array.isArray(embedding) || embedding.length === 0) {
+      throw new Error('Invalid Vertex AI response: embeddings values is not a valid array')
+    }
+
     timer.end({ provider: 'vertex-ai', dimensions: embedding.length })
     return embedding
   } catch (error) {
@@ -160,9 +170,9 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
   try {
     const projectId = getProjectId()
     const accessToken = await getAccessToken()
-    
+
     const endpoint = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${VERTEX_MODEL}:predict`
-    
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -180,8 +190,19 @@ export async function generateEmbeddings(texts: string[]): Promise<number[][]> {
     }
 
     const data = (await response.json()) as VertexEmbeddingResponse
-    const embeddings = data.predictions.map(p => p.embeddings.values)
-    
+
+    // M-08: Validate response structure before accessing nested properties
+    if (!data?.predictions || !Array.isArray(data.predictions)) {
+      throw new Error('Invalid Vertex AI response: missing predictions array')
+    }
+
+    const embeddings = data.predictions.map((p, idx) => {
+      if (!p?.embeddings?.values || !Array.isArray(p.embeddings.values)) {
+        throw new Error(`Invalid Vertex AI response: missing embeddings at index ${idx}`)
+      }
+      return p.embeddings.values
+    })
+
     timer.end({ provider: 'vertex-ai', count: texts.length, dimensions: embeddings[0]?.length })
     return embeddings
   } catch (error) {
@@ -210,9 +231,9 @@ export async function generateQueryEmbedding(query: string): Promise<number[]> {
   try {
     const projectId = getProjectId()
     const accessToken = await getAccessToken()
-    
+
     const endpoint = `https://${VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${VERTEX_LOCATION}/publishers/google/models/${VERTEX_MODEL}:predict`
-    
+
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -231,7 +252,7 @@ export async function generateQueryEmbedding(query: string): Promise<number[]> {
 
     const data = (await response.json()) as VertexEmbeddingResponse
     const embedding = data.predictions[0].embeddings.values
-    
+
     timer.end({ provider: 'vertex-ai', dimensions: embedding.length })
     return embedding
   } catch (error) {

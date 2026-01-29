@@ -5,11 +5,11 @@ import { getGoogleAuthOptions } from '@/lib/vertex-auth'
 
 // GCS bucket - required, no default to prevent accidental prod writes
 function getGcsBucketName(): string {
-  const bucket = process.env.GCS_BUCKET_NAME
-  if (!bucket) {
-    throw new Error('GCS_BUCKET_NAME environment variable is required')
-  }
-  return bucket
+    const bucket = process.env.GCS_BUCKET_NAME
+    if (!bucket) {
+        throw new Error('GCS_BUCKET_NAME environment variable is required')
+    }
+    return bucket
 }
 
 /**
@@ -33,14 +33,14 @@ export async function POST(request: Request) {
         if (!expectedToken) {
             console.error('GDPR_CLEANUP_SECRET not configured')
             return NextResponse.json(
-                { error: 'Service not configured' },
+                { error: 'Tjenesten er ikke konfigurert' },
                 { status: 503 }
             )
         }
 
         if (authHeader !== `Bearer ${expectedToken}`) {
             return NextResponse.json(
-                { error: 'Unauthorized' },
+                { error: 'Ikke autorisert' },
                 { status: 401 }
             )
         }
@@ -51,7 +51,7 @@ export async function POST(request: Request) {
 
         if (!supabaseUrl || !serviceRoleKey) {
             return NextResponse.json(
-                { error: 'Supabase not configured' },
+                { error: 'Supabase er ikke konfigurert' },
                 { status: 503 }
             )
         }
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
         if (error) {
             console.error('GDPR cleanup failed:', error)
             return NextResponse.json(
-                { error: 'Cleanup failed', details: error.message },
+                { error: 'Opprydding feilet', details: error.message },
                 { status: 500 }
             )
         }
@@ -126,14 +126,34 @@ export async function POST(request: Request) {
                     }
                 }
 
+                // M-14: Log audit trail BEFORE hard-deleting for GDPR compliance
+                const idsToDelete = deletedInstructions.map(i => i.id)
+                for (const instruction of deletedInstructions) {
+                    await supabase.from('audit_logs').insert({
+                        org_id: null, // System action, not user-initiated
+                        user_id: null,
+                        action_type: 'gdpr_hard_delete',
+                        entity_type: 'instruction',
+                        entity_id: instruction.id,
+                        details: {
+                            file_path: instruction.file_path,
+                            deletion_reason: 'gdpr_retention_period_exceeded',
+                            retention_days: retentionDays,
+                            cleanup_timestamp: new Date().toISOString()
+                        }
+                    })
+                }
+
                 // Hard delete the instruction records now that files are cleaned up
                 const { error: hardDeleteError } = await supabase
                     .from('instructions')
                     .delete()
-                    .in('id', deletedInstructions.map(i => i.id))
+                    .in('id', idsToDelete)
 
                 if (hardDeleteError) {
                     console.error('[GDPR_CLEANUP] Failed to hard delete instructions:', hardDeleteError)
+                } else {
+                    console.log(`[GDPR_CLEANUP] Successfully hard-deleted ${idsToDelete.length} instructions with audit trail`)
                 }
             }
         } catch (gcsCleanupError) {
@@ -152,7 +172,7 @@ export async function POST(request: Request) {
     } catch (error) {
         console.error('GDPR cleanup error:', error)
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Intern serverfeil' },
             { status: 500 }
         )
     }

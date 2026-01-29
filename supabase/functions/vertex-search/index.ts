@@ -45,7 +45,7 @@ async function getAccessToken(scopes: string[]): Promise<string> {
   const credentialsJson = Deno.env.get('GOOGLE_CREDENTIALS_JSON')
   if (!credentialsJson) throw new Error('GOOGLE_CREDENTIALS_JSON not set')
   const credentials = JSON.parse(credentialsJson)
-  
+
   const header = { alg: 'RS256', typ: 'JWT' }
   const now = Math.floor(Date.now() / 1000)
   const payload = {
@@ -55,25 +55,25 @@ async function getAccessToken(scopes: string[]): Promise<string> {
     iat: now,
     exp: now + 3600
   }
-  
+
   const base64url = (obj: object) => {
     const json = JSON.stringify(obj)
     const base64 = btoa(json)
     return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
   }
-  
+
   const encodedHeader = base64url(header)
   const encodedPayload = base64url(payload)
   const signatureInput = `${encodedHeader}.${encodedPayload}`
-  
+
   const privateKey = credentials.private_key
   const keyData = privateKey
     .replace('-----BEGIN PRIVATE KEY-----', '')
     .replace('-----END PRIVATE KEY-----', '')
     .replace(/\s/g, '')
-  
+
   const binaryKey = Uint8Array.from(atob(keyData), (c: string) => c.charCodeAt(0))
-  
+
   const cryptoKey = await crypto.subtle.importKey(
     'pkcs8',
     binaryKey,
@@ -81,20 +81,20 @@ async function getAccessToken(scopes: string[]): Promise<string> {
     false,
     ['sign']
   )
-  
+
   const signatureBuffer = await crypto.subtle.sign(
     'RSASSA-PKCS1-v1_5',
     cryptoKey,
     new TextEncoder().encode(signatureInput)
   )
-  
+
   const signature = btoa(String.fromCharCode(...new Uint8Array(signatureBuffer)))
     .replace(/\+/g, '-')
     .replace(/\//g, '_')
     .replace(/=/g, '')
-  
+
   const jwt = `${signatureInput}.${signature}`
-  
+
   const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -103,12 +103,12 @@ async function getAccessToken(scopes: string[]): Promise<string> {
       assertion: jwt
     })
   })
-  
+
   if (!tokenResponse.ok) {
     const error = await tokenResponse.text()
     throw new Error(`Failed to get access token: ${error}`)
   }
-  
+
   const tokenData = await tokenResponse.json()
   return tokenData.access_token
 }
@@ -118,14 +118,13 @@ async function getAccessToken(scopes: string[]): Promise<string> {
 const EDGE_SECRET = Deno.env.get('EDGE_FUNCTION_SECRET')
 
 serve(async (req: Request) => {
+  // M-05: Removed CORS - these are server-to-server only
   const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-edge-secret',
     'Content-Type': 'application/json'
   }
 
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers })
+    return new Response('ok', { status: 204 })
   }
 
   // Verify Edge Function Secret (C-002 security fix: fail-hard)
@@ -304,7 +303,7 @@ serve(async (req: Request) => {
     // Add grounded answer if available
     if (includeAnswer && data.summary) {
       searchResponse.answer = data.summary.summaryText || ''
-      
+
       // Extract citations
       if (data.summary.summaryWithMetadata?.citationMetadata?.citations) {
         searchResponse.citations = data.summary.summaryWithMetadata.citationMetadata.citations.map(
@@ -324,7 +323,7 @@ serve(async (req: Request) => {
   } catch (error) {
     console.error('Vertex Search error:', error)
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         error: (error as Error).message,
         results: []
       }),

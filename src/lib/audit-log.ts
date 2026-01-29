@@ -78,6 +78,8 @@ export type AuditActionType =
   | 'delete_user'
   | 'invite_user'
   | 'change_role'
+  // GDPR (M-14)
+  | 'gdpr_hard_delete'
 
 export type AuditEntityType = 'instruction' | 'alert' | 'folder' | 'team' | 'user' | 'invite'
 
