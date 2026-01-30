@@ -224,13 +224,28 @@ CREATE POLICY "Admins delete folders"
 -- ============================================================================
 
 -- Consolidated SELECT: admins see all, others see published only
+-- Consolidated SELECT: admins see all, others see published only
 CREATE POLICY "View instructions"
   ON public.instructions FOR SELECT
   USING (
     org_id = get_my_org_id()
     AND (
       get_my_role() = 'admin'
-      OR (status = 'published' AND deleted_at IS NULL)
+      OR (
+        status = 'published' 
+        AND deleted_at IS NULL
+        AND (
+          -- Visible if NOT assigned to any team (org-wide)
+          NOT EXISTS (SELECT 1 FROM instruction_teams it WHERE it.instruction_id = id)
+          OR
+          -- Visible if assigned to MY team
+          (get_my_team_id() IS NOT NULL AND EXISTS (
+            SELECT 1 FROM instruction_teams it
+            WHERE it.instruction_id = id
+            AND it.team_id = get_my_team_id()
+          ))
+        )
+      )
     )
   );
 
@@ -316,6 +331,18 @@ CREATE POLICY "Users insert own reads"
       WHERE i.id = instruction_reads.instruction_id
         AND i.org_id = instruction_reads.org_id
         AND i.status = 'published'
+        AND (
+          -- Verify user actually has access to this instruction
+          get_my_role() = 'admin'
+          OR
+          NOT EXISTS (SELECT 1 FROM instruction_teams it WHERE it.instruction_id = i.id)
+          OR
+          (get_my_team_id() IS NOT NULL AND EXISTS (
+            SELECT 1 FROM instruction_teams it
+            WHERE it.instruction_id = i.id
+            AND it.team_id = get_my_team_id()
+          ))
+        )
     )
   );
 
@@ -338,7 +365,7 @@ CREATE POLICY "View instruction reads"
       AND EXISTS (
         SELECT 1 FROM profiles p
         WHERE p.id = instruction_reads.user_id
-          AND p.team_id = get_my_team_id()
+        AND p.team_id = get_my_team_id()
       )
     )
   );
@@ -352,7 +379,23 @@ CREATE POLICY "View org alerts"
   ON public.alerts FOR SELECT
   USING (
     org_id = get_my_org_id()
-    AND (get_my_role() = 'admin' OR active = true)
+    AND (
+      get_my_role() = 'admin' 
+      OR (
+        active = true
+        AND (
+          -- Visible if NOT assigned to any team (org-wide)
+          NOT EXISTS (SELECT 1 FROM alert_teams at WHERE at.alert_id = id)
+          OR
+          -- Visible if assigned to MY team
+          (get_my_team_id() IS NOT NULL AND EXISTS (
+            SELECT 1 FROM alert_teams at
+            WHERE at.alert_id = id
+            AND at.team_id = get_my_team_id()
+          ))
+        )
+      )
+    )
   );
 
 CREATE POLICY "Admins insert alerts"

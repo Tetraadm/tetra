@@ -1,3 +1,4 @@
+import 'server-only'
 /**
  * Vertex AI Chat Client
  * 
@@ -30,12 +31,12 @@ function getEdgeFunctionHeaders(): Record<string, string> {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY || ''
     }
-    
+
     // Add shared secret for internal authentication
     if (EDGE_FUNCTION_SECRET) {
         headers['X-Edge-Secret'] = EDGE_FUNCTION_SECRET
     }
-    
+
     return headers
 }
 
@@ -56,7 +57,7 @@ export async function streamGeminiAnswer(
         }
 
         const userMessage = messages.map(m => m.content).join('\n')
-        
+
         const response = await fetch(`${SUPABASE_URL}/functions/v1/gemini-chat`, {
             method: 'POST',
             headers: getEdgeFunctionHeaders(),
@@ -107,7 +108,7 @@ export async function generateGeminiAnswer(
         }
 
         const userMessage = messages.map(m => m.content).join('\n')
-        
+
         const response = await fetch(`${SUPABASE_URL}/functions/v1/gemini-chat`, {
             method: 'POST',
             headers: getEdgeFunctionHeaders(),

@@ -1,3 +1,4 @@
+import 'server-only'
 /**
  * Supabase Edge Functions Client
  * 
@@ -26,7 +27,7 @@ async function callEdgeFunction<T>(
   payload: Record<string, unknown>
 ): Promise<EdgeFunctionResponse<T>> {
   const timer = createTimer(aiLogger, `edge_function_${functionName}`)
-  
+
   if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
     aiLogger.warn('Supabase not configured for Edge Functions')
     timer.end({ success: false, reason: 'not_configured' })
@@ -34,18 +35,18 @@ async function callEdgeFunction<T>(
   }
 
   const url = `${SUPABASE_URL}/functions/v1/${functionName}`
-  
+
   try {
     const headers: Record<string, string> = {
       'Authorization': `Bearer ${SUPABASE_SERVICE_KEY}`,
       'Content-Type': 'application/json'
     }
-    
+
     // Add shared secret for internal authentication
     if (EDGE_FUNCTION_SECRET) {
       headers['X-Edge-Secret'] = EDGE_FUNCTION_SECRET
     }
-    
+
     const response = await fetch(url, {
       method: 'POST',
       headers,
@@ -59,15 +60,15 @@ async function callEdgeFunction<T>(
 
     const data = await response.json() as T
     timer.end({ success: true, functionName })
-    
+
     return { success: true, data }
   } catch (error) {
     logError(aiLogger, error, { functionName, payload })
     timer.fail(error, { functionName })
-    
-    return { 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error' 
+
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
     }
   }
 }
@@ -82,12 +83,12 @@ export async function triggerEmbeddingGeneration(params: {
   orgId: string
 }): Promise<boolean> {
   const result = await callEdgeFunction('generate-embeddings', params)
-  
+
   if (!result.success) {
-    aiLogger.warn({ instructionId: params.instructionId, error: result.error }, 
+    aiLogger.warn({ instructionId: params.instructionId, error: result.error },
       'Failed to trigger embedding generation')
   }
-  
+
   return result.success
 }
 
@@ -101,12 +102,12 @@ export async function triggerDocumentProcessing(params: {
   triggerEmbeddings?: boolean
 }): Promise<boolean> {
   const result = await callEdgeFunction('process-document', params)
-  
+
   if (!result.success) {
-    aiLogger.warn({ instructionId: params.instructionId, error: result.error }, 
+    aiLogger.warn({ instructionId: params.instructionId, error: result.error },
       'Failed to trigger document processing')
   }
-  
+
   return result.success
 }
 

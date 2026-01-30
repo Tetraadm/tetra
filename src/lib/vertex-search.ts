@@ -1,3 +1,4 @@
+import 'server-only'
 /**
  * Vertex AI Search Client
  *
@@ -49,11 +50,11 @@ function getEdgeFunctionHeaders(): Record<string, string> {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
         'apikey': SUPABASE_ANON_KEY || ''
     }
-    
+
     if (EDGE_FUNCTION_SECRET) {
         headers['X-Edge-Secret'] = EDGE_FUNCTION_SECRET
     }
-    
+
     return headers
 }
 
@@ -82,7 +83,7 @@ export async function searchDocuments(
         timer.end({ source: 'disabled', reason: 'not_enabled' })
         return []
     }
-    
+
     // Check cache first
     if (ENABLE_SEARCH_CACHE) {
         const cached = await getCachedSearchResults<VertexSearchResult[]>(query, orgId)
@@ -100,7 +101,7 @@ export async function searchDocuments(
 
     try {
         const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/vertex-search`
-        
+
         const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
             headers: getEdgeFunctionHeaders(),
@@ -184,7 +185,7 @@ export async function searchWithAnswer(
 
     try {
         const edgeFunctionUrl = `${SUPABASE_URL}/functions/v1/vertex-search`
-        
+
         const response = await fetch(edgeFunctionUrl, {
             method: 'POST',
             headers: getEdgeFunctionHeaders(),
@@ -211,10 +212,10 @@ export async function searchWithAnswer(
             return { results: [] }
         }
 
-        timer.end({ 
-            source: 'edge_function', 
+        timer.end({
+            source: 'edge_function',
             count: data.results?.length || 0,
-            hasAnswer: !!data.answer 
+            hasAnswer: !!data.answer
         })
 
         return {
